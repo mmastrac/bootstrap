@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 #define PROGRAM_LENGTH 65536
-#define PC 63
+#define PC 61
 // #define dprintf(...) 
 #define dprintf printf
 
@@ -98,6 +98,9 @@ int sc(uint32_t syscall,
 			dprintf("Buffer not large enough\n");
 		}
 		return needed;
+	} else if (syscall == 6) {
+		debug("getmemsize");
+		return PROGRAM_LENGTH;
 	} else if (syscall == 7) {
 		debug("exit");
 		exit(arg1);

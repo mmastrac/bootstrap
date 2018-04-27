@@ -39,20 +39,20 @@
 # RJ = Error handler
 	=#J 0800
 
-# Get argv at $1000
+# Get argv at $5000
 	=#0 0005
-	=#1 1000
+	=#1 5000
 	=#2 1000
 	S+012   
 
 # Open argv[1] as r/o in R8 (input)
-	=#1 1004
+	=#1 5004
 	=(11
 	=#8 0000
 	S 81
 
 # Open argv[2] as r/w in R9 (output)
-	=#1 1008
+	=#1 5008
 	=(11
 	=#2 0602
 	=#9 0000
@@ -231,20 +231,20 @@
 	S+0812  
 	=(21
 
-	=#1 0790
-	=#0 07c0
+	=#1 0780
+	=#0 1000
 	=(30
 	?=23
 	J?1 
-	=#0 07d0
+	=#0 1020
 	=(30
 	?=23
 	J?1 
-	=#0 07e0
+	=#0 1040
 	=(30
 	?=23
 	J?1 
-	=#0 07f0
+	=#0 1060
 	=(30
 	?=23
 	J?1 
@@ -252,7 +252,7 @@
 # Error
 	J J 
 
-:0790
+:0780
 # Write the 12 bytes
 	+ 0d
 	=#1 0002
@@ -263,15 +263,6 @@
 	+ Id
 	+ Ie
 	J 4 
-
-:07c0
-	ret.=(xy+ yd= zx
-:07d0
-	ret?=(xy+?yd=?zx
-:07e0
-	jump= 00= 00=$z 
-:07f0
-	call=(yz- yd=$z 
 
 # Generic error, try to preserve registers
 :0800
@@ -295,8 +286,8 @@
 
 # If we read a nul, means table was empty
 	?=6a
-	=#z 09e0
-	J?z 
+	=#0 09e0
+	J?0 
 
 # Seek to fixup
 	=#0 0003
@@ -358,8 +349,8 @@
 	?>Fa
 	J?A 
 
-	=#z 09e0
-	J z 
+	=#0 09e0
+	J 0 
 
 :09e0
 
@@ -367,12 +358,22 @@
 	- 11
 	S 01
 
-# Input line buffer
+# Macros
 :1000
+	ret.=(xy+ yd= zx
+:1020
+	ret?=(xy+?yd=?zx
+:1040
+	jump= 00= 00=$z 
+:1060
+	call- yd(=yz=$z 
 
 # NOP
 :1100
 	= 00
+
+# Input line buffer
+:2000
 
 # Symbol table
 # 8-byte symbol, 4-byte address

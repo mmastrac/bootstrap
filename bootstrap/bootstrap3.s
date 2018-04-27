@@ -21,12 +21,38 @@
 # Call address (@call:label___)
 # @call: =(yz- yd=$z 
 
+# Rx = Temp var
+# Ry = Stack pointer
+# Rz = PC
+
+:entry___
+# Ra = Zero register
+	- aa
+# Rb = One register
+	=#b 0001
+# Rc = Two register
+	=#c 0002
+# Rd = Four register
+	=#d 0004
+# Re = Eight register
+	=#e 0008
+
+# Set stack to memsize
+	=$0 :SC_GTMEM
+	S 0 
+	= y0
+	- yd
+
+	@jump:main____
+
 =__null__ 0000
 =newline_ 000a
 =hash____ 0023
 =colon___ 003a
 =tab_____ 0009
+=space___ 0020
 =equals__ 003d
+=dollar__ 0024
 
 # EOF
 =T_EOF___ 0000
@@ -41,6 +67,14 @@
 # EOL
 =T_EOL___ 0005
 
+:tokens__
+	EOF 
+	IMM 
+	REF 
+	INS 
+	REG 
+	EOL 
+
 =SC_OPEN_ 0000
 =O_RDONLY 0000
 =O_WRONLY 0001
@@ -50,30 +84,16 @@
 
 =SC_READ_ 0001
 =SC_WRITE 0002
+
 =SC_SEEK_ 0003
+=SEEK_SET 0000
+=SEEK_CUR 0001
+=SEEK_END 0002
+
 =SC_CLOSE 0004
 =SC_GTARG 0005
 =SC_GTMEM 0006
 =SC_EXIT_ 0007
-
-# Ra = Zero register
-	- aa
-# Rb = One register
-	=#b 0001
-# Rc = Two register
-	=#c 0002
-# Rd = Four register
-	=#d 0004
-# Re = Eight register
-	=#e 0008
-
-# Rx = Temp var
-# Ry = Stack pointer
-# Rz = PC
-
-:entry___
-	@jump:main____
-
 
 
 # Global: Input file handle
@@ -101,7 +121,13 @@
 #   R0: Pointer to string (zero terminated)
 #===========================================================================
 :getargv_
-
+	=$1 :SC_GTARG
+	=$2 :scratch_
+	=#3 1000
+	S+123   
+	* 0d
+	+ 03
+	@ret.
 #===========================================================================
 
 
@@ -161,6 +187,20 @@
 
 
 #===========================================================================
+# Steps back in the input file by one char
+# No args/return
+#===========================================================================
+:rewind__
+	=$0 :SC_SEEK_
+	- 11
+	- 1b
+	=$2 :SEEK_CUR
+	S+0812
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
 # Returns:
 #   R0: Token type
 #   R1: Token data
@@ -168,49 +208,187 @@
 :readtok_
 	@call:readchar
 
-	=$z :newline_
-	=?0z
-	=$z :readtok_
-	J?z 
+# Whitespace is ignored
+	=$x :space___
+	=?0x
+	=$x :readtok_
+	=?zx
 
-	=$z :hash____
-	=?0z
-	=$z :readtok#
-	J?z 
+# Whitespace is ignored
+	=$x :tab_____
+	=?0x
+	=$x :readtok_
+	=?zx
+
+	=$x :newline_
+	=?0x
+	=$x :readtknl
+	=?zx
+
+	=$x :hash____
+	=?0x
+	=$x :readtok#
+	=?zx
 
 	=$z :colon___
-	=?0z
+	=?0x
 	=$z :readtok:
-	J?z 
+	=?zx
 
-	=!0a
-	=$z :readtoke
-	J?z 
+	=$z :dollar__
+	=?0x
+	=$z :readtok$
+	=?zx
 
 # Return zero at EOF
-	@ret.
+	?=0a
+	@ret?
 
-:readtoke
 	=$0 :einvchar
 	@call:error___
 
-:readtok$
+#***************************
+
+:readtok:
+	- 22
+:readtk:_
+	@call:readchar
+	@call:islabelc
+
+	=$1 :readtkbf
+	+ 12
+	=$x :readtk:y
+	=?zx
+
+# Store trailing NUL
+	- 00
+	[=10
+# Put back the non-label char
+	@call:rewind__
+# Return a reference token
+	=$0 :T_REF___
+	=$1 :readtkbf
+	@jump:readtret
+
+:readtk:y
+# Store that last char
+	[=10
+	@jump:readtk:_
+
+#***************************
 
 :readtok#
 # Eat chars until a newline
 	@call:readchar
-	=$z :newline_
-	?=0z
-	=$z :readtok_
-	J?z 
+	=$x :newline_
+	?!0x
+	=$x :readtok#
+	=?zx
+# Return EOL for a comment
+	=$0 :T_EOL___
+	@jump:readtret
+
+#***************************
 
 :readtokr
-:readtok:
+	=$0 :T_REG___
+	@jump:readtret
+
+#***************************
+
+:readtok$
+	=$0 :T_IMM___
+	@jump:readtret
+
+#***************************
+
+:readtknl
+	=$0 :T_EOL___
+	@jump:readtret
+
+:readtret
+# Write the token to stdout for debugging
+	= 20
+	* 2d
+	=$x :tokens__
+	+ 2x
+	=$3 :SC_WRITE
+	S+312d  
+	@ret.
+
+:readtkbf
+	................
 
 :einvchar
 	Invalid character   :__null__
 #===========================================================================
 
+
+
+
+#===========================================================================
+# Args:
+#   R0: Char
+# Returns:
+#   Flag in appropriate state
+#   R0: Char
+#===========================================================================
+:islabelc
+# Underscore is cool
+	=#1 005f
+	?=01
+	@ret?
+
+	@jump:isalnum_
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: Char
+# Returns:
+#   Flag in appropriate state
+#   R0: Char
+#===========================================================================
+:isalnum_
+	=#1 0030
+	?<01
+	=$x :isalnumf
+	=?zx
+
+	=#1 003a
+	?<01
+	=$x :isalnumt
+	=?zx
+
+	=#1 0041
+	?<01
+	=$x :isalnumf
+	=?zx
+
+	=#1 005b
+	?<01
+	=$x :isalnumt
+	=?zx
+
+	=#1 0061
+	?<01
+	=$x :isalnumf
+	=?zx
+
+	=#1 007b
+	?<01
+	=$x :isalnumt
+	=?zx
+
+# Fall through
+:isalnumf
+	?!11
+	@ret.
+:isalnumt
+	?=11
+	@ret.
+#===========================================================================
 
 
 #===========================================================================
@@ -250,11 +428,11 @@
 	@call:readtok_
 
 # EOF?
-	=$z :T_EOF___
-	?=0z
-	=$z :mlfinish
+	=$x :T_EOF___
+	?=0x
+	@jump:mlfinish
 
-	=$z :T_IMM___
+	=$z :T_REF___
 	?!0z
 	=$z :mlnotimm
 

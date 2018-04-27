@@ -28,3 +28,6 @@ diff $TEST/bootstrap2/test4.bin /tmp/t4.bin
 
 echo Compile 3
 ./vm /tmp/b2.bin $ROOT/bootstrap3.s /tmp/b3.bin > /dev/null
+echo Test 3
+./vm /tmp/b3.bin $TEST/bootstrap3/test1.s /tmp/t1.bin > /dev/null
+diff $TEST/bootstrap3/test1.bin /tmp/t1.bin
