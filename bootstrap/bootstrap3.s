@@ -110,7 +110,22 @@
 # Does not return
 #===========================================================================
 :error___
-
+# Stash R0 in stack
+	(=y0
+	@call:strlen__
+	=(3y
+	=$1 :SC_WRITE
+	=#2 0002
+	S+1230  
+# Write a newline
+	=$1 :SC_WRITE
+	=#3 000a
+	[=33
+	S+123b  
+# Exit with code 1
+	=$0 :SC_EXIT_
+	=#1 0001
+	S 01
 #===========================================================================
 
 
@@ -126,7 +141,28 @@
 	=#3 1000
 	S+123   
 	* 0d
-	+ 03
+	+ 02
+	=(00
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: String
+# Returns:
+#   R0: Length
+#===========================================================================
+:strlen__
+	= 10
+:strlenl_
+	=[20
+	?=2a
+	@jmp?:strlenr_
+	+ 0b
+	@jump:strlenl_
+:strlenr_
+	- 01
 	@ret.
 #===========================================================================
 
@@ -168,15 +204,16 @@
 	| 3x
 :open_ro_
 	S+2013  
-	?!0a
-	=$x :opensucc
-	J?z 
+	+ 2b
+	?!2a
+	@jmp?:opensucc
 
 	=$0 :eopfail_
 	@call:error___
 
 :opensucc
 	= 02
+	- 0b
 	@ret.
 
 
@@ -195,7 +232,7 @@
 	- 11
 	- 1b
 	=$2 :SEEK_CUR
-	S+0812
+	S+0812  
 	@ret.
 #===========================================================================
 
@@ -210,39 +247,39 @@
 
 # Whitespace is ignored
 	=$x :space___
-	=?0x
+	?=0x
 	=$x :readtok_
 	=?zx
 
 # Whitespace is ignored
 	=$x :tab_____
-	=?0x
+	?=0x
 	=$x :readtok_
 	=?zx
 
 	=$x :newline_
-	=?0x
+	?=0x
 	=$x :readtknl
 	=?zx
 
 	=$x :hash____
-	=?0x
+	?=0x
 	=$x :readtok#
 	=?zx
 
-	=$z :colon___
-	=?0x
-	=$z :readtok:
+	=$x :colon___
+	?=0x
+	=$x :readtok:
 	=?zx
 
-	=$z :dollar__
-	=?0x
-	=$z :readtok$
+	=$x :dollar__
+	?=0x
+	=$x :readtok$
 	=?zx
 
 # Return zero at EOF
 	?=0a
-	@ret?
+	@jmp?:readtret
 
 	=$0 :einvchar
 	@call:error___
@@ -307,12 +344,13 @@
 	@jump:readtret
 
 :readtret
-# Write the token to stdout for debugging
+# Write the token to stderr for debugging
 	= 20
 	* 2d
 	=$x :tokens__
 	+ 2x
 	=$3 :SC_WRITE
+	= 1c
 	S+312d  
 	@ret.
 
@@ -392,12 +430,21 @@
 
 
 #===========================================================================
-# Args:
-#   R0: Handle
 # Returns:
 #   R0: Char (zero if EOF)
 #===========================================================================
 :readchar
+	=$0 :in_hand_
+	=(00
+	=$1 :SC_READ_
+	=$2 :readchbf
+	[=2a
+	= 3b
+	S+1023  
+	=[02
+	@ret.
+:readchbf
+	????
 #===========================================================================
 
 
@@ -430,11 +477,16 @@
 # EOF?
 	=$x :T_EOF___
 	?=0x
-	@jump:mlfinish
+	@jmp?:mlfinish
 
-	=$z :T_REF___
-	?!0z
-	=$z :mlnotimm
+# EOL?
+	=$x :T_EOL___
+	?=0x
+	@jmp?:mainloop
+
+	=$x :T_IMM___
+	?!0x
+	@jmp?:mlnotimm
 
 # Immediate
 
@@ -453,10 +505,10 @@
 :mlfinish
 
 #TODO
-	....
+	xxxx
 
 :einvtok_
-	Invalid token encountered :__null__
+	Invalid token encountered   :__null__
 #===========================================================================
 
 

@@ -6,4 +6,4 @@ ldd r0, r0
 mov r0, @OPEN_READ
 
 :scratch
-	....
+	dat 1

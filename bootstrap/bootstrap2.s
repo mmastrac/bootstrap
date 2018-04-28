@@ -248,6 +248,10 @@
 	=(30
 	?=23
 	J?1 
+	=#0 1080
+	=(30
+	?=23
+	J?1 
 
 # Error
 	J J 
@@ -255,13 +259,17 @@
 :0780
 # Write the 12 bytes
 	+ 0d
+	=(30
+	=#4 0798
+	(=43
+	=#2 ????
+	+ 0d
 	=#1 0002
-	=#2 000c
 	S+1902  
+# Mark # of bytes output
+	+ I2
+# Continue processing assembler
 	=#4 0600
-# Mark 12 bytes output
-	+ Id
-	+ Ie
 	J 4 
 
 # Generic error, try to preserve registers
@@ -360,13 +368,29 @@
 
 # Macros
 :1000
-	ret.=(xy+ yd= zx
+	ret.000c=(xy+ yd= zx
 :1020
-	ret?=(xy+?yd=?zx
+	ret?000c=(xy+?yd=?zx
 :1040
-	jump= 00= 00=$z 
+	jump0004=$z 
 :1060
-	call- yd(=yz=$z 
+# Conditional jump - works by skipping jump instruction if flag not set
+	jmp?0008+^ze=$z 
+:1080
+# Add 12 to the current address and push that as our return.
+# This is not super-efficient as a call pattern but at this point
+# in our bootstrap we don't care.
+#
+# sub sp, 4
+# mov tmp, pc
+# add tmp, 12
+# mov [sp], tmp
+# mov pc, address
+	call0018- yd=#x 000c+ xz(=yx=$z 
+:10a0
+	psh00008- yd(=y0
+:10c0
+	pop00008=(0y+ yd
 
 # NOP
 :1100

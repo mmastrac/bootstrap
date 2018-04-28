@@ -174,8 +174,19 @@ int main(int argc, const char** argv) {
 
 		dprintf("%c%c%c%c\n", op1, op2, op3, op4);
 
+		// Only if flag is set
 		if (op2 == '?') {
 			if (flag) {
+				op2 = ' ';
+			} else {
+				// Skip
+				continue;
+			}
+		}
+
+		// Only if flag is not set
+		if (op2 == '^') {
+			if (!flag) {
 				op2 = ' ';
 			} else {
 				// Skip
