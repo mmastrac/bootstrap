@@ -72,8 +72,14 @@ int sc(uint32_t syscall,
 		int whence = 0;
 		if (arg3 == 0) {
 			whence = SEEK_SET;
+		} else if (arg3 == 1) {
+			whence = SEEK_CUR;
+		} else if (arg3 == 2) {
+			whence = SEEK_END;
+		} else {
+			invalid();
 		}
-		return (uint32_t)lseek(arg1, (off_t)arg2, whence);
+		return (uint32_t)(int32_t)lseek(arg1, (off_t)(int32_t)arg2, whence);
 	} else if (syscall == 4) {
 		debug("close");
 		return close(arg1);

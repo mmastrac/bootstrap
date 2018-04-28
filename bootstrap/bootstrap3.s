@@ -56,6 +56,14 @@
 =letterr_ 0072
 =question 003f
 =hat_____ 005e
+=zero____ 0030
+=comma___ 002c
+=plus____ 002b
+=minus___ 002d
+=left[___ 005b
+=left{___ 007b
+=left(___ 0028
+=at______ 0040
 
 # EOF
 =T_EOF___ 0000
@@ -133,6 +141,16 @@
 
 
 #===========================================================================
+# Does not return
+#===========================================================================
+:exit____
+	=$0 :SC_EXIT_
+	- 11
+	S 01
+#===========================================================================
+
+
+#===========================================================================
 # Args:
 #   R0: Which
 # Returns:
@@ -198,20 +216,20 @@
 	=$2 :SC_OPEN_
 	=$3 :O_RDONLY
 	?=1a
-	=$x :open_ro_
+	@jmp?:open_ro_
 	=$3 :O_RDWR__
 	=$x :O_TRUNC_
 	| 3x
 	=$x :O_CREAT_
 	| 3x
 :open_ro_
-	S+2013  
+	S+203   
 	+ 2b
 	?!2a
 	@jmp?:opensucc
 
 	=$0 :eopfail_
-	@call:error___
+	@jump:error___
 
 :opensucc
 	= 02
@@ -234,7 +252,9 @@
 	- 11
 	- 1b
 	=$2 :SEEK_CUR
-	S+0812  
+	=$3 :in_hand_
+	=(33
+	S+0312  
 	@ret.
 #===========================================================================
 
@@ -248,16 +268,8 @@
 	@call:readchar
 
 # Whitespace is ignored
-	=$x :space___
-	?=0x
-	=$x :readtok_
-	=?zx
-
-# Whitespace is ignored
-	=$x :tab_____
-	?=0x
-	=$x :readtok_
-	=?zx
+	@call:istoksep
+	@jmp?:readtok_
 
 	=$x :newline_
 	?=0x
@@ -270,6 +282,11 @@
 	=?zx
 
 	=$x :colon___
+	?=0x
+	=$x :readtok:
+	=?zx
+
+	=$x :at______
 	?=0x
 	=$x :readtok:
 	=?zx
@@ -302,7 +319,7 @@
 
 :readtinv
 	=$0 :einvchar
-	@call:error___
+	@jump:error___
 
 #***************************
 
@@ -354,7 +371,61 @@
 	?!1x
 	@jmp?:readtinv
 
+	=$x :zero____
+	- 0x
+	= 10
+:readtkrl
+	@psh1
+	@call:readchar
+	@pop1
+	@call:istoksep
+	@jmp?:readtkrd
+	=$x :newline_
+	?=0x
+	@jmp?:readtkrd
+
+	=#x 000a
+	* 1x
+	=$x :zero____
+	- 0x
+	+ 10
+	@jump:readtkrl
+
+:readtkrd
+
+	@psh1
+	@call:rewind__
+	@pop1
 	=$0 :T_REG___
+	@jump:readtret
+
+#***************************
+
+:readtok$
+:readtk$l
+	@psh1
+	@call:readchar
+	@pop1
+	@call:istoksep
+	@jmp?:readtk$d
+	=$x :newline_
+	?=0x
+	@jmp?:readtk$d
+
+	=#x 000a
+	* 1x
+	=$x :zero____
+	- 0x
+	+ 10
+	@jump:readtk$l
+
+:readtk$d
+
+	@psh1
+	@call:rewind__
+	@pop1
+
+	=$0 :T_IMM___
 	@jump:readtret
 
 #***************************
@@ -384,11 +455,7 @@
 	@call:readchar
 	@pop3
 	@pop2
-	=$x :space___
-	?=0x
-	@jmp?:readtkid
-	=$x :tab_____
-	?=0x
+	@call:istoksep
 	@jmp?:readtkid
 	=$x :newline_
 	?=0x
@@ -431,6 +498,8 @@
 	?=12
 	@jmp?:readtkir
 	+ 0e
+# We need to skip the NOP from address refs too
+	+ 0d
 	?=03
 	@jmp?:readtkie
 	@jump:readtkis
@@ -448,13 +517,7 @@
 	@jump:error___
 
 :inserr__
-	Unknown instruction:__null__
-
-#***************************
-
-:readtok$
-	=$0 :T_IMM___
-	@jump:readtret
+	Unknown instruction :__null__
 
 #***************************
 
@@ -471,8 +534,8 @@
 	=$x :tokens__
 	+ 2x
 	=$3 :SC_WRITE
-	= 1c
-	S+312d  
+	= 4c
+	S+342d  
 	@ret.
 
 # This is enough for 32-byte labels
@@ -577,6 +640,31 @@
 #===========================================================================
 
 
+
+#===========================================================================
+# Args:
+#   R0: Char
+# Returns:
+#   Flag in appropriate state
+#   R0: Char
+#===========================================================================
+:istoksep
+	=$x :space___
+	?=0x
+	@jmp?:rettrue_
+
+	=$x :tab_____
+	?=0x
+	@jmp?:rettrue_
+
+	=$x :comma___
+	?=0x
+	@jmp?:rettrue_
+
+	@jump:retfalse
+#===========================================================================
+
+
 #===========================================================================
 # Returns:
 #   R0: Char (zero if EOF)
@@ -593,6 +681,45 @@
 	@ret.
 :readchbf
 	????
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: Char
+#===========================================================================
+:writech_
+	=$x :writchbf
+	[=x0
+	=$0 :out_hand
+	=(00
+	=$1 :SC_WRITE
+	= 2x
+	= 3b
+	S+1023  
+	@ret.
+:writchbf
+	....
+#===========================================================================
+
+
+
+#===========================================================================
+# Args:
+#   R0: 32-bit value
+#===========================================================================
+:write32_
+	=$x :writ32bf
+	(=x0
+	=$0 :out_hand
+	=(00
+	=$1 :SC_WRITE
+	= 2x
+	= 3d
+	S+1023  
+	@ret.
+:writ32bf
+	....
 #===========================================================================
 
 
@@ -632,54 +759,199 @@
 	?=0x
 	@jmp?:mainloop
 
-	=$x :T_IMM___
-	?!0x
-	@jmp?:mlnotimm
+	=$x :T_REF___
+	?=0x
+	@jmp?:mlref___
 
-# Immediate
-
-:mlnotimm
-
-	=$z :T_INS___
-	?!0z
-	=$z :mlnotins
-
-:mlnotins
+	=$x :T_INS___
+	?=0x
+	@jmp?:mlins___
 
 	=$0 :einvtok_
-	@call:error___
+	@jump:error___
 
+:mlref___
+	@jump:mlfinish
+:mlins___
+# Extract the conditional execution flag
+# TODO
+
+# Perform a call to a mini-function that will jump to the next address
+	@call:mlinsi__
+	@jump:mainloop
+
+:mlinsi__
+	= z1
+
+	@jump:mlfinish
 
 :mlfinish
 
-#TODO
-	xxxx
+	=#0 0000
+	@call:exit____
 
 :einvtok_
 	Invalid token encountered   :__null__
 #===========================================================================
 
+:expcteol
+	@call:readtok_
+	=$x :T_EOL___
+	?!0x
+	=$x :eexpceol
+	=?0x
+	@jmp?:error___
+	@ret.
 
+:eexpceol
+	Expected EOL:__null__
 
+:i__reg__
+	@call:readtok_
+	=$x :T_REG___
+	?!0x
+	=$x :eexpregi
+	=?0x
+	@jmp?:error___
+	@jump:i__valr_
+
+:eexpregi
+	Expected register:__null__
+
+:i__val__
+	@call:readtok_
+	=$x :T_REG___
+	?=0x
+	@jmp?:i__valr_
+
+# =$x :T_REF___
+# ?=0x
+# @jmp?:i__valr_
+
+# =$x :T_IMM___
+# ?=0x
+# @jmp?:i__valr_
+
+	=$0 :equals__
+	@call:writech_
+	=$0 :dollar__
+	@call:writech_
+	=#0 0078
+	@call:writech_
+	=$0 :space___
+	@call:writech_
+
+	=#0 1234
+	@call:write32_
+
+	=#0 0078
+	@ret.
+
+:i__valr_
+# Move the reg# to r0
+	=$0 :register
+	+ 01
+# Load the character representing the register
+	=[00
+	@ret.
+
+:i_stdbf1
+	....
+:i_stdbf2
+	....
+
+# Standard instruction
+:i_std___
+	=$2 :i_stdbf1
+	(=20
+	=$2 :i_stdbf2
+	(=21
+# Target register
+	@call:i__reg__
+	@psh0
+# Source register/value
+	@call:i__val__
+	@psh0
+	=$1 :i_stdbf1
+	=(01
+	@call:writech_
+	=$1 :i_stdbf2
+	=(01
+	@call:writech_
+	@pop1
+	@pop0
+	@psh1
+	@call:writech_
+	@pop0
+	@call:writech_
+	@call:expcteol
+	@ret.
 
 :i_mov___
+	=$0 :equals__
+	=$1 :space___
+	@jump:i_std___
 :i_add___
+	=$0 :plus____
+	=$1 :space___
+	@jump:i_std___
 :i_sub___
+	=$0 :minus___
+	=$1 :space___
+	@jump:i_std___
 :i_push__
+	@ret.
 :i_pop___
+	@ret.
 :i_ldb___
+	=$0 :equals__
+	=$1 :left[___
+	@jump:i_std___
+	@ret.
 :i_ldw___
+	=$0 :equals__
+	=$1 :left{___
+	@jump:i_std___
+	@ret.
 :i_ldd___
+	=$0 :equals__
+	=$1 :left(___
+	@jump:i_std___
+	@ret.
 :i_stb___
+	=$0 :left[___
+	=$1 :equals__
+	@jump:i_std___
+	@ret.
 :i_stw___
+	=$0 :left{___
+	=$1 :equals__
+	@jump:i_std___
+	@ret.
 :i_std___
+	=$0 :left(___
+	=$1 :equals__
+	@jump:i_std___
+	@ret.
 :i_call__
+	@ret.
 :i_ret___
+	@call:expcteol
+	@ret.
 :i_sys___
+	@ret.
 :i_db____
+	@ret.
 :i_dw____
+	@ret.
 :i_dd____
+	@ret.
 :i_ds____
+	@ret.
+
+# Simple lookup table for registers
+:register
+	0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz..
 
 # Instruction table
 :instruct
@@ -738,5 +1010,12 @@
 	:i_ds____
 
 :lastinst
+
+:symtab__
+	........
+
+:deftab__
+	........
+
 :scratch_
 

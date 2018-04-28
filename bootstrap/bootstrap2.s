@@ -298,7 +298,7 @@
 
 # Seek to fixup
 	=#0 0003
-	S+096   
+	S+096a  
 
 # Read eight bytes (the address)
 	=#0 0001
@@ -343,7 +343,7 @@
 
 # Seek to fixup
 	=#0 0003
-	S+096   
+	S+096a  
 # Write address/value
 	=#0 0002
 	= 1d
