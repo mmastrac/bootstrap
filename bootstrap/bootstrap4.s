@@ -11,7 +11,7 @@
 #  - Return values provided in r0 or r0+r1
 #  - All other registers must be restored to state before call, other than temps
 
-#include include/syscall.h
+#include "include/syscall.h"
 
 # Register definitions
 #define pc r61
@@ -87,8 +87,7 @@ std :output_handle, r0
 #   R0: Length
 #===========================================================================
 :strlen
-	push r2
-	push r1
+	push r1, r2
 	mov r1, r0
 .loop
 	ld.b r2, r0
@@ -98,8 +97,7 @@ std :output_handle, r0
 	jump .loop
 .ret
 	sub r0, r1
-	pop r1
-	pop r2
+	pop r2, r1
 	ret
 #===========================================================================
 

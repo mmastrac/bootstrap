@@ -190,6 +190,50 @@
 
 #===========================================================================
 # Args:
+#  R0: Dest
+#  R1: Src
+# Returns:
+#  R0: Dest
+#===========================================================================
+:strcpy__
+	@psh0
+:strcpyl_
+	=[21
+	[=02
+	?=2a
+	@jmp?:strcpyd_
+	+ 0b
+	+ 1b
+	@jump:strcpyl_
+:strcpyd_
+	@pop0
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#  R0: String 1
+#  R1: String 2
+# Returns:
+#  Equal? in flags
+#===========================================================================
+:strcmp__
+:strcmpl_
+	=[20
+	=[31
+	?!23
+	@jmp?:retfalse
+	?=2a
+	@ret?
+	+ 0b
+	+ 1b
+	@jump:strcmpl_
+#===========================================================================
+
+
+#===========================================================================
+# Args:
 #   R0: Address
 #   R1: Value
 #   R2: Length
@@ -202,6 +246,42 @@
 	+ 0b
 	- 2b
 	@jump:memset__
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: Size
+# Returns:
+#   R0: Address
+#===========================================================================
+:malloc__
+	=$x :heap____
+	=(xx
+	= 1x
+	+ 10
+	= 0x
+	=$x :heap____
+	(=x1
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: String
+# Returns:
+#   R0: Address
+#===========================================================================
+:mallocst
+	@psh0
+	@call:strlen__
+	+ 0b
+	@call:malloc__
+	=$x :heap____
+	=(xx
+	@pop1
+	@jump:strcpy__
 #===========================================================================
 
 
@@ -242,7 +322,6 @@
 #===========================================================================
 
 
-
 #===========================================================================
 # Steps back in the input file by one char
 # No args/return
@@ -256,6 +335,53 @@
 	=(33
 	S+0312  
 	@ret.
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: NUL-terminated definition name
+# Returns:
+#   R0: Token type
+#   R1: Token data
+#===========================================================================
+:lookupdf
+	@psh0
+	=$2 :deftab__
+
+:lookdfl_
+# Get the definition record
+	=(22
+	?=2a
+	@jmp?:lookdfnf
+# Get the pointer to the string
+	+ 2e
+	=(12
+	@pop0
+	@psh0
+	@psh2
+	@call:strcmp__
+	@pop2
+	@jmp?:lookdff_
+	+ 2d
+	@jump:lookdfl_
+
+# Found
+:lookdff_
+	= XX
+	- 2d
+	=(12
+	- 2d
+	=(02
+	@pop2
+	@ret.
+
+:lookdfnf
+	=$0 :elookdf_
+	@jump:error___
+
+:elookdf_
+	define not found:__null__
 #===========================================================================
 
 
@@ -324,13 +450,18 @@
 #***************************
 
 :readtok:
-	- 22
+	@psh0
+	= 2a
+	@psh2
 :readtk:_
 	@call:readchar
 	@call:islabelc
 
 	=$1 :readtkbf
+	@pop2
 	+ 12
+	+ 2b
+	@psh2
 	=$x :readtk:y
 	=?zx
 
@@ -339,6 +470,20 @@
 	[=10
 # Put back the non-label char
 	@call:rewind__
+
+	@pop0
+	@call:logtoken
+
+	@pop0
+	=$x :at______
+	?!0x
+	@jmp?:readtk:r
+
+# This is a macro, so search for the definition
+	=$0 :readtkbf
+	@call:lookupdf
+
+:readtk:r
 # Return a reference token
 	=$0 :T_REF___
 	=$1 :readtkbf
@@ -352,15 +497,88 @@
 #***************************
 
 :readtok#
+	- 22
+	@psh2
+:readtk#l
 # Eat chars until a newline
 	@call:readchar
+	@pop2
 	=$x :newline_
-	?!0x
-	=$x :readtok#
-	=?zx
+	?=0x
+	@jmp?:readtk#d
+	=#3 0006
+	?=23
+	=$1 :readtkbf
+	+ 12
+	+ 2b
+	[=10
+	@jmp?:readtk#c
+	@psh2
+	@jump:readtk#l
+
+# Fast look when we don't need to match #define
+:readtk#f
+	@call:readchar
+	=$x :newline_
+	?=0x
+	@jmp?:readtk#d
+	@jump:readtk#f
+
+# We matched #define, so need to process this in a special way
+:readtk#c
+# NUL terminate, then compare against "define "
+	+ 1b
+	[=1a
+	=$1 :readtkbf
+	=$0 :readtk#s
+	@call:strcmp__
+	@jmp^:readtk#f
+# Zero out the buffer
+	=$0 :readtkbf
+	- 11
+	=#2 0020
+	@call:memset__
+# Definition name
+	- 00
+	@call:readtkwd
+	=$0 :readtkbf
+	@call:mallocst
+	@psh0
+# Read the next token
+	@call:readtok_
+	@psh0
+	@psh1
+# Expect an EOL
+	@call:expcteol
+# Allocate a record
+	=#0 0010
+	@call:malloc__
+# Read the current record
+	=$x :deftab__
+	=(xx
+# Write everything to the struct
+	= 10
+	@pop2
+	(=12
+	+ 1d
+	@pop2
+	(=12
+	+ 1d
+	@pop2
+	(=12
+	+ 1d
+	(=1x
+# Write the struct as the latest
+	=$x :deftab__
+	(=x0
+
 # Return EOL for a comment
+:readtk#d
 	=$0 :T_EOL___
 	@jump:readtret
+
+:readtk#s
+	define :__null__
 
 #***************************
 
@@ -483,14 +701,12 @@
 # Put the whitespace back
 	@call:rewind__
 
-	=$0 :SC_WRITE
-	=#1 0002
-	=$2 :readtkbf
-	=#3 0006
-	S+0123  
+	=#0 0006
+	@call:logtoken
 
 # Search the instruction table for a match
 	=$0 :instruct
+	=$2 :readtkbf
 	=(22
 	=$3 :lastinst
 :readtkis
@@ -536,7 +752,16 @@
 	=$3 :SC_WRITE
 	= 4c
 	S+342d  
+	=$x :rtnlbyte
+	=$3 :SC_WRITE
+	S+34xb  
 	@ret.
+
+:rtnlbyte
+	:newline_
+
+:rtspbyte
+	:space___
 
 # This is enough for 32-byte labels
 :readtkbf
@@ -544,6 +769,51 @@
 	........
 	........
 	........
+
+# r0 = len
+:logtoken
+	@psh1
+	@psh2
+	@psh3
+	=$1 :readtkbf
+	=#2 0002
+	=$3 :SC_WRITE
+	S+3210  
+	=$1 :rtspbyte
+	=#2 0002
+	=$3 :SC_WRITE
+	S+321b  
+	@pop3
+	@pop2
+	@pop1
+	@ret.
+
+# r0 = offset into readtkbf
+# returns r0 = last char
+:readtkwd
+	@psh0
+:readtkwl
+	@call:readchar
+	@call:islabelc
+	@jmp^:readtkwe
+	@pop1
+	=$x :readtkbf
+	+ x1
+	[=x0
+	+ 1b
+	@psh1
+	@jump:readtkwl
+:readtkwe
+	@pop1
+# Write a trailing NUL
+	=$x :readtkbf
+	+ x1
+	[=xa
+# Rewind that char
+	@psh0
+	@call:rewind__
+	@pop0
+	@ret.
 
 :einvchar
 	Invalid character   :__null__
@@ -771,6 +1041,10 @@
 	@jump:error___
 
 :mlref___
+# Make a copy of this label string
+	= 01
+	@call:mallocst
+
 	@jump:mlfinish
 :mlins___
 # Extract the conditional execution flag
@@ -789,6 +1063,10 @@
 
 	=#0 0000
 	@call:exit____
+
+# Current global label
+:mlglobal
+	:__null__
 
 :einvtok_
 	Invalid token encountered   :__null__
@@ -824,14 +1102,25 @@
 	?=0x
 	@jmp?:i__valr_
 
-# =$x :T_REF___
-# ?=0x
-# @jmp?:i__valr_
+	=$x :T_REF___
+	?=0x
+	@jmp?:i__valrf
 
-# =$x :T_IMM___
-# ?=0x
-# @jmp?:i__valr_
+	=$x :T_IMM___
+	?=0x
+	@jmp?:i__valim
 
+# TODO: error
+	....
+
+:i__valrf
+	@psh1
+	@jump:i__valfn
+:i__valim
+	@psh1
+	@jump:i__valfn
+
+:i__valfn
 	=$0 :equals__
 	@call:writech_
 	=$0 :dollar__
@@ -841,7 +1130,7 @@
 	=$0 :space___
 	@call:writech_
 
-	=#0 1234
+	@pop0
 	@call:write32_
 
 	=#0 0078
@@ -1011,11 +1300,24 @@
 
 :lastinst
 
+# Linked list of symbols:
+# [global symbol pointer] [local symbol pointer] [write address] [prev symbol]
 :symtab__
-	........
+	:__null__
 
+# Linked list of defines:
+# [define string pointer] [token type] [token value] [prev define]
 :deftab__
-	........
+	:__null__
+
+# Linked list of fixups:
+# [fixup address] [global symbol pointer] [local symbol pointer] [prev fixup]
+:fixuptab
+	:__null__
+
+# Current heap pointer
+:heap____
+	:scratch_
 
 :scratch_
 

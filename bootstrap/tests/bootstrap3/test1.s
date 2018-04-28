@@ -1,4 +1,4 @@
-#define OPEN_READ 1
+#define OPEN_READ $1
 
 mov r10, :scratch
 add r0, $4
