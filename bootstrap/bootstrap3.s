@@ -53,6 +53,9 @@
 =space___ 0020
 =equals__ 003d
 =dollar__ 0024
+=letterr_ 0072
+=question 003f
+=hat_____ 005e
 
 # EOF
 =T_EOF___ 0000
@@ -111,9 +114,9 @@
 #===========================================================================
 :error___
 # Stash R0 in stack
-	(=y0
+	@psh0
 	@call:strlen__
-	=(3y
+	@pop3
 	=$1 :SC_WRITE
 	=#2 0002
 	S+1230  
@@ -177,8 +180,7 @@
 # If length == 0, return
 	?=2a
 	@ret?
-	- 2b
-	=[01
+	[=01
 	+ 0b
 	- 2b
 	@jump:memset__
@@ -281,6 +283,24 @@
 	?=0a
 	@jmp?:readtret
 
+# Make sure it's alpha-numeric
+	@call:isalnum_
+	@jmp^:readtinv
+
+# This might be an instruction or register at this point, so read a second char
+	@psh0
+	@call:readchar
+	@pop1
+
+# If this one is a number, it's a register
+	@call:isnumber
+	@jmp?:readtokr
+
+# Otherwise if it's alnum, it's an instruction
+	@call:isalnum_
+	@jmp?:readtoki
+
+:readtinv
 	=$0 :einvchar
 	@call:error___
 
@@ -327,9 +347,108 @@
 
 #***************************
 
+# We've read two chars at this point
 :readtokr
+# Make sure the first one was an 'r'
+	=$x :letterr_
+	?!1x
+	@jmp?:readtinv
+
 	=$0 :T_REG___
 	@jump:readtret
+
+#***************************
+
+# We've read two chars at this point (r1 and r0)
+:readtoki
+# Clear the token buffer
+	@psh0
+	@psh1
+	=$0 :readtkbf
+	=#1 0020
+	=#2 0020
+	@call:memset__
+	@pop1
+	@pop0
+	=$2 :readtkbf
+	[=21
+	+ 2b
+	[=20
+	+ 2b
+	- 33
+
+# Read until we get a space, tab or newline
+:readtkil
+	@psh2
+	@psh3
+	@call:readchar
+	@pop3
+	@pop2
+	=$x :space___
+	?=0x
+	@jmp?:readtkid
+	=$x :tab_____
+	?=0x
+	@jmp?:readtkid
+	=$x :newline_
+	?=0x
+	@jmp?:readtkid
+
+# If the instruction ends in a ?, this means it is only executed if flag == true
+	=$x :question
+	?=0x
+	=?3b
+	@jmp?:readtkid
+
+# If the instruction ends in a ^, this means it is only executed if flag == false
+	=$x :hat_____
+	?=0x
+	=?3c
+	@jmp?:readtkid
+
+# Store and continue
+# TODO: We should probably check if this is alpha
+	[=20
+	+ 2b
+	@jump:readtkil
+
+:readtkid
+# Put the whitespace back
+	@call:rewind__
+
+	=$0 :SC_WRITE
+	=#1 0002
+	=$2 :readtkbf
+	=#3 0006
+	S+0123  
+
+# Search the instruction table for a match
+	=$0 :instruct
+	=(22
+	=$3 :lastinst
+:readtkis
+	=(10
+	?=12
+	@jmp?:readtkir
+	+ 0e
+	?=03
+	@jmp?:readtkie
+	@jump:readtkis
+
+:readtkir
+# Read instruction address
+	+ 0d
+	=(10
+# Return
+	=$0 :T_INS___
+	@jump:readtret
+
+:readtkie
+	=$0 :inserr__
+	@jump:error___
+
+:inserr__
+	Unknown instruction:__null__
 
 #***************************
 
@@ -343,6 +462,8 @@
 	=$0 :T_EOL___
 	@jump:readtret
 
+#***************************
+
 :readtret
 # Write the token to stderr for debugging
 	= 20
@@ -354,15 +475,26 @@
 	S+312d  
 	@ret.
 
+# This is enough for 32-byte labels
 :readtkbf
-	................
+	........
+	........
+	........
+	........
 
 :einvchar
 	Invalid character   :__null__
 #===========================================================================
 
+# Useful function ends to return false or true in the flag
 
+:retfalse
+	?!11
+	@ret.
 
+:rettrue_
+	?=11
+	@ret.
 
 #===========================================================================
 # Args:
@@ -373,8 +505,8 @@
 #===========================================================================
 :islabelc
 # Underscore is cool
-	=#1 005f
-	?=01
+	=#x 005f
+	?=0x
 	@ret?
 
 	@jump:isalnum_
@@ -388,44 +520,60 @@
 #   Flag in appropriate state
 #   R0: Char
 #===========================================================================
+:isnumber
+	=#x 0030
+	?<0x
+	=$x :retfalse
+	=?zx
+
+	=#x 003a
+	?<0x
+	=$x :rettrue_
+	=?zx
+
+	@jump:retfalse
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: Char
+# Returns:
+#   Flag in appropriate state
+#   R0: Char
+#===========================================================================
 :isalnum_
-	=#1 0030
-	?<01
-	=$x :isalnumf
+	=#x 0030
+	?<0x
+	=$x :retfalse
 	=?zx
 
-	=#1 003a
-	?<01
-	=$x :isalnumt
+	=#x 003a
+	?<0x
+	=$x :rettrue_
 	=?zx
 
-	=#1 0041
-	?<01
-	=$x :isalnumf
+	=#x 0041
+	?<0x
+	=$x :retfalse
 	=?zx
 
-	=#1 005b
-	?<01
-	=$x :isalnumt
+	=#x 005b
+	?<0x
+	=$x :rettrue_
 	=?zx
 
-	=#1 0061
-	?<01
-	=$x :isalnumf
+	=#x 0061
+	?<0x
+	=$x :retfalse
 	=?zx
 
-	=#1 007b
-	?<01
-	=$x :isalnumt
+	=#x 007b
+	?<0x
+	=$x :rettrue_
 	=?zx
 
-# Fall through
-:isalnumf
-	?!11
-	@ret.
-:isalnumt
-	?=11
-	@ret.
+	@jump:retfalse
 #===========================================================================
 
 
@@ -517,15 +665,21 @@
 :i_mov___
 :i_add___
 :i_sub___
-:i_pus___
+:i_push__
 :i_pop___
 :i_ldb___
 :i_ldw___
 :i_ldd___
+:i_stb___
+:i_stw___
+:i_std___
 :i_call__
 :i_ret___
 :i_sys___
-:i_dat___
+:i_db____
+:i_dw____
+:i_dd____
+:i_ds____
 
 # Instruction table
 :instruct
@@ -538,22 +692,31 @@
 	sub 
 	:i_sub___
 
-	psh 
-	:i_pus___
+	push
+	:i_push__
 
 	pop 
 	:i_pop___
 
-	ldb 
+	ld.b
 	:i_ldb___
 
-	ldw 
+	ld.w
 	:i_ldw___
 
-	ldd 
+	ld.d
 	:i_ldd___
 
-	cal 
+	st.b
+	:i_stb___
+
+	st.w
+	:i_stw___
+
+	st.d
+	:i_std___
+
+	call
 	:i_call__
 
 	ret 
@@ -562,7 +725,18 @@
 	sys 
 	:i_sys___
 
-	dat 
-	:i_dat___
+	db  
+	:i_db____
 
+	dw  
+	:i_dw____
+
+	dd  
+	:i_dd____
+
+	ds  
+	:i_ds____
+
+:lastinst
 :scratch_
+

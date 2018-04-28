@@ -33,11 +33,13 @@
 # RG = Main loop address (ie: read/process a line)
 	=#G 0200
 # RH = NOP
-	=#H 1100
+	=#H 1200
 # RI = Current offset in output (used for fixup)
 	=#I 0000
 # RJ = Error handler
 	=#J 0800
+# RK = Line number
+	- KK
 
 # Get argv at $5000
 	=#0 0005
@@ -79,12 +81,14 @@
 # Empty line? If so, ignore
 	=#1 000a
 	?=01
+	+?Kb
 	J?G 
 
 # Comment line? (#)
 	=#1 0023
 	?=01
 	=#4 0300
+	+?Kb
 	J?4 
 
 # Label line? (:)
@@ -173,6 +177,7 @@
 # EOL? If so, return to main loop
 	=#3 000a
 	?=32
+	+?Kb
 	J?G 
 
 # Macro? If so, expand to output
@@ -232,26 +237,20 @@
 	=(21
 
 	=#1 0780
-	=#0 1000
+	=#4 1000
+	=#5 0020
+	=#6 0750
+	J 6 
+
+# Loop over macro defs until we read a zero
+:0750
+	= 04
 	=(30
 	?=23
 	J?1 
-	=#0 1020
-	=(30
-	?=23
-	J?1 
-	=#0 1040
-	=(30
-	?=23
-	J?1 
-	=#0 1060
-	=(30
-	?=23
-	J?1 
-	=#0 1080
-	=(30
-	?=23
-	J?1 
+	+ 45
+	?!3a
+	J?6 
 
 # Error
 	J J 
@@ -292,9 +291,9 @@
 	+ Ed
 	- Fd
 
-# If we read a nul, means table was empty
+# If we read a nul, means table was empty, normal exit
 	?=6a
-	=#0 09e0
+	=#0 0f00
 	J?0 
 
 # Seek to fixup
@@ -326,7 +325,8 @@
 
 # Zero symbol means error
 	?=3a
-	J?J 
+	=#x 09f0
+	J?x 
 
 # Diff this symbol and the lookup symbol
 	- 30
@@ -357,16 +357,24 @@
 	?>Fa
 	J?A 
 
-	=#0 09e0
-	J 0 
+	=#x 0f00
+	J x 
 
-:09e0
+:09f0
+	=#2 0002
+	=#3 0002
+	S+23Be  
+	J J 
 
+# Normal exit
+:0f00
 	=#0 0007
 	- 11
 	S 01
 
 # Macros
+# These could be defined in the next stage compiler, but we'll hard-code them
+# for now to avoid adding more code in here
 :1000
 	ret.000c=(xy+ yd= zx
 :1020
@@ -377,6 +385,8 @@
 # Conditional jump - works by skipping jump instruction if flag not set
 	jmp?0008+^ze=$z 
 :1080
+	jmp^0008+?ze=$z 
+:10a0
 # Add 12 to the current address and push that as our return.
 # This is not super-efficient as a call pattern but at this point
 # in our bootstrap we don't care.
@@ -387,13 +397,26 @@
 # mov [sp], tmp
 # mov pc, address
 	call0018- yd=#x 000c+ xz(=yx=$z 
-:10a0
-	psh00008- yd(=y0
+# Support for push/pop for r0-r3
 :10c0
+	psh00008- yd(=y0
+:10e0
 	pop00008=(0y+ yd
+:1100
+	psh10008- yd(=y1
+:1120
+	pop10008=(1y+ yd
+:1140
+	psh20008- yd(=y2
+:1160
+	pop20008=(2y+ yd
+:1180
+	psh30008- yd(=y3
+:11a0
+	pop30008=(3y+ yd
 
 # NOP
-:1100
+:1200
 	= 00
 
 # Input line buffer
