@@ -30,6 +30,7 @@
 #   - #include
 #   - (?) object file support to make C easier?
 #   - Symbol table with local symbs should be "rolled back" at next global symbol for perf
+#   - Short immediate constants should use '=!x.' format
 
 # Rx = Temp var
 # Ry = Stack pointer
@@ -75,6 +76,7 @@
 =left(___ 0028
 =at______ 0040
 =period__ 002e
+=x_______ 0078
 
 # EOF
 =T_EOF___ 0000
@@ -751,7 +753,7 @@
 	@psh0
 	@psh1
 # Expect an EOL
-	@call:expcteol
+	@call:readeol_
 	@pop2
 	@pop1
 	@pop0
@@ -1247,6 +1249,7 @@
 	=$x :out_hand
 	(=x0
 
+	@call:patchins
 
 :mainloop
 # Read a token
@@ -1367,7 +1370,12 @@
 	Invalid token encountered   :__null__
 #===========================================================================
 
-:expcteol
+
+#===========================================================================
+# Args:
+#   None
+#===========================================================================
+:readeol_
 	@call:readtok_
 	=$x :T_EOL___
 	?!0x
@@ -1378,37 +1386,62 @@
 
 :eexpceol
 	Expected EOL:__null__
+#===========================================================================
 
-:i__reg__
+
+#===========================================================================
+# Returns:
+#   Register encoding in r0
+#===========================================================================
+:readreg_
 	@call:readtok_
 	=$x :T_REG___
 	?!0x
 	=$x :eexpregi
 	=?0x
 	@jmp?:error___
-	@jump:i__valr_
+	@jump:encodreg
 
 :eexpregi
 	Expected register:__null__
+#===========================================================================
 
-:i__val__
-	@call:readtok_
-	=$x :T_REG___
-	?=0x
-	@jmp?:i__valr_
 
+#===========================================================================
+# Args:
+#   R0: The register index
+# Returns:
+#   Register encoding in r0
+#===========================================================================
+:encodreg
+# Move the reg# to r0
+	=$0 :register
+	+ 01
+# Load the character representing the register
+	=[00
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: Token type
+#   R1: Token value
+#   R2: Token flag
+#===========================================================================
+:encrefim
 	=$x :T_REF___
 	?=0x
-	@jmp?:i__valrf
+	@jmp?:encref__
 
 	=$x :T_IMM___
 	?=0x
-	@jmp?:i__valim
+	@jmp?:encimm__
 
 # TODO: error
 	....
 
-:i__valrf
+:encref__
 # Create a fixup
 	?=2b
 	@jmp?:i__valrg
@@ -1419,7 +1452,6 @@
 	@psh1
 	@call:outtell_
 	= 20
-	+ 2d
 	@pop1
 	=$x :mlglobal
 	=(0x
@@ -1427,7 +1459,7 @@
 # Use a fake address for now
 	=#1 1234
 	@psh1
-	@jump:i__valfn
+	@jump:enc32___
 :i__valrg
 # For a global ref we need to copy the token
 	= 01
@@ -1436,46 +1468,57 @@
 	@call:outtell_
 # Add 4 to file position for fixup
 	= 20
-	+ 2d
 	@pop0
 	- 11
 	@call:createfx
 # Use a fake address for now
 	=#1 1234
 	@psh1
-	@jump:i__valfn
-:i__valim
+	@jump:enc32___
+:encimm__
 	@psh1
-	@jump:i__valfn
+	@jump:enc32___
 
-:i__valfn
-	=$0 :equals__
-	@call:writech_
-	=$0 :dollar__
-	@call:writech_
-	=#0 0078
-	@call:writech_
-	=$0 :space___
-	@call:writech_
-
+:enc32___
 	@pop0
 	@call:write32_
+	@ret.
+#===========================================================================
 
-	=#0 0078
+
+#===========================================================================
+# Returns:
+#   R0: Register encoding for value
+#===========================================================================
+:readval_
+	@call:readtok_
+	=$x :T_REG___
+	?=0x
+	@jmp?:encodreg
+
+# If it's not a register, assign it to x
+	@psh0
+	@psh1
+	@psh2
+	=$0 :xeqconst
+	= 1d
+	@call:writebuf
+	@pop2
+	@pop1
+	@pop0
+
+	@call:encrefim
+
+	=$0 :x_______
 	@ret.
 
-:i__valr_
-# Move the reg# to r0
-	=$0 :register
-	+ 01
-# Load the character representing the register
-	=[00
-	@ret.
-
+:xeqconst
+	=$x 
 :i_stdbf1
 	....
 :i_stdbf2
 	....
+#===========================================================================
 
 # Standard instruction
 :i_std___
@@ -1484,10 +1527,10 @@
 	=$2 :i_stdbf2
 	(=21
 # Target register
-	@call:i__reg__
+	@call:readreg_
 	@psh0
 # Source register/value
-	@call:i__val__
+	@call:readval_
 	@psh0
 	=$1 :i_stdbf1
 	=(01
@@ -1501,7 +1544,7 @@
 	@call:writech_
 	@pop0
 	@call:writech_
-	@call:expcteol
+	@call:readeol_
 	@ret.
 
 :i_mov___
@@ -1551,14 +1594,16 @@
 	@jump:i_std___
 	@ret.
 :i_call__
+# =$0 :i_call_s
+# =$1 #0014
+# @call:writebuf
+# @call:readtok_
+# @call:encrefim
 	@ret.
+:i_call_s
+	-!y.=!x.+ xz(=yx=$z 
 :i_ret___
-	@call:expcteol
-	=$x :i_ret__s
-	=#0 0007
-	+ x0
-	=#0 0004
-	[=x0
+	@call:readeol_
 	=$0 :i_ret__s
 	=#1 000b
 	@call:writebuf
@@ -1574,6 +1619,26 @@
 :i_dd____
 	@ret.
 :i_ds____
+	@ret.
+
+:patchins
+# Patch the constant into ret
+	=$x :i_ret__s
+	=#0 0007
+	+ x0
+	=#0 0004
+	[=x0
+
+# Patch the constants into call
+	=$x :i_call_s
+	=#0 0003
+	+ x0
+	=#0 0004
+	[=x0
+	+ x0
+	=#0 000c
+	[=x0
+
 	@ret.
 
 # Simple lookup table for registers
