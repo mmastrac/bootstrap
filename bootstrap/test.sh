@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euox pipefail
-cc vm.c -o vm
+cc -g vm.c -o vm
 
 ROOT=bootstrap
 TEST=$ROOT/tests

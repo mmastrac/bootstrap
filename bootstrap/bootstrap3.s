@@ -21,7 +21,6 @@
 
 # TODO:
 #   - Need to support decimal/octal constants for C compat
-#   - String support (should also auto-round address to power of 4)
 #   - sys
 #   - push/pop
 #   - token logging should be optional based on command-line
@@ -977,6 +976,10 @@
 
 :readtret
 # Write the token to stderr for debugging
+	=$x :isverbos
+	=[xx
+	?=xa
+	@ret?
 	= 50
 	* 5d
 	=$x :tokens__
@@ -1004,6 +1007,10 @@
 
 # r0 = len
 :logtoken
+	=$x :isverbos
+	=[xx
+	?=xa
+	@ret?
 	@psh1
 	@psh2
 	@psh3
@@ -1301,13 +1308,43 @@
 	Invalid token encountered:__null__
 #===========================================================================
 
+
+# Syntax highlighters get confused by our unmatched brackets
+# This is an unfortunate necessity
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+
+:verbose_
+	-v:__null__
+:isverbos
+	..
+:verbmsg_
+	Verbose mode:__null__
+
 #===========================================================================
 # Main loop
 #===========================================================================
 :main____
 
+	= 0b
+	@call:getargv_
+	=$1 :verbose_
+	@call:strcmp__
+	=$x :isverbos
+	[=xa
+	@jmp^:noverbos
+	[=xb
+	=$0 :SC_WRITE
+	=#1 0002
+	=$2 :verbmsg_
+	=#3 000c
+	S+0123  
+:noverbos
 # Open argv[1] as ro, store in in_hand_
 	= 0b
+	=$x :isverbos
+	=[xx
+	+ 0x
 	@call:getargv_
 	= 1a
 	@call:open____
@@ -1316,6 +1353,9 @@
 
 # Open argv[2] as rw, store in out_hand_
 	= 0c
+	=$x :isverbos
+	=[xx
+	+ 0x
 	@call:getargv_
 	= 1b
 	@call:open____
@@ -1608,10 +1648,6 @@
 	....
 #===========================================================================
 
-# Syntax highlighters get confused by our unmatched brackets
-# This is an unfortunate necessity
-	]})]})]})]})
-
 
 # Standard instruction
 :i_stnd__
@@ -1871,7 +1907,7 @@
 
 # Syntax highlighters get confused by our unmatched brackets
 # This is an unfortunate necessity
-	]})]})]})]})
+	]})]})]})]})]})]})]})]})
 
 #===========================================================================
 # Called at init time to patch some of our instruction strings

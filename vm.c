@@ -7,18 +7,22 @@
 
 #define PROGRAM_LENGTH 65536
 #define PC 61
-// #define dprintf(...) 
-#define dprintf printf
+#define dprintf if (verbose > VERBOSE_NONE) printf
+
+#define VERBOSE_NONE 0
+#define VERBOSE_DEBUG 1
+#define VERBOSE_TRACE 2
 
 int _argc;
 const char** _argv;
+int verbose = 0;
 
 uint8_t flag;
 uint8_t program[PROGRAM_LENGTH];
 uint32_t registers[64];
 
 void debug(const char* msg) {
-	printf("DEBUG %s\n", msg);
+	dprintf("DEBUG %s\n", msg);
 }
 
 void invalid() {
@@ -89,7 +93,6 @@ int sc(uint32_t syscall,
 		for (int i = 1; i < _argc; i++) {
 			needed += strlen(_argv[i]) + 1;
 		}
-		printf("%d %08x\n", _argc, needed);
 		uint8_t* address_write = &program[arg1];
 		uint32_t string_write = arg1 + _argc * 4;
 		if (needed <= arg2) {
@@ -163,13 +166,24 @@ uint32_t rhs(uint8_t op2, uint8_t op4) {
 int main(int argc, const char** argv) {
 	int fd;
 
-	if (argc == 1) {
-		printf("USAGE: vm program [arguments...]\n");
+	while (argc > 1) {
+		if (strcmp(argv[1], "-v") == 0) {
+			verbose++;
+		} else {
+			break;
+		}
+		argv++;
+		argc--;
+	}
+
+	if (argc <= 2) {
+		printf("USAGE: vm [-v [-v]] program [arguments...]\n");
 		exit(1);
 	}
 
 	_argc = argc;
 	_argv = argv;
+
 	flag = 0;
 	memset(program, 0, PROGRAM_LENGTH);
 	memset(registers, 0, sizeof(registers));
@@ -180,9 +194,11 @@ int main(int argc, const char** argv) {
 
 	while (1) {
 		dprintf("PC = %08x\n", registers[PC]);
-		for (int i = 0; i < sizeof(registers) / sizeof(registers[0]); i += 8) {
-			dprintf("%08x %08x %08x %08x %08x %08x %08x %08x\n", registers[i], registers[i+1], registers[i+2], registers[i+3],
-				registers[i+4], registers[i+5], registers[i+6], registers[i+7]);
+		if (verbose >= VERBOSE_TRACE) {
+			for (int i = 0; i < sizeof(registers) / sizeof(registers[0]); i += 8) {
+				dprintf("%08x %08x %08x %08x %08x %08x %08x %08x\n", registers[i], registers[i+1], registers[i+2], registers[i+3],
+					registers[i+4], registers[i+5], registers[i+6], registers[i+7]);
+			}
 		}
 
 		int pc = registers[PC];
