@@ -93,7 +93,7 @@ st.d :output_handle, r0
 	ret
 
 :open_error
-#	ds "Failed to open file"
+	ds "Failed to open file"
 #===========================================================================
 
 

@@ -84,6 +84,7 @@
 =div_____ 002f
 =and_____ 0026
 =or______ 007c
+=quote___ 0022
 
 # EOF
 =T_EOF___ 0000
@@ -97,6 +98,8 @@
 =T_REG___ 0004
 # EOL
 =T_EOL___ 0005
+# String
+=T_STR___ 0006
 
 :tokens__
 	EOF 
@@ -105,6 +108,7 @@
 	INS 
 	REG 
 	EOL 
+	STR 
 
 =SC_OPEN_ 0000
 =O_RDONLY 0000
@@ -627,6 +631,11 @@
 	=$x :readtok$
 	=?zx
 
+	=$x :quote___
+	?=0x
+	=$x :readtokq
+	=?zx
+
 # Return zero at EOF
 	?=0a
 	@jmp?:readtret
@@ -934,6 +943,27 @@
 
 #***************************
 
+:readtokq
+	=$2 :readtkbf
+:readtkql
+	@psh2
+	@call:readchar
+	@pop2
+	=$x :quote___
+	?=0x
+	@jmp?:readtkqd
+	[=20
+	+ 2b
+	@jump:readtkql
+:readtkqd
+	=#0 0010
+	@call:logtoken
+
+	=$0 :T_STR___
+	@jump:readtret
+
+#***************************
+
 :readtknl
 	=$0 :T_EOL___
 	@jump:readtret
@@ -960,7 +990,7 @@
 :rtspbyte
 	:space___
 
-# This is enough for 32-byte labels
+# This is enough for 32-byte labels/identifiers/strings
 :readtkbf
 	........
 	........
