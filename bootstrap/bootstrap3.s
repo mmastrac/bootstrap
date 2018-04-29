@@ -22,7 +22,6 @@
 # TODO:
 #   - Need to support decimal/octal constants for C compat
 #   - String support (should also auto-round address to power of 4)
-#   - db/dw/dd
 #   - sys
 #   - push/pop
 #   - token logging should be optional based on command-line
@@ -76,6 +75,7 @@
 =at______ 0040
 =period__ 002e
 =x_______ 0078
+=z_______ 007a
 =question 003f
 =exclaim_ 0021
 =gt______ 003e
@@ -956,10 +956,15 @@
 	+ 2b
 	@jump:readtkql
 :readtkqd
-	=#0 0010
+# Trailing null
+	[=2a
+	=$x :readtkbf
+	- 2x
+	= 02
 	@call:logtoken
 
 	=$0 :T_STR___
+	=$1 :readtkbf
 	@jump:readtret
 
 #***************************
@@ -1252,6 +1257,25 @@
 
 #===========================================================================
 # Args:
+#   R0: 16-bit value
+#===========================================================================
+:write16_
+	=$x :writ16bf
+	(=x0
+	=$0 :out_hand
+	=(00
+	=$1 :SC_WRITE
+	= 2x
+	= 3c
+	S+1023  
+	@ret.
+:writ16bf
+	....
+#===========================================================================
+
+
+#===========================================================================
+# Args:
 #   R0: Buffer
 #   R1: Length
 #===========================================================================
@@ -1265,6 +1289,17 @@
 	....
 #===========================================================================
 
+
+#===========================================================================
+# Does not return
+#===========================================================================
+:errtoken
+	=$x :einvtok_
+	@jump:error___
+
+:einvtok_
+	Invalid token encountered:__null__
+#===========================================================================
 
 #===========================================================================
 # Main loop
@@ -1311,8 +1346,7 @@
 	?=0x
 	@jmp?:mlins___
 
-	=$0 :einvtok_
-	@jump:error___
+	@jump:errtoken
 
 :mlref___
 # Make a copy of this label string
@@ -1403,9 +1437,6 @@
 # Current global label
 :mlglobal
 	:__null__
-
-:einvtok_
-	Invalid token encountered   :__null__
 #===========================================================================
 
 
@@ -1441,7 +1472,7 @@
 	@jump:encodreg
 
 :eexpregi
-	Expected register:__null__
+	Expected register   :__null__
 #===========================================================================
 
 
@@ -1467,7 +1498,7 @@
 
 #===========================================================================
 # Args:
-#   R0: The register index
+#   R1: The register index
 # Returns:
 #   Register encoding in r0
 #===========================================================================
@@ -1496,8 +1527,7 @@
 	?=0x
 	@jmp?:encimm__
 
-# TODO: error
-	....
+	@jump:errtoken
 
 :encref__
 # Create a fixup
@@ -1577,6 +1607,11 @@
 :i_stdbf2
 	....
 #===========================================================================
+
+# Syntax highlighters get confused by our unmatched brackets
+# This is an unfortunate necessity
+	]})]})]})]})
+
 
 # Standard instruction
 :i_stnd__
@@ -1724,23 +1759,43 @@
 	@jump:i_stnd__
 	@ret.
 :i_call__
+# Note that call doesn't support a register target yet - this is possible but would complicate
+# this code
 	=$0 :i_call_s
 	=#1 0014
 	@call:writebuf
 	@call:readtok_
 	@call:encrefim
 	@ret.
-:i_call_s
-	-!y.=!x.+ xz(=yx=$z 
 :i_jump__
+	@call:readtok_
+	=$x :T_REG___
+	?=0x
+	@jmp?:i_jump_r
+	@psh0
+	@psh1
+	@psh2
 	=$0 :i_jump_s
 	=#1 0004
 	@call:writebuf
-	@call:readtok_
+	@pop2
+	@pop1
+	@pop0
 	@call:encrefim
 	@ret.
-:i_jump_s
-	=$z 
+:i_jump_r
+# Emit faster jump to a register
+	@psh1
+	=$0 :equals__
+	@call:writech_
+	=$0 :space___
+	@call:writech_
+	=$0 :z_______
+	@call:writech_
+	@pop1
+	@call:encodreg
+	@call:writech_
+	@ret.
 :i_ret___
 	@call:readeol_
 	=$0 :i_ret__s
@@ -1759,26 +1814,68 @@
 	=$x :T_EOL___
 	?=0x
 	@ret?
+	=$x :T_IMM___
+	?=0x
+	@jmp?:i_db_i__
+	=$x :T_STR___
+	?=0x
+	@jmp?:i_db_s__
+	@jump:errtoken
+:i_db_i__
+	= 01
+	=#1 00ff
+	?>01
+	@jmp?:errtoken
+	@call:writech_
+	@jump:i_db____
+:i_db_s__
+	@psh1
+	= 01
+	@call:strlen__
+	= 10
+	@pop0
+	@call:writebuf
 	@jump:i_db____
 :i_dw____
 	@call:readtok_
 	=$x :T_EOL___
 	?=0x
 	@ret?
+	=$x :T_IMM___
+	?=0x
+	@jmp?:i_dw_i__
+	@jump:errtoken
+:i_dw_i__
+	= 01
+	@call:write16_
 	@jump:i_dw____
 :i_dd____
 	@call:readtok_
 	=$x :T_EOL___
 	?=0x
 	@ret?
+	@call:encrefim
 	@jump:i_dd____
 :i_ds____
-	@call:readtok_
-	=$x :T_EOL___
-	?=0x
-	@ret?
-	@jump:i_ds____
+	@call:i_db____
+:i_ds_alg
+# Alignment loop
+	- 00
+	@call:writech_
+	@call:outtell_
+	=#1 0003
+	& 01
+	?!0a
+	@jmp?:i_ds_alg
+	@ret.
 
+# Syntax highlighters get confused by our unmatched brackets
+# This is an unfortunate necessity
+	]})]})]})]})
+
+#===========================================================================
+# Called at init time to patch some of our instruction strings
+#===========================================================================
 :patchins
 # Patch the constant into ret
 	=$x :i_ret__s
@@ -1798,6 +1895,12 @@
 	[=x0
 
 	@ret.
+
+:i_call_s
+	-!y.=!x.+ xz(=yx=$z 
+:i_jump_s
+	=$z 
+#===========================================================================
 
 # Simple lookup table for registers
 :register
