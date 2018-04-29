@@ -5,21 +5,31 @@
 #   '=': Defines a 2-byte hex constant
 #   'tab': Assemble chars until a newline (:label refs auto-replaced)
 #   'newline': Blank line, skipped
-#	'@': Macro definition
 #
 # Implements an assembler that supports a much richer, more human-readable format
 #
-# Includes real, two-pass label support (up to 12 chars long), simple call/return semantics,
-# better opcode format
+# Includes real, two-pass label support (up to 32 chars long), simple call/return semantics
 
-# Return from proc
-# @ret.: =(xy+ yd== zx
-# Return from proc if flag
-# @ret?: =(xy+?yd==?zx
-# Jump to address (@jump:label___)
-# @jump: =$z 
-# Call address (@call:label___)
-# @call: =(yz- yd=$z 
+# The previous stage has some helpful macros for function calls:
+#
+# @ret.: Return from proc
+# @ret?: Return from proc if flag
+# @jump: Jump to address (@jump:label___)
+# @jmp?: Jump to address if flag (@jmp?:label___)
+# @call: Call address (@call:label___)
+# @pshN: Push register N to the stack (supports 0-3)
+
+# TODO:
+#   - Need to support decimal/octal constants for C compat
+#   - String support (should also auto-round address to power of 4)
+#   - db/dw/dd
+#   - sys
+#   - push/pop
+#   - call
+#   - token logging should be optional based on command-line
+#   - #include
+#   - (?) object file support to make C easier?
+#   - Symbol table with local symbs should be "rolled back" at next global symbol for perf
 
 # Rx = Temp var
 # Ry = Stack pointer
@@ -869,6 +879,7 @@
 
 # Store and continue
 # TODO: We should probably check if this is alpha
+# .. or use the new helper function
 	[=20
 	+ 2b
 	@jump:readtkil
@@ -1193,6 +1204,22 @@
 	= 2x
 	= 3d
 	S+1023  
+	@ret.
+:writ32bf
+	....
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: Buffer
+#   R1: Length
+#===========================================================================
+:writebuf
+	=$2 :out_hand
+	=(22
+	=$3 :SC_WRITE
+	S+3201  
 	@ret.
 :writ32bf
 	....
@@ -1527,7 +1554,17 @@
 	@ret.
 :i_ret___
 	@call:expcteol
+	=$x :i_ret__s
+	=#0 0007
+	+ x0
+	=#0 0004
+	[=x0
+	=$0 :i_ret__s
+	=#1 000b
+	@call:writebuf
 	@ret.
+:i_ret__s
+	=(xy+!y.= zx
 :i_sys___
 	@ret.
 :i_db____
