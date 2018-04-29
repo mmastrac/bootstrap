@@ -64,6 +64,7 @@
 =left{___ 007b
 =left(___ 0028
 =at______ 0040
+=period__ 002e
 
 # EOF
 =T_EOF___ 0000
@@ -370,9 +371,9 @@
 :lookdff_
 	= XX
 	- 2d
-	=(12
-	- 2d
 	=(02
+	- 2d
+	=(12
 	@pop2
 	@ret.
 
@@ -383,6 +384,43 @@
 :elookdf_
 	define not found:__null__
 #===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: Definition name
+#   R1: Token type
+#   R2: Token value
+#===========================================================================
+:createdf
+	= YY
+	@psh0
+	@psh1
+	@psh2
+# Allocate a record
+	=#0 0010
+	@call:malloc__
+# Read the current record
+	=$x :deftab__
+	=(xx
+# Write everything to the struct
+	= 10
+	@pop2
+	(=12
+	+ 1d
+	@pop2
+	(=12
+	+ 1d
+	@pop2
+	(=12
+	+ 1d
+	(=1x
+# Write the struct as the latest
+	=$x :deftab__
+	(=x0
+	@ret.
+#===========================================================================
+
 
 
 #===========================================================================
@@ -482,9 +520,15 @@
 # This is a macro, so search for the definition
 	=$0 :readtkbf
 	@call:lookupdf
+	@ret.
 
 :readtk:r
 # Return a reference token
+	=$x :period__
+	?=0x
+# Token flag: 0 for local, 1 for global
+	=?2b
+	=^2a
 	=$0 :T_REF___
 	=$1 :readtkbf
 	@jump:readtret
@@ -550,27 +594,10 @@
 	@psh1
 # Expect an EOL
 	@call:expcteol
-# Allocate a record
-	=#0 0010
-	@call:malloc__
-# Read the current record
-	=$x :deftab__
-	=(xx
-# Write everything to the struct
-	= 10
 	@pop2
-	(=12
-	+ 1d
-	@pop2
-	(=12
-	+ 1d
-	@pop2
-	(=12
-	+ 1d
-	(=1x
-# Write the struct as the latest
-	=$x :deftab__
-	(=x0
+	@pop1
+	@pop0
+	@call:createdf
 
 # Return EOL for a comment
 :readtk#d
@@ -620,6 +647,7 @@
 #***************************
 
 :readtok$
+	- 11
 :readtk$l
 	@psh1
 	@call:readchar
@@ -1044,6 +1072,12 @@
 # Make a copy of this label string
 	= 01
 	@call:mallocst
+
+# Global?
+	?=2a
+	@jmp?:mlref_g_
+
+:mlref_g_
 
 	@jump:mlfinish
 :mlins___
