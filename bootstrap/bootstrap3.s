@@ -25,7 +25,6 @@
 #   - db/dw/dd
 #   - sys
 #   - push/pop
-#   - call
 #   - token logging should be optional based on command-line
 #   - #include
 #   - (?) object file support to make C easier?
@@ -77,6 +76,14 @@
 =at______ 0040
 =period__ 002e
 =x_______ 0078
+=question 003f
+=exclaim_ 0021
+=gt______ 003e
+=lt______ 003c
+=multiply 002a
+=div_____ 002f
+=and_____ 0026
+=or______ 007c
 
 # EOF
 =T_EOF___ 0000
@@ -871,13 +878,13 @@
 	=$x :question
 	?=0x
 	=?3b
-	@jmp?:readtkid
+	@jmp?:readtkip
 
 # If the instruction ends in a ^, this means it is only executed if flag == false
 	=$x :hat_____
 	?=0x
 	=?3c
-	@jmp?:readtkid
+	@jmp?:readtkip
 
 # Store and continue
 # TODO: We should probably check if this is alpha
@@ -890,6 +897,7 @@
 # Put the whitespace back
 	@call:rewind__
 
+:readtkip
 	=#0 0006
 	@call:logtoken
 
@@ -1408,6 +1416,26 @@
 
 
 #===========================================================================
+# Returns:
+#   Register encoding in r0
+#===========================================================================
+:readropt
+	@call:readtok_
+	=$x :T_EOL___
+	?=0x
+	-?00
+	@ret?
+
+	=$x :T_REG___
+	?!0x
+	=$x :eexpregi
+	=?0x
+	@jmp?:error___
+	@jump:encodreg
+#===========================================================================
+
+
+#===========================================================================
 # Args:
 #   R0: The register index
 # Returns:
@@ -1521,7 +1549,7 @@
 #===========================================================================
 
 # Standard instruction
-:i_std___
+:i_stnd__
 	=$2 :i_stdbf1
 	(=20
 	=$2 :i_stdbf2
@@ -1547,51 +1575,123 @@
 	@call:readeol_
 	@ret.
 
+# Standard store instruction
+:i_stndst
+	=$2 :i_stdbf1
+	(=20
+# Source register/value
+	@call:readval_
+	@psh0
+# Target register
+	@call:readreg_
+	@psh0
+	=$1 :i_stdbf1
+	=(01
+	@call:writech_
+	=$0 :equals__
+	@call:writech_
+	@pop1
+	@pop0
+	@psh1
+	@call:writech_
+	@pop0
+	@call:writech_
+	@call:readeol_
+	@ret.
+
+
 :i_mov___
 	=$0 :equals__
 	=$1 :space___
-	@jump:i_std___
+	@jump:i_stnd__
 :i_add___
 	=$0 :plus____
 	=$1 :space___
-	@jump:i_std___
+	@jump:i_stnd__
 :i_sub___
 	=$0 :minus___
 	=$1 :space___
-	@jump:i_std___
+	@jump:i_stnd__
+:i_mul___
+	=$0 :multiply
+	=$1 :space___
+	@jump:i_stnd__
+:i_div___
+	=$0 :div_____
+	=$1 :space___
+	@jump:i_stnd__
+:i_or____
+	=$0 :or______
+	=$1 :space___
+	@jump:i_stnd__
+:i_and___
+	=$0 :and_____
+	=$1 :space___
+	@jump:i_stnd__
+:i_xor___
+	=$0 :hat_____
+	=$1 :space___
+	@jump:i_stnd__
+:i_sub___
+	=$0 :minus___
+	=$1 :space___
+	@jump:i_stnd__
 :i_push__
-	@ret.
+	@call:readropt
+	?=0a
+	@ret?
+	@jump:i_push__
 :i_pop___
-	@ret.
+	@call:readropt
+	?=0a
+	@ret?
+	@jump:i_pop___
 :i_ldb___
 	=$0 :equals__
 	=$1 :left[___
-	@jump:i_std___
+	@jump:i_stnd__
 	@ret.
 :i_ldw___
 	=$0 :equals__
 	=$1 :left{___
-	@jump:i_std___
+	@jump:i_stnd__
 	@ret.
 :i_ldd___
 	=$0 :equals__
 	=$1 :left(___
-	@jump:i_std___
+	@jump:i_stnd__
 	@ret.
 :i_stb___
 	=$0 :left[___
-	=$1 :equals__
-	@jump:i_std___
+	@jump:i_stndst
 	@ret.
 :i_stw___
 	=$0 :left{___
-	=$1 :equals__
-	@jump:i_std___
+	@jump:i_stndst
 	@ret.
 :i_std___
 	=$0 :left(___
+	@jump:i_stndst
+	@ret.
+:i_eq____
+	=$0 :question
 	=$1 :equals__
-	@jump:i_std___
+	@jump:i_stnd__
+	@ret.
+:i_ne____
+	=$0 :question
+	=$1 :exclaim_
+	@jump:i_stnd__
+	@ret.
+:i_gt____
+	=$0 :question
+	=$1 :gt______
+	@jump:i_stnd__
+	@ret.
+:i_lt____
+	=$0 :equals__
+	=$1 :lt______
+	@jump:i_stnd__
 	@ret.
 :i_call__
 	=$0 :i_call_s
@@ -1602,6 +1702,15 @@
 	@ret.
 :i_call_s
 	-!y.=!x.+ xz(=yx=$z 
+:i_jump__
+	=$0 :i_jump_s
+	=#1 0004
+	@call:writebuf
+	@call:readtok_
+	@call:encrefim
+	@ret.
+:i_jump_s
+	=$z 
 :i_ret___
 	@call:readeol_
 	=$0 :i_ret__s
@@ -1611,15 +1720,34 @@
 :i_ret__s
 	=(xy+!y.= zx
 :i_sys___
-	@ret.
+	@call:readropt
+	?=0a
+	@ret?
+	@jump:i_sys___
 :i_db____
-	@ret.
+	@call:readtok_
+	=$x :T_EOL___
+	?=0x
+	@ret?
+	@jump:i_db____
 :i_dw____
-	@ret.
+	@call:readtok_
+	=$x :T_EOL___
+	?=0x
+	@ret?
+	@jump:i_dw____
 :i_dd____
-	@ret.
+	@call:readtok_
+	=$x :T_EOL___
+	?=0x
+	@ret?
+	@jump:i_dd____
 :i_ds____
-	@ret.
+	@call:readtok_
+	=$x :T_EOL___
+	?=0x
+	@ret?
+	@jump:i_ds____
 
 :patchins
 # Patch the constant into ret
@@ -1656,6 +1784,21 @@
 	sub 
 	:i_sub___
 
+	mul 
+	:i_mul___
+
+	div 
+	:i_div___
+
+	or  
+	:i_or____
+
+	and 
+	:i_and___
+
+	xor 
+	:i_xor___
+
 	push
 	:i_push__
 
@@ -1680,8 +1823,23 @@
 	st.d
 	:i_std___
 
+	eq  
+	:i_eq____
+
+	ne  
+	:i_ne____
+
+	gt  
+	:i_gt____
+
+	lt  
+	:i_lt____
+
 	call
 	:i_call__
+
+	jump
+	:i_jump__
 
 	ret 
 	:i_ret___

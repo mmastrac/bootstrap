@@ -1,6 +1,6 @@
 # Test for virtual ops
-
-mov r60, $1000
+#define sp r60
+mov @sp, $1000
 call :myfunc
 mov r0, $999
 

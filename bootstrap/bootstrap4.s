@@ -16,6 +16,8 @@
 #define O_RDONLY $0
 #define O_WRONLY $1
 #define O_RDWR $2
+#define O_CREAT $200
+#define O_TRUNC $400
 
 #define SC_READ $1
 #define SC_WRITE $2
@@ -24,6 +26,9 @@
 #define SC_GETARGV $5
 #define SC_GETMEMSIZE $6
 #define SC_EXIT $7
+
+#define OPEN_READ $0
+#define OPEN_WRITE $1
 
 # Register definitions
 #define pc r61
@@ -45,18 +50,18 @@ sys r0 r1 r2
 # Open argv[1] as input
 mov r0, :scratch
 add r0, $4
-ldd r0, r0
+ld.d r0, r0
 mov r0, @OPEN_READ
 call :open
-std :input_handle, r0
+st.d :input_handle, r0
 
 # Open argv[2] as output
 mov r0, :scratch
 add r0, $8
-ldd r0, r0
+ld.d r0, r0
 mov r0, @OPEN_WRITE
-call open
-std :output_handle, r0
+call :open
+st.d :output_handle, r0
 
 :fatal
 
@@ -77,18 +82,18 @@ std :output_handle, r0
 .read
 	mov r3, @O_RDONLY
 .open
-	mov tmp0, @SC_OPEN
-	sys tmp0 r0 r3
-	mov r0, tmp0
-	add tmp0, $1
-	eq tmp0, $0
+	mov @tmp0, @SC_OPEN
+	sys @tmp0 r0 r3
+	mov r0, @tmp0
+	add @tmp0, $1
+	eq @tmp0, $0
 	mov? r0, :open_error
 	jump? :fatal
 	pop r3
 	ret
 
 :open_error
-	ds Failed to open file
+#	ds "Failed to open file"
 #===========================================================================
 
 
