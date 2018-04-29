@@ -369,7 +369,6 @@
 
 # Found
 :lookdff_
-	= XX
 	- 2d
 	=(02
 	- 2d
@@ -393,7 +392,6 @@
 #   R2: Token value
 #===========================================================================
 :createdf
-	= YY
 	@psh0
 	@psh1
 	@psh2
@@ -424,6 +422,151 @@
 
 
 #===========================================================================
+# Args:
+#   R0: String A (or 0)
+#   R1: String B (or 0)
+# Returns:
+#   Equals in flag
+#===========================================================================
+:comparsm
+	?=0a
+	@jmp?:comparsz
+	?=1a
+	@jmp?:comparsz
+	@jump:strcmp__
+:comparsz
+	?=01
+	@ret.
+
+
+#===========================================================================
+# Args:
+#   R0: Global symbol name
+#   R1: Local symbol name
+# Returns:
+#   R0: Address
+#===========================================================================
+:lookupsm
+	@psh0
+	@psh1
+	=$2 :symtab__
+
+:looksml_
+# Get the symbol record
+	=(22
+	?=2a
+	@jmp?:looksmnf
+# Get the pointer to the local name
+	+ 2d
+	=(12
+	@pop0
+	@psh0
+	@psh2
+	@call:comparsm
+	@pop2
+# Not a match, next record
+	+^2e
+	@jmp^:looksml_
+
+	@pop1
+	@pop0
+	@psh0
+	@psh1
+	+ 2d
+	=(12
+	@psh2
+	@call:comparsm
+	@pop2
+# Not a match, next record
+	+^2d
+	@jmp^:looksml_
+
+	- 2e
+	=(02
+	@pop2
+	@pop2
+	@ret.
+
+:looksmnf
+	=$0 :elooksm_
+	@jump:error___
+
+:elooksm_
+	symbol not found:__null__
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: Global symbol
+#   R1: Local symbol (0 ok)
+#   R2: Address
+#===========================================================================
+:createsm
+	@psh0
+	@psh1
+	@psh2
+# Allocate a record
+	=#0 0010
+	@call:malloc__
+# Read the current record
+	=$x :symtab__
+	=(xx
+# Write everything to the struct
+	= 10
+	@pop2
+	(=12
+	+ 1d
+	@pop2
+	(=12
+	+ 1d
+	@pop2
+	(=12
+	+ 1d
+	(=1x
+# Write the struct as the latest
+	=$x :symtab__
+	(=x0
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: Global symbol
+#   R1: Local symbol (0 ok)
+#   R2: Address
+#===========================================================================
+:createfx
+	@psh0
+	@psh1
+	@psh2
+# Allocate a record
+	=#0 0010
+	@call:malloc__
+# Read the current record
+	=$x :fixuptab
+	=(xx
+# Write everything to the struct
+	= 10
+	@pop2
+	(=12
+	+ 1d
+	@pop2
+	(=12
+	+ 1d
+	@pop2
+	(=12
+	+ 1d
+	(=1x
+# Write the struct as the latest
+	=$x :fixuptab
+	(=x0
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
 # Returns:
 #   R0: Token type
 #   R1: Token data
@@ -443,6 +586,11 @@
 	=$x :hash____
 	?=0x
 	=$x :readtok#
+	=?zx
+
+	=$x :period__
+	?=0x
+	=$x :readtok:
 	=?zx
 
 	=$x :colon___
@@ -527,8 +675,8 @@
 	=$x :period__
 	?=0x
 # Token flag: 0 for local, 1 for global
-	=?2b
-	=^2a
+	=?2a
+	=^2b
 	=$0 :T_REF___
 	=$1 :readtkbf
 	@jump:readtret
@@ -773,13 +921,13 @@
 
 :readtret
 # Write the token to stderr for debugging
-	= 20
-	* 2d
+	= 50
+	* 5d
 	=$x :tokens__
-	+ 2x
+	+ 5x
 	=$3 :SC_WRITE
 	= 4c
-	S+342d  
+	S+345d  
 	=$x :rtnlbyte
 	=$3 :SC_WRITE
 	S+34xb  
@@ -965,6 +1113,36 @@
 
 #===========================================================================
 # Returns:
+#   R0: File offset
+#===========================================================================
+:outtell_
+	=$0 :out_hand
+	=(00
+	=$1 :SC_SEEK_
+	- 22
+	=$3 :SEEK_CUR
+	S+1023  
+	= 01
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: File offset
+#===========================================================================
+:outseek_
+	=$2 :out_hand
+	=(22
+	=$1 :SC_SEEK_
+	=$3 :SEEK_SET
+	S+1203  
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
+# Returns:
 #   R0: Char (zero if EOF)
 #===========================================================================
 :readchar
@@ -1071,15 +1249,37 @@
 :mlref___
 # Make a copy of this label string
 	= 01
+	@psh2
 	@call:mallocst
+	@pop2
 
 # Global?
-	?=2a
+	?=2b
 	@jmp?:mlref_g_
 
-:mlref_g_
+# Create a local symbol using the current global
+	= 10
+	@psh1
+	@call:outtell_
+	= 20
+	@pop1
+	=$x :mlglobal
+	=(0x
+	@call:createsm
+	@jump:mainloop
 
-	@jump:mlfinish
+:mlref_g_
+# Store this as our global
+	=$x :mlglobal
+	(=x0
+	@psh0
+	@call:outtell_
+	= 20
+	@pop0
+	- 11
+	@call:createsm
+	@jump:mainloop
+
 :mlins___
 # Extract the conditional execution flag
 # TODO
@@ -1095,6 +1295,40 @@
 
 :mlfinish
 
+	=$x :fixuptab
+	=(0x
+
+:mlfixup_
+	?=0a
+	@jmp?:mlfixupd
+	@psh0
+# Address
+	=(10
+	+ 0d
+	@psh1
+# Local
+	=(20
+	+ 0d
+# Global
+	=(30
+	+ 0d
+	= 03
+	= 12
+	@call:lookupsm
+	@pop1
+	@psh0
+	= 01
+# Seek to address, fixup
+	@call:outseek_
+	@pop0
+	@call:write32_
+	@pop0
+	+ 0d
+	+ 0e
+	=(00
+	@jump:mlfixup_
+
+:mlfixupd
 	=#0 0000
 	@call:exit____
 
@@ -1148,6 +1382,35 @@
 	....
 
 :i__valrf
+# Create a fixup
+	?=2b
+	@jmp?:i__valrg
+# For a local ref we use the global symbol and copy the local token
+	= 01
+	@call:mallocst
+	= 10
+	=$x :mlglobal
+	=(0x
+	=#2 abcd
+	@call:createfx
+# Use a fake address for now
+	=#1 1234
+	@psh1
+	@jump:i__valfn
+:i__valrg
+# For a global ref we need to copy the token
+	= 01
+	@call:mallocst
+	@psh0
+	@call:outtell_
+# Add 4 to file position for fixup
+	= 20
+	+ 2d
+	@pop0
+	- 11
+	@call:createfx
+# Use a fake address for now
+	=#1 1234
 	@psh1
 	@jump:i__valfn
 :i__valim

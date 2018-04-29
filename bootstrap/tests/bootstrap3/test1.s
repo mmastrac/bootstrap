@@ -6,4 +6,4 @@ ld.d r0, r0
 mov r0, @OPEN_READ
 
 :scratch
-	db $1
+mov r5, $1
