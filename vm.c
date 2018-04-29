@@ -146,6 +146,20 @@ uint16_t readpchex() {
 	return hexchar(readpc8()) << 12 | hexchar(readpc8()) << 8 | hexchar(readpc8()) << 4 | hexchar(readpc8()) << 0;
 }
 
+uint32_t rhs(uint8_t op2, uint8_t op4) {
+	if (op2 == ' ') {
+		return registers[char_to_register(op4)];
+	}
+
+	if (op2 == '!') {
+		// Sign-extended
+		return (int8_t)op4;
+	}
+
+	debug("invalid load");
+	invalid();
+}
+
 int main(int argc, const char** argv) {
 	int fd;
 
@@ -205,10 +219,6 @@ int main(int argc, const char** argv) {
 				// 16-bit hex literal
 				debug("hex literal");
 				registers[char_to_register(op3)] = readpchex();
-			} else if (op2 == ' ') {
-				// Register to register
-				debug("register-to-register");
-				registers[char_to_register(op3)] = registers[char_to_register(op4)];
 			} else if (op2 == '$') {
 				// 32-bit binary literal
 				debug("binary literal");
@@ -225,8 +235,7 @@ int main(int argc, const char** argv) {
 				debug("32-bit indirect load");
 				registers[char_to_register(op3)] = read32(&program[registers[char_to_register(op4)]]);
 			} else {
-				debug("invalid load");
-				invalid();
+				registers[char_to_register(op3)] = rhs(op2, op4);
 			}
 		} else if (op1 == '[' && op2 == '=') {
 			// 8-bit indirect store
@@ -237,24 +246,24 @@ int main(int argc, const char** argv) {
 			invalid();
 		} else if (op1 == '(' && op2 == '=') {
 			write32(&program[registers[char_to_register(op3)]], registers[char_to_register(op4)]);
-		} else if (op1 == '+' && op2 == ' ') {
-			registers[char_to_register(op3)] += registers[char_to_register(op4)];
-		} else if (op1 == '-' && op2 == ' ') {
-			registers[char_to_register(op3)] -= registers[char_to_register(op4)];
-		} else if (op1 == '*' && op2 == ' ') {
-			registers[char_to_register(op3)] *= registers[char_to_register(op4)];
-		} else if (op1 == '/' && op2 == ' ') {
-			registers[char_to_register(op3)] /= registers[char_to_register(op4)];
-		} else if (op1 == '&' && op2 == ' ') {
-			registers[char_to_register(op3)] &= registers[char_to_register(op4)];
-		} else if (op1 == '|' && op2 == ' ') {
-			registers[char_to_register(op3)] |= registers[char_to_register(op4)];
-		} else if (op1 == '^' && op2 == ' ') {
-			registers[char_to_register(op3)] ^= registers[char_to_register(op4)];
-		} else if (op1 == '>' && op2 == ' ') {
-			registers[char_to_register(op3)] >>= registers[char_to_register(op4)];
-		} else if (op1 == '<' && op2 == ' ') {
-			registers[char_to_register(op3)] <<= registers[char_to_register(op4)];
+		} else if (op1 == '+') {
+			registers[char_to_register(op3)] += rhs(op2, op4);
+		} else if (op1 == '-') {
+			registers[char_to_register(op3)] -= rhs(op2, op4);
+		} else if (op1 == '*') {
+			registers[char_to_register(op3)] *= rhs(op2, op4);
+		} else if (op1 == '/') {
+			registers[char_to_register(op3)] /= rhs(op2, op4);
+		} else if (op1 == '&') {
+			registers[char_to_register(op3)] &= rhs(op2, op4);
+		} else if (op1 == '|') {
+			registers[char_to_register(op3)] |= rhs(op2, op4);
+		} else if (op1 == '^') {
+			registers[char_to_register(op3)] ^= rhs(op2, op4);
+		} else if (op1 == '>') {
+			registers[char_to_register(op3)] >>= rhs(op2, op4);
+		} else if (op1 == '<') {
+			registers[char_to_register(op3)] <<= rhs(op2, op4);
 		} else if (op1 == '?') {
 			if (op2 == '=') {
 				debug("equal?");

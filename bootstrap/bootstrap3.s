@@ -1594,18 +1594,18 @@
 	@jump:i_std___
 	@ret.
 :i_call__
-# =$0 :i_call_s
-# =$1 #0014
-# @call:writebuf
-# @call:readtok_
-# @call:encrefim
+	=$0 :i_call_s
+	=#1 0014
+	@call:writebuf
+	@call:readtok_
+	@call:encrefim
 	@ret.
 :i_call_s
 	-!y.=!x.+ xz(=yx=$z 
 :i_ret___
 	@call:readeol_
 	=$0 :i_ret__s
-	=#1 000b
+	=#1 000c
 	@call:writebuf
 	@ret.
 :i_ret__s
