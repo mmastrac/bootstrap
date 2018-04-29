@@ -31,5 +31,8 @@ echo Compile 3
 echo Test 3
 ./vm /tmp/b3.bin $TEST/bootstrap3/test1.s /tmp/t1.bin > /dev/null
 diff $TEST/bootstrap3/test1.bin /tmp/t1.bin
+echo Test 3
+./vm /tmp/b3.bin $TEST/bootstrap3/test2.s /tmp/t2.bin > /dev/null
+diff $TEST/bootstrap3/test2.bin /tmp/t2.bin
 
 echo Done

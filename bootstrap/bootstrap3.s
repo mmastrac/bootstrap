@@ -1389,9 +1389,13 @@
 	= 01
 	@call:mallocst
 	= 10
+	@psh1
+	@call:outtell_
+	= 20
+	+ 2d
+	@pop1
 	=$x :mlglobal
 	=(0x
-	=#2 abcd
 	@call:createfx
 # Use a fake address for now
 	=#1 1234
