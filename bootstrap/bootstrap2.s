@@ -69,53 +69,45 @@
 	= 0G
 	J G 
 
+# Line prefix lookup
+:0100
+# NUL (\x00), rest are bad
+	09000800080008000800080008000800
+# Tab (\x09), newline (\x0a)
+	08000600020008000800080008000800
+# All bad from (0x10-0x1f)
+	08000800080008000800080008000800
+	08000800080008000800080008000800
+# Hash (\x23)
+	08000800080003000800080008000800
+# Period (\x2e) - NYI
+	08000800080008000800080008000800
+# All bad from (0x30-0x37)
+	08000800080008000800080008000800
+# Colon (\x3a), equals (\x3d)
+	08000800040008000800050008000800
+
 :0200
 # Read a char
 	=#0 0001
 	= 1B
+	[=1a
 	=#2 0001
 	S+0812  
-
-# EOF? (return value == zero?)
-	?=0a
-	J?A 
 
 # Load the character we just read
 	=[01
 
-# Empty line? If so, ignore
-	=#1 000a
-	?=01
-	+?Kb
-	J?G 
-
-# Comment line? (#)
-	=#1 0023
-	?=01
-	=#4 0300
-	+?Kb
-	J?4 
-
-# Label line? (:)
-	=#1 003a
-	?=01
-	=#4 0400
-	J?4 
-
-# Define line? (=)
-	=#1 003d
-	?=01
-	=#4 0500
-	J?4 
-
-# Tab line?
-	=#1 0009
-	?=01
-	=#4 0600
-	J?4 
-
-# Unknown prefix, error exit
-	J J 
+# Look up how to handle it
+	* 0d
+	=#1 0100
+	+ 01
+# Overwrite the ???? below (careful w/these offsets)
+	=#1 0248
+	=(00
+	(=10
+	=#4 ????
+	J 4 
 
 # Process comment
 :0300
