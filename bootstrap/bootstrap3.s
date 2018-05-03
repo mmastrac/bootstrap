@@ -20,10 +20,9 @@
 # @pshN: Push register N to the stack (supports 0-3)
 
 # TODO:
-#   - Need to support decimal/octal constants for C compat
+#   - Need to support decimal/hex constants for C compat
 #   - sys
 #   - push/pop
-#   - token logging should be optional based on command-line
 #   - #include
 #   - (?) object file support to make C easier?
 #   - Symbol table with local symbs should be "rolled back" at next global symbol for perf

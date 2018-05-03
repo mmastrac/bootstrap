@@ -7,6 +7,11 @@
 #
 # Implements an assembler that supports two-pass labels (8-char long only)
 
+# TODO:
+#   - Avoid using so many registers (future planned register symbol 
+#     re-allocation) - maybe a lookup func?
+#   - Add support for local labels (.something)
+
 # Ra = Zero register
 	- aa
 # Rb = One register
