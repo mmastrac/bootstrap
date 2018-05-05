@@ -14,10 +14,11 @@
 #
 # @ret.: Return from proc
 # @ret?: Return from proc if flag
+# @ret^: Return from proc if not flag
 # @jump: Jump to address (@jump:label___)
 # @jmp?: Jump to address if flag (@jmp?:label___)
 # @call: Call address (@call:label___)
-# @pshN: Push register N to the stack (supports 0-3)
+# @pshN/@popN: Push/pop register N to the stack (supports 0-3)
 
 # TODO:
 #   - Need to support decimal/hex constants for C compat
@@ -85,6 +86,7 @@
 =and_____ 0026
 =or______ 007c
 =quote___ 0022
+=squote__ 0027
 
 # EOF
 =T_EOF___ 0000
@@ -213,8 +215,6 @@
 	=#2 0010
 	@call:memset__
 	@pop0
-
-	= MM
 
 # Start at the end of the buffer
 	=$1 .buffer__
@@ -722,6 +722,108 @@
 
 #===========================================================================
 # Returns:
+#   R0: The number
+#===========================================================================
+:readimm_
+# Number prefix:
+#   0x: Base 16
+#   0: Base 8 (octal, unsupported)
+#   $: Base 16
+#   1-9: Base 10
+	@call:readchar
+
+	=$x :dollar__
+	?=0x
+	=$x .immhex__
+	=?zx
+
+	=$x :zero____
+	?=0x
+	=$x .immzero_
+	=?zx
+
+	@call:isdigit_
+	=$x .immdec__
+	=?zx
+
+	=$0 .errinvch
+	@call:error___
+
+.immzero_
+# If the number started with zero, assume hex
+	@call:readchar
+	=$x :x_______
+	?=0x
+	@jmp?.immhex__
+
+	=$0 .errinvch
+	@call:error___
+
+.immdec__
+# Populate with the first digit we read
+	=$x :zero____
+	- 0x
+	= 10
+
+.immdloop
+# Base 10 loop
+	@psh1
+	@call:readchar
+	@pop1
+	@call:istoksep
+	@jmp?.immdone_
+	=$x :newline_
+	?=0x
+	@jmp?.immdone_
+
+	=#x 000a
+	* 1x
+	=$x :zero____
+	- 0x
+	+ 10
+	@jump.immdloop
+
+.immhex__
+	- 11
+
+.immhloop
+# Base 16 loop
+	@psh1
+	@call:readchar
+	@pop1
+	@call:istoksep
+	@jmp?.immdone_
+	=$x :newline_
+	?=0x
+	@jmp?.immdone_
+
+# Use self-modifying code to read this digit
+	=$x .immhdigi
+	[=x0
+	=#0 000
+.immhdigi
+	_
+
+	=#x 0010
+	* 1x
+	+ 10
+	@jump.immhloop
+
+.immdone_
+# Common exit point for base 10/16
+	@psh1
+	@call:rewind__
+	@pop0
+
+	@ret.
+
+.errinvch
+	Invalid immediate character\00
+#===========================================================================
+
+
+#===========================================================================
+# Returns:
 #   R0: Token type
 #   R1: Token data
 #===========================================================================
@@ -759,12 +861,26 @@
 
 	=$x :dollar__
 	?=0x
-	=$x .readtok$
+	=$x .imm_____
+	=?zx
+
+	=$x :zero____
+	?=0x
+	=$x .imm_____
+	=?zx
+
+	@call:isdigit_
+	=$x .imm_____
 	=?zx
 
 	=$x :quote___
 	?=0x
-	=$x .readtokq
+	=$x .string__
+	=?zx
+
+	=$x :squote__
+	?=0x
+	=$x .charimm_
 	=?zx
 
 # Return zero at EOF
@@ -905,31 +1021,20 @@
 
 #***************************
 
-.readtok$
-	- 11
-.readtk$l
-	@psh1
+.imm_____
+	@call:rewind__
+	@call:readimm_
+	= 10
+	=$0 :T_IMM___
+	@jump.ret_____
+
+#***************************
+
+.charimm_
+	@call:readchar
+	@psh0
 	@call:readchar
 	@pop1
-	@call:istoksep
-	@jmp?.readtk$d
-	=$x :newline_
-	?=0x
-	@jmp?.readtk$d
-
-	=#x 000a
-	* 1x
-	=$x :zero____
-	- 0x
-	+ 10
-	@jump.readtk$l
-
-.readtk$d
-
-	@psh1
-	@call:rewind__
-	@pop1
-
 	=$0 :T_IMM___
 	@jump.ret_____
 
@@ -1020,19 +1125,19 @@
 
 #***************************
 
-.readtokq
+.string__
 	=$2 .buffer__
-.readtkql
+.stringl_
 	@psh2
 	@call:readchar
 	@pop2
 	=$x :quote___
 	?=0x
-	@jmp?.readtkqd
+	@jmp?.stringd_
 	[=20
 	+ 2b
-	@jump.readtkql
-.readtkqd
+	@jump.stringl_
+.stringd_
 # Trailing null
 	[=2a
 
@@ -1276,6 +1381,28 @@
 #   Flag in appropriate state
 #   R0: Char
 #===========================================================================
+:isdigit_
+	=#x 0030
+	?<0x
+	=$x :retfalse
+	=?zx
+
+	=#x 003a
+	?<0x
+	=$x :rettrue_
+	=?zx
+
+	@jump:retfalse
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: Char
+# Returns:
+#   Flag in appropriate state
+#   R0: Char
+#===========================================================================
 :isalnum_
 	=#x 0030
 	?<0x
@@ -1309,7 +1436,6 @@
 
 	@jump:retfalse
 #===========================================================================
-
 
 
 #===========================================================================

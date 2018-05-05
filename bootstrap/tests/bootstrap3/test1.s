@@ -1,4 +1,6 @@
-#define OPEN_READ $10
+#define OPEN_READ 10
+#define O_CREAT 0x200
+#define O_TRUNC $400
 
 mov r10, :scratch
 add r0, $4
