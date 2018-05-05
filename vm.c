@@ -16,6 +16,7 @@
 int _argc;
 const char** _argv;
 int verbose = 0;
+int dump = 0;
 
 uint8_t flag;
 uint8_t program[PROGRAM_LENGTH];
@@ -27,6 +28,12 @@ void debug(const char* msg) {
 
 void invalid() {
 	printf("Invalid opcode\n");
+	if (dump) {
+		printf("Dumped memory to /tmp/memory.bin\n");
+		int fd = open("/tmp/memory.bin", O_CREAT | O_TRUNC | O_WRONLY, 0777);
+		write(fd, &program[0], sizeof(program));
+		close(fd);
+	}
 	exit(1);
 }
 
@@ -169,6 +176,8 @@ int main(int argc, const char** argv) {
 	while (argc > 1) {
 		if (strcmp(argv[1], "-v") == 0) {
 			verbose++;
+		} else if (strcmp(argv[1], "-d") == 0) {
+			dump++;
 		} else {
 			break;
 		}

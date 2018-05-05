@@ -25,6 +25,12 @@ diff $TEST/bootstrap2/test3.bin /tmp/t3.bin
 echo Test 2
 ./vm /tmp/b2.bin $TEST/bootstrap2/test4.s /tmp/t4.bin > /dev/null
 diff $TEST/bootstrap2/test4.bin /tmp/t4.bin
+echo Test 2
+./vm /tmp/b2.bin $TEST/bootstrap2/test5.s /tmp/t5.bin > /dev/null
+diff $TEST/bootstrap2/test5.bin /tmp/t5.bin
+echo Test 2
+./vm /tmp/b2.bin $TEST/bootstrap2/test6.s /tmp/t6.bin > /dev/null
+diff $TEST/bootstrap2/test6.bin /tmp/t6.bin
 
 echo Compile 3
 ./vm /tmp/b2.bin $ROOT/bootstrap3.s /tmp/b3.bin > /dev/null

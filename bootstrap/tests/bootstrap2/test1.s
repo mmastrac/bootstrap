@@ -2,4 +2,4 @@
 	TEST!
 	Foo
 	=$0 :constant
-	TEST.
+	TEST_

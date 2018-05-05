@@ -131,11 +131,11 @@
 
 # Global: Input file handle
 :in_hand_
-	....
+	____
 
 # Global: Output file handle
 :out_hand
-	....
+	____
 
 #===========================================================================
 # Args:
@@ -918,8 +918,6 @@
 	?=12
 	@jmp?:readtkir
 	+ 0e
-# We need to skip the NOP from address refs too
-	+ 0d
 	?=03
 	@jmp?:readtkie
 	@jump:readtkis
@@ -999,10 +997,10 @@
 
 # This is enough for 32-byte labels/identifiers/strings
 :readtkbf
-	........
-	........
-	........
-	........
+	________
+	________
+	________
+	________
 
 # r0 = len
 :logtoken
@@ -1237,7 +1235,7 @@
 	S+1023  
 	@ret.
 :writchbf
-	....
+	____
 #===========================================================================
 
 
@@ -1257,7 +1255,7 @@
 	S+1023  
 	@ret.
 :writ32bf
-	....
+	____
 #===========================================================================
 
 
@@ -1276,7 +1274,7 @@
 	S+1023  
 	@ret.
 :writ16bf
-	....
+	____
 #===========================================================================
 
 
@@ -1292,7 +1290,7 @@
 	S+3201  
 	@ret.
 :writ32bf
-	....
+	____
 #===========================================================================
 
 
@@ -1316,7 +1314,7 @@
 :verbose_
 	-v:__null__
 :isverbos
-	..
+	__
 :verbmsg_
 	Verbose mode:__null__
 
@@ -1447,6 +1445,8 @@
 	=(10
 	+ 0d
 	@psh1
+
+
 # Local
 	=(20
 	+ 0d
@@ -1642,9 +1642,9 @@
 :xeqconst
 	=$x 
 :i_stdbf1
-	....
+	____
 :i_stdbf2
-	....
+	____
 #===========================================================================
 
 
@@ -1838,7 +1838,7 @@
 	@call:writebuf
 	@ret.
 :i_ret__s
-	=(xy+!y.= zx
+	=(xy+!y_= zx
 :i_sys___
 	@call:readropt
 	?=0a
@@ -1932,14 +1932,14 @@
 	@ret.
 
 :i_call_s
-	-!y.=!x.+ xz(=yx=$z 
+	-!y_=!x_+ xz(=yx=$z 
 :i_jump_s
 	=$z 
 #===========================================================================
 
 # Simple lookup table for registers
 :register
-	0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz..
+	0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz__
 
 # Instruction table
 :instruct
@@ -1973,22 +1973,22 @@
 	pop 
 	:i_pop___
 
-	ld.b
+	ld%b
 	:i_ldb___
 
-	ld.w
+	ld%w
 	:i_ldw___
 
-	ld.d
+	ld%d
 	:i_ldd___
 
-	st.b
+	st%b
 	:i_stb___
 
-	st.w
+	st%w
 	:i_stw___
 
-	st.d
+	st%d
 	:i_std___
 
 	eq  
