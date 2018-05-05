@@ -1000,6 +1000,7 @@
 	?=12
 	@jmp?.readtkir
 	+ 0e
+	+ 0d
 	?=03
 	@jmp?.readtkie
 	@jump.readtkis
@@ -1049,11 +1050,34 @@
 
 .ret_____
 # If not verbose, just return
-	=$x :isverbos
-	=[xx
-	?=xa
-	@ret?
+	@call:is_vrbos
+	@ret^
 
+	@jump:logtoken
+
+# This is enough for 32-byte labels/identifiers/strings
+.buffer__
+	________
+	________
+	________
+	________
+
+.space___
+	:space___
+
+.readtinv
+	=$0 .errinvch
+	@jump:error___
+
+.errinvch
+	Invalid character   :__null__
+#===========================================================================
+
+
+#===========================================================================
+# Logs the return value of readtok_, preserving all registers
+#===========================================================================
+:logtoken
 # Write the token to stderr for debugging
 	@psh0
 	@psh1
@@ -1099,6 +1123,16 @@
 	=$x .logstr__
 	=?zx
 
+	=$x :T_EOF___
+	?=0x
+	=$x .logeof__
+	=?zx
+
+	=$x :T_DEF___
+	?=0x
+	=$x .logdef__
+	=?zx
+
 	@jump.logdone_
 
 .log_br_l
@@ -1119,16 +1153,19 @@
 	) \00\00
 
 .logeol__
+.logeof__
 	=$0 .newline_
+	@call:log_____
+	@jump.logdone_
+
+.logdef__
+	=$0 .space___
 	@call:log_____
 	@jump.logdone_
 
 .logins__
 	@call.log_br_l
-	=$0 .buffer__
-	+ 0d
-	[=0a
-	=$0 .buffer__
+	= 01
 	@call:log_____
 	@call.log_br_r
 	@jump.logdone_
@@ -1162,7 +1199,7 @@
 
 .logstr__
 	@call.log_br_l
-	=$0 .buffer__
+	= 01
 	@call:log_____
 	@call.log_br_r
 	@jump.logdone_
@@ -1176,22 +1213,11 @@
 .newline_
 	:newline_
 
-# This is enough for 32-byte labels/identifiers/strings
-.buffer__
-	________
-	________
-	________
-	________
-
 .space___
 	:space___
 
-.readtinv
-	=$0 .errinvch
-	@jump:error___
-
-.errinvch
-	Invalid character   :__null__
+.buffer__
+	____
 #===========================================================================
 
 # Useful function ends to return false or true in the flag
@@ -1447,9 +1473,23 @@
 # This is an unfortunate necessity
 	]})]})]})]})]})]})]})]})
 	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
 
-:isverbos
+:_isvrbfl
 	__
+
+#===========================================================================
+# Args:
+#   None
+# Returns:
+#   Flag set to true if verbose
+#===========================================================================
+:is_vrbos
+	=$x :_isvrbfl
+	=[xx
+	?=xb
+	@ret.
 
 #===========================================================================
 # Main
@@ -1459,7 +1499,7 @@
 	@call:getargv_
 	=$1 .verbose_
 	@call:strcmp__
-	=$x :isverbos
+	=$x :_isvrbfl
 	[=xa
 	@jmp^.notverb_
 	[=xb
@@ -1468,7 +1508,7 @@
 .notverb_
 # Open argv[1] as ro, store in in_hand_
 	= 0b
-	=$x :isverbos
+	=$x :_isvrbfl
 	=[xx
 	+ 0x
 	@call:getargv_
@@ -1479,7 +1519,7 @@
 
 # Open argv[2] as rw, store in out_hand_
 	= 0c
-	=$x :isverbos
+	=$x :_isvrbfl
 	=[xx
 	+ 0x
 	@call:getargv_
@@ -1568,7 +1608,7 @@
 # TODO
 
 # Perform a call to a mini-function that will jump to the next address
-	+ 1d
+	+ 1e
 	=(11
 	@call.insdisp_
 	@jump:mainloop
@@ -1579,7 +1619,7 @@
 
 .def_____
 # Definition name
-	@call:readlbl_
+	@call:readref_
 	@call:mallocst
 	@psh0
 # Read the next token
@@ -1647,13 +1687,31 @@
 	@call:readtok_
 	=$x :T_EOL___
 	?!0x
-	=$x :eexpceol
+	=$x .error___
 	=?0x
 	@jmp?:error___
 	@ret.
 
-:eexpceol
+.error___
 	Expected EOL:__null__
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   None
+#===========================================================================
+:readref_
+	@call:readlbl_
+	= 10
+	=$0 :T_REF___
+	= 2a
+	@call:is_vrbos
+	@jmp^.nolog___
+	@call:logtoken
+.nolog___
+	= 01
+	@ret.
 #===========================================================================
 
 
@@ -1703,11 +1761,15 @@
 #===========================================================================
 :encodreg
 # Move the reg# to r0
-	=$0 :register
+	=$0 .register
 	+ 01
 # Load the character representing the register
 	=[00
 	@ret.
+
+# Simple lookup table for registers
+.register
+	0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz__
 #===========================================================================
 
 
@@ -2098,94 +2160,90 @@
 	=$z 
 #===========================================================================
 
-# Simple lookup table for registers
-:register
-	0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz__
-
 # Instruction table
 :instruct
-	mov\00
+	mov\00:__null__
 	:i_mov___
 
-	add\00
+	add\00:__null__
 	:i_add___
 
-	sub\00
+	sub\00:__null__
 	:i_sub___
 
-	mul\00
+	mul\00:__null__
 	:i_mul___
 
-	div\00
+	div\00:__null__
 	:i_div___
 
-	or\00\00
+	or\00\00:__null__
 	:i_or____
 
-	and\00
+	and\00:__null__
 	:i_and___
 
-	xor\00
+	xor\00:__null__
 	:i_xor___
 
-	push
+	push:__null__
 	:i_push__
 
-	pop\00
+	pop\00:__null__
 	:i_pop___
 
-	ld\2eb
+	ld\2eb:__null__
 	:i_ldb___
 
-	ld\2ew
+	ld\2ew:__null__
 	:i_ldw___
 
-	ld\2ed
+	ld\2ed:__null__
 	:i_ldd___
 
-	st\2eb
+	st\2eb:__null__
 	:i_stb___
 
-	st\2ew
+	st\2ew:__null__
 	:i_stw___
 
-	st\2ed
+	st\2ed:__null__
 	:i_std___
 
-	eq\00\00
+	eq\00\00:__null__
 	:i_eq____
 
-	ne\00\00
+	ne\00\00:__null__
 	:i_ne____
 
-	gt\00\00
+	gt\00\00:__null__
 	:i_gt____
 
-	lt\00\00
+	lt\00\00:__null__
 	:i_lt____
 
-	call
+	call:__null__
 	:i_call__
 
-	jump
+	jump:__null__
 	:i_jump__
 
-	ret\00
+	ret\00:__null__
 	:i_ret___
 
-	sys\00
+	sys\00:__null__
 	:i_sys___
 
-	db\00\00
+	db\00\00:__null__
 	:i_db____
 
-	dw\00\00
+	dw\00\00:__null__
 	:i_dw____
 
-	dd\00\00
+	dd\00\00:__null__
 	:i_dd____
 
-	ds\00\00
+	ds\00\00:__null__
 	:i_ds____
 
 :lastinst

@@ -568,6 +568,8 @@
 	psh30008- yd(=y3
 :11a0
 	pop30008=(3y+ yd
+:11c0
+	ret^000c=(xy+^yd=^zx
 
 # Input line buffer
 :2000

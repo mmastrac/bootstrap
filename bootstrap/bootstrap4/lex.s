@@ -255,6 +255,7 @@
 	mov r0, r13
 	call :_isdigit
 	eq r0, $1
+	
 	jump? :__lex_digit # tail call
 
 	# Attempt to match multi-byte operators
