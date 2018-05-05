@@ -37,12 +37,23 @@ void invalid() {
 	exit(1);
 }
 
+void write16(void* location, uint32_t value) {
+	uint8_t* bytes = (uint8_t*)location;
+	bytes[0] = value & 0xff;
+	bytes[1] = (value >> 8) & 0xff;
+}
+
 void write32(void* location, uint32_t value) {
 	uint8_t* bytes = (uint8_t*)location;
 	bytes[0] = value & 0xff;
 	bytes[1] = (value >> 8) & 0xff;
 	bytes[2] = (value >> 16) & 0xff;
 	bytes[3] = (value >> 24) & 0xff;
+}
+
+uint32_t read16(void* location) {
+	uint8_t* bytes = (uint8_t*)location;
+	return bytes[0] | bytes[1] << 8;
 }
 
 uint32_t read32(void* location) {
@@ -261,6 +272,7 @@ int main(int argc, const char** argv) {
 			} else if (op2 == '{') {
 				// 16-bit indirect load
 				debug("16-bit indirect load");
+				registers[char_to_register(op3)] = read16(&program[registers[char_to_register(op4)]]);
 			} else if (op2 == '(') {
 				// 32-bit indirect load
 				debug("32-bit indirect load");
@@ -273,8 +285,7 @@ int main(int argc, const char** argv) {
 			debug("8-bit indirect store");
 			program[registers[char_to_register(op3)]] = registers[char_to_register(op4)];
 		} else if (op1 == '{' && op2 == '=') {
-			// TODO
-			invalid();
+			write16(&program[registers[char_to_register(op3)]], registers[char_to_register(op4)]);
 		} else if (op1 == '(' && op2 == '=') {
 			write32(&program[registers[char_to_register(op3)]], registers[char_to_register(op4)]);
 		} else if (op1 == '+') {

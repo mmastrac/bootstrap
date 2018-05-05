@@ -66,28 +66,66 @@
 	=#9 0000
 	S+912   
 
+# Set the table to the main table
+	=#0 0100
+	=#1 0170
+	(=01
+
 # Jump to main loop
 	= 0G
 	J G 
 
-# Line prefix lookup
+# Character jump table
+# Labels allow a small amount of indirection
 :0100
-# NUL (\x00), rest are bad
-	09000f000f000f000f000f000f000f00
-# Tab (\x09), newline (\x0a)
-	0f00060002800f000f000f000f000f00
-# All bad from (0x10-0x1f)
-	0f000f000f000f000f000f000f000f00
-	0f000f000f000f000f000f000f000f00
-# Hash (\x23)
-	0f000f000f0003000f000f000f000f00
-# Period (\x2e)
-	0f000f000f000f000f000f0004000f00
-# All bad from (0x30-0x37)
-	0f000f000f000f000f000f000f000f00
-# Colon (\x3a), equals (\x3d)
-	0f000f0004000f000f0005000f000f00
+# Pointer to current table
+	....
+# Label lookup
+	err_:0f00
+	nl__:0300
+	cmnt:0320
+	assm:0340
+	copy:0360
+	ignr:0380
+	labl:0400
+	defn:0500
+	escp:03a0
+	fixp:0700
+	mcro:0800
+	eof_:0900
 
+# Main jump table
+:0170
+	00:eof_
+	09:assm
+	0a:nl__
+	23:cmnt
+	2e:labl
+	3a:labl
+	3d:defn
+# Default
+	ff:err_
+
+# Assembler jump table
+:01a8
+	00:eof_
+	0a:nl__
+	25:escp
+	2e:fixp
+	3a:fixp
+	40:mcro
+# Default
+	ff:copy
+
+# Comment jump table
+:01e0
+	00:eof_
+	0a:nl__
+# Default
+	ff:ignr
+
+# Read/dispatch function
+# This is the heart of the parser so it has some hand-linked jumps
 :0200
 # Read a char
 	=#0 0001
@@ -98,35 +136,98 @@
 
 # Load the character we just read
 	=[01
-	= 30
-# Look up how to handle it
-	* 0d
+
+# Look up how to handle it from the current table
 	=#1 0100
-	+ 01
-# Overwrite the ???? below (careful w/these offsets)
-	=#1 024c
-	=(00
-	(=10
-	=#4 ????
-	= 03
-	J 4 
+	=(11
+
+#:loop1 (:0230)
+# Load the two bytes into r2 by overwriting the instruction
+	={31
+	=#2 0246
+	{=23
+	=#2 00??
+# Skip the colon
+	+ 1b
+	+ 1c
+	?=20
+	=#x 0280
+	J?x 
+	=#3 00ff
+	?=32
+	J?x 
+# Add four to skip the label
+	+ 1d
+# Restart the loop
+	=#x 0230
+	J x 
+
+#:found1 (:0280)
+	=(21
+# Now look up the label
+	=#1 0104
+
+#:loop2 (:028c)
+	=(31
+# Skip the colon
+	+ 1b
+	+ 1d
+	?=32
+	=(31
+	+ 1d
+	=#x 028c
+	J^x 
+
+# Load the address for the label and jump to it
+	=#1 02c0
+	(=13
+	=#1 ????
+	J 1 
 
 # Process newline (\n)
-:0280
+:0300
+# Move the parser into the default mode
+	=#0 0100
+	=#1 0170
+	(=01
+# Increment current line
 	+ Kb
 	J G 
 
 # Process comment (#)
-:0300
-	=#0 0001
-	= 2B
-	S+0820  
-	=[32
-	=#2 000a
-	?=32
-	+?Kb
-	J?G 
-	J 4 
+:0320
+# Move the parser into the comment mode
+	=#0 0100
+	=#1 01e0
+	(=01
+	J G 
+
+# Process assembler line (tab)
+:0340
+# Move the parser into the assembler mode
+	=#0 0100
+	=#1 01a8
+	(=01
+	J G 
+
+# Copy a char
+:0360
+	=#0 0002
+	= 1B
+	=#2 0001
+	S+0912  
+	+ Ib
+
+# Ignore a char
+:0380
+	J G 
+
+# Percent (escape for a period)
+:03a0
+	=#0 002e
+	[=B0
+	=#x 0360
+	J x 
 
 # Process label (:)
 :0400
@@ -213,59 +314,12 @@
 # The trailing newline will get handled by the main loop
 	J G 
 
-# Process assembler line (tab) by copying to output
-:0600
-# Read one char
-	=#0 0001
-	= 1B
-	=#2 0001
-	S+0812  
-	=[21
-
-# EOL? If so, return to main loop
-	=#3 000a
-	?=32
-	+?Kb
-	J?G 
-
-# Macro? If so, expand to output
-	=#3 0040
-	?=32
-	=#0 0800
-	J?0 
-
-# Colon? If so, write a fixup
-	=#3 003a
-	?=32
-	=#0 0700
-	J?0 
-
-# Period? If so, write a fixup
-	=#3 002e
-	?=32
-	=#0 0700
-	J?0 
-
-# Percent? If so, change to a period
-	=#3 0025
-	?=32
-	=#3 002e
-	=?23
-	[=12
-
-# Something else, so write to output and continue
-	=#0	0002
-	= 1B
-	=#2	0001
-	S+0912  
-	+ Ib
-	J 4 
 
 # Write a fixup for a global (:) or local (.) - assumes label reference is at EOL
 :0700
 # Set flag if this is a global label
 	=#1 003a
-	?=21
+	?=01
 
 # Load the current fixup table address
 	= 1E
@@ -362,8 +416,7 @@
 # Mark # of bytes output
 	+ I2
 # Continue processing assembler
-	=#4 0600
-	J 4 
+	J G 
 
 # Exit/cleanup
 :0900
