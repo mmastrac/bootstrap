@@ -100,6 +100,8 @@
 =T_EOL___ 0005
 # String
 =T_STR___ 0006
+# Define
+=T_DEF___ 0007
 
 :tokens__
 	EOF 
@@ -109,6 +111,7 @@
 	REG 
 	EOL 
 	STR 
+	DEF 
 
 =SC_OPEN_ 0000
 =O_RDONLY 0000
@@ -589,6 +592,45 @@
 
 #===========================================================================
 # Returns:
+#   R0: Pointer to label string
+#===========================================================================
+:readlbl_
+	= 1a
+	@psh1
+.loop____
+	- 00
+	@call:readchar
+	@call:islabelc
+	@jmp^.done____
+	@pop1
+	=$x .buffer__
+	+ x1
+	[=x0
+	+ 1b
+	@psh1
+	@jump.loop____
+.done____
+	@pop1
+# Write a trailing NUL
+	=$x .buffer__
+	+ x1
+	[=xa
+# Rewind that char
+	@call:rewind__
+	=$0 .buffer__
+	@ret.
+
+# This is enough for 32-byte labels/identifiers/strings
+.buffer__
+	________
+	________
+	________
+	________
+#===========================================================================
+
+
+#===========================================================================
+# Returns:
 #   R0: Token type
 #   R1: Token data
 #===========================================================================
@@ -710,8 +752,6 @@
 
 #***************************
 
-# TODO: #define should return a token
-
 .cmt_____
 	- 22
 	@psh2
@@ -749,27 +789,10 @@
 	=$0 .cmtdstr_
 	@call:strcmp__
 	@jmp^.cmtfastl
-# Zero out the buffer
-	=$0 .buffer__
-	- 11
-	=#2 0020
-	@call:memset__
-# Definition name
-	- 00
-	@call.readtkwd
-	=$0 .buffer__
-	@call:mallocst
-	@psh0
-# Read the next token
-	@call:readtok_
-	@psh0
-	@psh1
-# Expect an EOL
-	@call:readeol_
-	@pop2
-	@pop1
-	@pop0
-	@call:createdf
+
+# It's a #define token, so return that
+	=$0 :T_DEF___
+	@jump.ret_____
 
 # Return EOL for a comment
 .cmtdone_
@@ -1021,34 +1044,6 @@
 
 .space___
 	:space___
-
-# r0 = offset into readtkbf
-# returns r0 = last char
-.readtkwd
-	@psh0
-.readtkwl
-	@call:readchar
-	@call:islabelc
-	@jmp^.readtkwe
-	@pop1
-	=$x .buffer__
-	+ x1
-	[=x0
-	+ 1b
-	@psh1
-	@jump.readtkwl
-.readtkwe
-	@pop1
-# Write a trailing NUL
-	=$x .buffer__
-	+ x1
-	[=xa
-# Rewind that char
-	@psh0
-	@call:rewind__
-	@pop0
-	@ret.
-
 
 .readtinv
 	=$0 .errinvch
@@ -1390,6 +1385,10 @@
 	?=0x
 	@jmp?.ins_____
 
+	=$x :T_DEF___
+	?=0x
+	@jmp?.def_____
+
 	@jump:errtoken
 
 .ref_____
@@ -1437,6 +1436,23 @@
 .insdisp_
 # Note: does not return here!
 	= z1
+
+.def_____
+# Definition name
+	@call:readlbl_
+	@call:mallocst
+	@psh0
+# Read the next token
+	@call:readtok_
+	@psh0
+	@psh1
+# Expect an EOL
+	@call:readeol_
+	@pop2
+	@pop1
+	@pop0
+	@call:createdf
+	@jump:mainloop
 
 .eof_____
 	=$x :fixuptab
