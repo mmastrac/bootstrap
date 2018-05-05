@@ -1,2 +1,2 @@
-# Percent to period
-	Hello%
+# Backslash escape
+	Hello\2e

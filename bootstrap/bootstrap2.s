@@ -112,10 +112,10 @@
 :01a8
 	00:eof_
 	0a:nl__
-	25:escp
 	2e:fixp
 	3a:fixp
 	40:mcro
+	5c:escp
 # Default
 	ff:copy
 
@@ -224,9 +224,16 @@
 :0380
 	J G 
 
-# Percent (escape for a period)
+# Backslash escape
 :03a0
-	=#0 002e
+# Read two bytes to the input buffer
+	=#2 0001
+	S+28Bc  
+# Load into zero
+	={0B
+	=#1 03c6
+	{=10
+	=#0 00??
 	[=B0
 	=#x 0360
 	J x 

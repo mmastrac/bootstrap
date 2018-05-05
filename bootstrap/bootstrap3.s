@@ -643,7 +643,7 @@
 
 	=$x :newline_
 	?=0x
-	=$x .readtknl
+	=$x .eol_____
 	=?zx
 
 	=$x :hash____
@@ -960,7 +960,7 @@
 
 #***************************
 
-.readtknl
+.eol_____
 	=$0 :T_EOL___
 	@jump.ret_____
 
@@ -1968,22 +1968,22 @@
 	pop 
 	:i_pop___
 
-	ld%b
+	ld\2eb
 	:i_ldb___
 
-	ld%w
+	ld\2ew
 	:i_ldw___
 
-	ld%d
+	ld\2ed
 	:i_ldd___
 
-	st%b
+	st\2eb
 	:i_stb___
 
-	st%w
+	st\2ew
 	:i_stw___
 
-	st%d
+	st\2ed
 	:i_std___
 
 	eq  
