@@ -337,7 +337,6 @@
 	- 0b
 	@ret.
 
-
 .errfail_
 	Failed to open file :__null__
 #===========================================================================
@@ -370,11 +369,11 @@
 	@psh0
 	=$2 :deftab__
 
-:lookdfl_
+.loop____
 # Get the definition record
 	=(22
 	?=2a
-	@jmp?:lookdfnf
+	@jmp?.notfound
 # Get the pointer to the string
 	+ 2e
 	=(12
@@ -383,12 +382,12 @@
 	@psh2
 	@call:strcmp__
 	@pop2
-	@jmp?:lookdff_
+	@jmp?.found___
 	+ 2d
-	@jump:lookdfl_
+	@jump.loop____
 
 # Found
-:lookdff_
+.found___
 	- 2d
 	=(02
 	- 2d
@@ -396,11 +395,11 @@
 	@pop2
 	@ret.
 
-:lookdfnf
-	=$0 :elookdf_
+.notfound
+	=$0 .errnotfo
 	@jump:error___
 
-:elookdf_
+.errnotfo
 	define not found:__null__
 #===========================================================================
 
@@ -450,11 +449,11 @@
 #===========================================================================
 :comparsm
 	?=0a
-	@jmp?:comparsz
+	@jmp?.zero____
 	?=1a
-	@jmp?:comparsz
+	@jmp?.zero____
 	@jump:strcmp__
-:comparsz
+.zero____
 	?=01
 	@ret.
 
@@ -471,11 +470,11 @@
 	@psh1
 	=$2 :symtab__
 
-:looksml_
+.loop____
 # Get the symbol record
 	=(22
 	?=2a
-	@jmp?:looksmnf
+	@jmp?.notfound
 # Get the pointer to the local name
 	+ 2d
 	=(12
@@ -486,7 +485,7 @@
 	@pop2
 # Not a match, next record
 	+^2e
-	@jmp^:looksml_
+	@jmp^.loop____
 
 	@pop1
 	@pop0
@@ -499,7 +498,7 @@
 	@pop2
 # Not a match, next record
 	+^2d
-	@jmp^:looksml_
+	@jmp^.loop____
 
 	- 2e
 	=(02
@@ -507,11 +506,11 @@
 	@pop2
 	@ret.
 
-:looksmnf
-	=$0 :elooksm_
+.notfound
+	=$0 .errnotfo
 	@jump:error___
 
-:elooksm_
+.errnotfo
 	symbol not found:__null__
 #===========================================================================
 
@@ -1208,13 +1207,13 @@
 	=$0 :in_hand_
 	=(00
 	=$1 :SC_READ_
-	=$2 :readchbf
+	=$2 .buffer__
 	[=2a
 	= 3b
 	S+1023  
 	=[02
 	@ret.
-:readchbf
+.buffer__
 	????
 #===========================================================================
 
@@ -1224,7 +1223,7 @@
 #   R0: Char
 #===========================================================================
 :writech_
-	=$x :writchbf
+	=$x .buffer__
 	[=x0
 	=$0 :out_hand
 	=(00
@@ -1233,7 +1232,7 @@
 	= 3b
 	S+1023  
 	@ret.
-:writchbf
+.buffer__
 	____
 #===========================================================================
 
@@ -1244,7 +1243,7 @@
 #   R0: 32-bit value
 #===========================================================================
 :write32_
-	=$x :writ32bf
+	=$x .buffer__
 	(=x0
 	=$0 :out_hand
 	=(00
@@ -1253,7 +1252,7 @@
 	= 3d
 	S+1023  
 	@ret.
-:writ32bf
+.buffer__
 	____
 #===========================================================================
 
@@ -1263,7 +1262,7 @@
 #   R0: 16-bit value
 #===========================================================================
 :write16_
-	=$x :writ16bf
+	=$x .buffer__
 	(=x0
 	=$0 :out_hand
 	=(00
@@ -1272,7 +1271,7 @@
 	= 3c
 	S+1023  
 	@ret.
-:writ16bf
+.buffer__
 	____
 #===========================================================================
 
@@ -1288,8 +1287,6 @@
 	=$3 :SC_WRITE
 	S+3201  
 	@ret.
-:writ32bf
-	____
 #===========================================================================
 
 
@@ -1297,10 +1294,10 @@
 # Does not return
 #===========================================================================
 :errtoken
-	=$x :einvtok_
+	=$x .errtoken
 	@jump:error___
 
-:einvtok_
+.errtoken
 	Invalid token encountered:__null__
 #===========================================================================
 
@@ -1626,7 +1623,7 @@
 	@psh0
 	@psh1
 	@psh2
-	=$0 :xeqconst
+	=$0 .x_eq____
 	= 1d
 	@call:writebuf
 	@pop2
@@ -1638,14 +1635,15 @@
 	=$0 :x_______
 	@ret.
 
-:xeqconst
+.x_eq____
 	=$x 
+#===========================================================================
+
+
 :i_stdbf1
 	____
 :i_stdbf2
 	____
-#===========================================================================
-
 
 # Standard instruction
 :i_stnd__
