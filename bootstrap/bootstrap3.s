@@ -1654,7 +1654,6 @@
 	=$x :out_hand
 	(=x0
 
-	@call:patchins
 	@jump:mainloop
 
 .verbose_
@@ -2049,6 +2048,13 @@
 	@ret.
 
 
+:i_call_s
+	-!y\04=!x\0c+ xz(=yx=$z 
+:i_jump_s
+	=$z 
+:i_ret__s
+	=(xy+!y\04= zx
+
 :i_mov___
 	=$0 :equals__
 	=$1 :space___
@@ -2186,8 +2192,6 @@
 	=#1 000c
 	@call:writebuf
 	@ret.
-:i_ret__s
-	=(xy+!y_= zx
 :i_sys___
 	@call:readropt
 	?=0a
@@ -2256,35 +2260,6 @@
 # Syntax highlighters get confused by our unmatched brackets
 # This is an unfortunate necessity
 	]})]})]})]})]})]})]})]})
-
-#===========================================================================
-# Called at init time to patch some of our instruction strings
-#===========================================================================
-:patchins
-# Patch the constant into ret
-	=$x :i_ret__s
-	=#0 0007
-	+ x0
-	=#0 0004
-	[=x0
-
-# Patch the constants into call
-	=$x :i_call_s
-	=#0 0003
-	+ x0
-	=#0 0004
-	[=x0
-	+ x0
-	=#0 000c
-	[=x0
-
-	@ret.
-
-:i_call_s
-	-!y_=!x_+ xz(=yx=$z 
-:i_jump_s
-	=$z 
-#===========================================================================
 
 # Instruction table
 :instruct
