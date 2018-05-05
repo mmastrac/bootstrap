@@ -26,6 +26,7 @@
 #   - #include
 #   - (?) object file support to make C easier?
 #   - Symbol table with local symbs should be "rolled back" at next global symbol for perf
+#      - Can we do local fixups per global?
 #   - Short immediate constants should use '=!x.' format
 
 # Rx = Temp var
@@ -599,46 +600,46 @@
 
 	=$x :newline_
 	?=0x
-	=$x :readtknl
+	=$x .readtknl
 	=?zx
 
 	=$x :hash____
 	?=0x
-	=$x :readtok#
+	=$x .readtok#
 	=?zx
 
 	=$x :period__
 	?=0x
-	=$x :readtok:
+	=$x .label___
 	=?zx
 
 	=$x :colon___
 	?=0x
-	=$x :readtok:
+	=$x .label___
 	=?zx
 
 	=$x :at______
 	?=0x
-	=$x :readtok:
+	=$x .label___
 	=?zx
 
 	=$x :dollar__
 	?=0x
-	=$x :readtok$
+	=$x .readtok$
 	=?zx
 
 	=$x :quote___
 	?=0x
-	=$x :readtokq
+	=$x .readtokq
 	=?zx
 
 # Return zero at EOF
 	?=0a
-	@jmp?:readtret
+	@jmp?.readtret
 
 # Make sure it's alpha-numeric
 	@call:isalnum_
-	@jmp^:readtinv
+	@jmp^.readtinv
 
 # This might be an instruction or register at this point, so read a second char
 	@psh0
@@ -647,32 +648,28 @@
 
 # If this one is a number, it's a register
 	@call:isnumber
-	@jmp?:readtokr
+	@jmp?.readtokr
 
 # Otherwise if it's alnum, it's an instruction
 	@call:isalnum_
-	@jmp?:readtoki
-
-:readtinv
-	=$0 :einvchar
-	@jump:error___
+	@jmp?.readtoki
 
 #***************************
 
-:readtok:
+.label___
 	@psh0
 	= 2a
 	@psh2
-:readtk:_
+.lablloop
 	@call:readchar
 	@call:islabelc
 
-	=$1 :readtkbf
+	=$1 .buffer__
 	@pop2
 	+ 12
 	+ 2b
 	@psh2
-	=$x :readtk:y
+	=$x .labelchr
 	=?zx
 
 # Store trailing NUL
@@ -682,19 +679,19 @@
 	@call:rewind__
 
 	@pop0
-	@call:logtoken
+	@call.logtoken
 
 	@pop0
 	=$x :at______
 	?!0x
-	@jmp?:readtk:r
+	@jmp?.labelref
 
 # This is a macro, so search for the definition
-	=$0 :readtkbf
+	=$0 .buffer__
 	@call:lookupdf
 	@ret.
 
-:readtk:r
+.labelref
 # Return a reference token
 	=$x :period__
 	?=0x
@@ -702,62 +699,64 @@
 	=?2a
 	=^2b
 	=$0 :T_REF___
-	=$1 :readtkbf
-	@jump:readtret
+	=$1 .buffer__
+	@jump.readtret
 
-:readtk:y
+.labelchr
 # Store that last char
 	[=10
-	@jump:readtk:_
+	@jump.lablloop
 
 #***************************
 
-:readtok#
+# TODO: #define should return a token
+
+.readtok#
 	- 22
 	@psh2
-:readtk#l
+.readtk#l
 # Eat chars until a newline
 	@call:readchar
 	@pop2
 	=$x :newline_
 	?=0x
-	@jmp?:readtk#d
+	@jmp?.readtk#d
 	=#3 0006
 	?=23
-	=$1 :readtkbf
+	=$1 .buffer__
 	+ 12
 	+ 2b
 	[=10
-	@jmp?:readtk#c
+	@jmp?.readtk#c
 	@psh2
-	@jump:readtk#l
+	@jump.readtk#l
 
 # Fast look when we don't need to match #define
-:readtk#f
+.readtk#f
 	@call:readchar
 	=$x :newline_
 	?=0x
-	@jmp?:readtk#d
-	@jump:readtk#f
+	@jmp?.readtk#d
+	@jump.readtk#f
 
 # We matched #define, so need to process this in a special way
-:readtk#c
+.readtk#c
 # NUL terminate, then compare against "define "
 	+ 1b
 	[=1a
-	=$1 :readtkbf
-	=$0 :readtk#s
+	=$1 .buffer__
+	=$0 .readtk#s
 	@call:strcmp__
-	@jmp^:readtk#f
+	@jmp^.readtk#f
 # Zero out the buffer
-	=$0 :readtkbf
+	=$0 .buffer__
 	- 11
 	=#2 0020
 	@call:memset__
 # Definition name
 	- 00
-	@call:readtkwd
-	=$0 :readtkbf
+	@call.readtkwd
+	=$0 .buffer__
 	@call:mallocst
 	@psh0
 # Read the next token
@@ -772,94 +771,94 @@
 	@call:createdf
 
 # Return EOL for a comment
-:readtk#d
+.readtk#d
 	=$0 :T_EOL___
-	@jump:readtret
+	@jump.readtret
 
-:readtk#s
+.readtk#s
 	define :__null__
 
 #***************************
 
 # We've read two chars at this point
-:readtokr
+.readtokr
 # Make sure the first one was an 'r'
 	=$x :letterr_
 	?!1x
-	@jmp?:readtinv
+	@jmp?.readtinv
 
 	=$x :zero____
 	- 0x
 	= 10
-:readtkrl
+.readtkrl
 	@psh1
 	@call:readchar
 	@pop1
 	@call:istoksep
-	@jmp?:readtkrd
+	@jmp?.readtkrd
 	=$x :newline_
 	?=0x
-	@jmp?:readtkrd
+	@jmp?.readtkrd
 
 	=#x 000a
 	* 1x
 	=$x :zero____
 	- 0x
 	+ 10
-	@jump:readtkrl
+	@jump.readtkrl
 
-:readtkrd
+.readtkrd
 
 	@psh1
 	@call:rewind__
 	@pop1
 	=$0 :T_REG___
-	@jump:readtret
+	@jump.readtret
 
 #***************************
 
-:readtok$
+.readtok$
 	- 11
-:readtk$l
+.readtk$l
 	@psh1
 	@call:readchar
 	@pop1
 	@call:istoksep
-	@jmp?:readtk$d
+	@jmp?.readtk$d
 	=$x :newline_
 	?=0x
-	@jmp?:readtk$d
+	@jmp?.readtk$d
 
 	=#x 000a
 	* 1x
 	=$x :zero____
 	- 0x
 	+ 10
-	@jump:readtk$l
+	@jump.readtk$l
 
-:readtk$d
+.readtk$d
 
 	@psh1
 	@call:rewind__
 	@pop1
 
 	=$0 :T_IMM___
-	@jump:readtret
+	@jump.readtret
 
 #***************************
 
 # We've read two chars at this point (r1 and r0)
-:readtoki
+.readtoki
 # Clear the token buffer
 	@psh0
 	@psh1
-	=$0 :readtkbf
+	=$0 .buffer__
 	=#1 0020
 	=#2 0020
 	@call:memset__
 	@pop1
 	@pop0
-	=$2 :readtkbf
+	=$2 .buffer__
 	[=21
 	+ 2b
 	[=20
@@ -867,109 +866,109 @@
 	- 33
 
 # Read until we get a space, tab or newline
-:readtkil
+.readtkil
 	@psh2
 	@psh3
 	@call:readchar
 	@pop3
 	@pop2
 	@call:istoksep
-	@jmp?:readtkid
+	@jmp?.readtkid
 	=$x :newline_
 	?=0x
-	@jmp?:readtkid
+	@jmp?.readtkid
 
 # If the instruction ends in a ?, this means it is only executed if flag == true
 	=$x :question
 	?=0x
 	=?3b
-	@jmp?:readtkip
+	@jmp?.readtkip
 
 # If the instruction ends in a ^, this means it is only executed if flag == false
 	=$x :hat_____
 	?=0x
 	=?3c
-	@jmp?:readtkip
+	@jmp?.readtkip
 
 # Store and continue
 # TODO: We should probably check if this is alpha
 # .. or use the new helper function
 	[=20
 	+ 2b
-	@jump:readtkil
+	@jump.readtkil
 
-:readtkid
+.readtkid
 # Put the whitespace back
 	@call:rewind__
 
-:readtkip
+.readtkip
 	=#0 0006
-	@call:logtoken
+	@call.logtoken
 
 # Search the instruction table for a match
 	=$0 :instruct
-	=$2 :readtkbf
+	=$2 .buffer__
 	=(22
 	=$3 :lastinst
-:readtkis
+.readtkis
 	=(10
 	?=12
-	@jmp?:readtkir
+	@jmp?.readtkir
 	+ 0e
 	?=03
-	@jmp?:readtkie
-	@jump:readtkis
+	@jmp?.readtkie
+	@jump.readtkis
 
-:readtkir
+.readtkir
 # Read instruction address
 	+ 0d
 	=(10
 # Return
 	=$0 :T_INS___
-	@jump:readtret
+	@jump.readtret
 
-:readtkie
-	=$0 :inserr__
+.readtkie
+	=$0 .inserr__
 	@jump:error___
 
-:inserr__
+.inserr__
 	Unknown instruction :__null__
 
 #***************************
 
-:readtokq
-	=$2 :readtkbf
-:readtkql
+.readtokq
+	=$2 .buffer__
+.readtkql
 	@psh2
 	@call:readchar
 	@pop2
 	=$x :quote___
 	?=0x
-	@jmp?:readtkqd
+	@jmp?.readtkqd
 	[=20
 	+ 2b
-	@jump:readtkql
-:readtkqd
+	@jump.readtkql
+.readtkqd
 # Trailing null
 	[=2a
-	=$x :readtkbf
+	=$x .buffer__
 	- 2x
 	= 02
-	@call:logtoken
+	@call.logtoken
 
 	=$0 :T_STR___
-	=$1 :readtkbf
-	@jump:readtret
+	=$1 .buffer__
+	@jump.readtret
 
 #***************************
 
-:readtknl
+.readtknl
 	=$0 :T_EOL___
-	@jump:readtret
+	@jump.readtret
 
 #***************************
 
-:readtret
+.readtret
 # Write the token to stderr for debugging
 	=$x :isverbos
 	=[xx
@@ -982,26 +981,26 @@
 	=$3 :SC_WRITE
 	= 4c
 	S+345d  
-	=$x :rtnlbyte
+	=$x .rtnlbyte
 	=$3 :SC_WRITE
 	S+34xb  
 	@ret.
 
-:rtnlbyte
+.rtnlbyte
 	:newline_
 
-:rtspbyte
+.rtspbyte
 	:space___
 
 # This is enough for 32-byte labels/identifiers/strings
-:readtkbf
+.buffer__
 	________
 	________
 	________
 	________
 
 # r0 = len
-:logtoken
+.logtoken
 	=$x :isverbos
 	=[xx
 	?=xa
@@ -1009,11 +1008,11 @@
 	@psh1
 	@psh2
 	@psh3
-	=$1 :readtkbf
+	=$1 .buffer__
 	=#2 0002
 	=$3 :SC_WRITE
 	S+3210  
-	=$1 :rtspbyte
+	=$1 .rtspbyte
 	=#2 0002
 	=$3 :SC_WRITE
 	S+321b  
@@ -1024,23 +1023,23 @@
 
 # r0 = offset into readtkbf
 # returns r0 = last char
-:readtkwd
+.readtkwd
 	@psh0
-:readtkwl
+.readtkwl
 	@call:readchar
 	@call:islabelc
-	@jmp^:readtkwe
+	@jmp^.readtkwe
 	@pop1
-	=$x :readtkbf
+	=$x .buffer__
 	+ x1
 	[=x0
 	+ 1b
 	@psh1
-	@jump:readtkwl
-:readtkwe
+	@jump.readtkwl
+.readtkwe
 	@pop1
 # Write a trailing NUL
-	=$x :readtkbf
+	=$x .buffer__
 	+ x1
 	[=xa
 # Rewind that char
@@ -1049,7 +1048,12 @@
 	@pop0
 	@ret.
 
-:einvchar
+
+.readtinv
+	=$0 .errinvch
+	@jump:error___
+
+.errinvch
 	Invalid character   :__null__
 #===========================================================================
 
