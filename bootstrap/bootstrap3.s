@@ -17,11 +17,11 @@
 # @ret^: Return from proc if not flag
 # @jump: Jump to address (@jump:label___)
 # @jmp?: Jump to address if flag (@jmp?:label___)
+# @jmp^: Jump to address if not flag (@jmp^:label___)
 # @call: Call address (@call:label___)
 # @pshN/@popN: Push/pop register N to the stack (supports 0-3)
 
 # TODO:
-#   - Need to support decimal/hex constants for C compat
 #   - sys
 #   - push/pop
 #   - #include
