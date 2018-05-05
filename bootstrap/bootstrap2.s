@@ -445,13 +445,13 @@
 	- Ee
 	=#2 0002
 	=#3 0002
-	S+23Ee  
+	=#4 0010
+	S+23E4  
 	J J 
 
 
 # Generic error, try to preserve registers
 :0f00
-	....
 	=#a 0002
 	=#b 0002
 	=#c 0ff0

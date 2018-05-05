@@ -1307,32 +1307,27 @@
 	]})]})]})]})]})]})]})]})
 	]})]})]})]})]})]})]})]})
 
-:verbose_
-	-v:__null__
 :isverbos
 	__
-:verbmsg_
-	Verbose mode:__null__
 
 #===========================================================================
-# Main loop
+# Main
 #===========================================================================
 :main____
-
 	= 0b
 	@call:getargv_
-	=$1 :verbose_
+	=$1 .verbose_
 	@call:strcmp__
 	=$x :isverbos
 	[=xa
-	@jmp^:noverbos
+	@jmp^.notverb_
 	[=xb
 	=$0 :SC_WRITE
 	=#1 0002
-	=$2 :verbmsg_
+	=$2 .verbmsg_
 	=#3 000c
 	S+0123  
-:noverbos
+.notverb_
 # Open argv[1] as ro, store in in_hand_
 	= 0b
 	=$x :isverbos
@@ -1356,7 +1351,18 @@
 	(=x0
 
 	@call:patchins
+	@jump:mainloop
 
+.verbose_
+	-v:__null__
+.verbmsg_
+	Verbose mode:__null__
+#===========================================================================
+
+
+#===========================================================================
+# Main loop
+#===========================================================================
 :mainloop
 # Read a token
 	@call:readtok_
@@ -1364,7 +1370,7 @@
 # EOF?
 	=$x :T_EOF___
 	?=0x
-	@jmp?:mlfinish
+	@jmp?.eof_____
 
 # EOL?
 	=$x :T_EOL___
@@ -1373,15 +1379,15 @@
 
 	=$x :T_REF___
 	?=0x
-	@jmp?:mlref___
+	@jmp?.ref_____
 
 	=$x :T_INS___
 	?=0x
-	@jmp?:mlins___
+	@jmp?.ins_____
 
 	@jump:errtoken
 
-:mlref___
+.ref_____
 # Make a copy of this label string
 	= 01
 	@psh2
@@ -1390,7 +1396,7 @@
 
 # Global?
 	?=2b
-	@jmp?:mlref_g_
+	@jmp?.refgloba
 
 # Create a local symbol using the current global
 	= 10
@@ -1403,7 +1409,7 @@
 	@call:createsm
 	@jump:mainloop
 
-:mlref_g_
+.refgloba
 # Store this as our global
 	=$x :mlglobal
 	(=x0
@@ -1415,27 +1421,25 @@
 	@call:createsm
 	@jump:mainloop
 
-:mlins___
+.ins_____
 # Extract the conditional execution flag
 # TODO
 
 # Perform a call to a mini-function that will jump to the next address
-	@call:mlinsi__
+	@call.insdisp_
 	@jump:mainloop
 
-:mlinsi__
+.insdisp_
+# Note: does not return here!
 	= z1
 
-	@jump:mlfinish
-
-:mlfinish
-
+.eof_____
 	=$x :fixuptab
 	=(0x
 
-:mlfixup_
+.dofixups
 	?=0a
-	@jmp?:mlfixupd
+	@jmp?.done____
 	@psh0
 # Address
 	=(10
@@ -1463,17 +1467,16 @@
 	+ 0d
 	+ 0e
 	=(00
-	@jump:mlfixup_
+	@jump.dofixups
 
-:mlfixupd
+.done____
 	=#0 0000
 	@call:exit____
+#===========================================================================
 
 # Current global label
 :mlglobal
 	:__null__
-#===========================================================================
-
 
 #===========================================================================
 # Args:
@@ -1556,18 +1559,18 @@
 :encrefim
 	=$x :T_REF___
 	?=0x
-	@jmp?:encref__
+	@jmp?.ref_____
 
 	=$x :T_IMM___
 	?=0x
-	@jmp?:encimm__
+	@jmp?.imm_____
 
 	@jump:errtoken
 
-:encref__
+.ref_____
 # Create a fixup
 	?=2b
-	@jmp?:i__valrg
+	@jmp?.global__
 # For a local ref we use the global symbol and copy the local token
 	= 01
 	@call:mallocst
@@ -1582,8 +1585,8 @@
 # Use a fake address for now
 	=#1 1234
 	@psh1
-	@jump:enc32___
-:i__valrg
+	@jump.enc32___
+.global__
 # For a global ref we need to copy the token
 	= 01
 	@call:mallocst
@@ -1597,12 +1600,12 @@
 # Use a fake address for now
 	=#1 1234
 	@psh1
-	@jump:enc32___
-:encimm__
+	@jump.enc32___
+.imm_____
 	@psh1
-	@jump:enc32___
+	@jump.enc32___
 
-:enc32___
+.enc32___
 	@pop0
 	@call:write32_
 	@ret.
