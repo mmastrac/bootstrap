@@ -701,36 +701,15 @@
 
 .label___
 	@psh0
-	= 2a
-	@psh2
-.lablloop
-	@call:readchar
-	@call:islabelc
-
-	=$1 .buffer__
-	@pop2
-	+ 12
-	+ 2b
-	@psh2
-	=$x .labelchr
-	=?zx
-
-# Store trailing NUL
-	- 00
-	[=10
-# Put back the non-label char
-	@call:rewind__
-
-	@pop0
-	@call.logtoken
-
+	@call:readlbl_
+	= 10
 	@pop0
 	=$x :at______
 	?!0x
 	@jmp?.labelref
 
 # This is a macro, so search for the definition
-	=$0 .buffer__
+	= 01
 	@call:lookupdf
 	@ret.
 
@@ -744,11 +723,6 @@
 	=$0 :T_REF___
 	=$1 .buffer__
 	@jump.ret_____
-
-.labelchr
-# Store that last char
-	[=10
-	@jump.lablloop
 
 #***************************
 
