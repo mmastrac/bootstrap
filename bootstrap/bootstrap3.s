@@ -28,6 +28,7 @@
 #   - Symbol table with local symbs should be "rolled back" at next global symbol for perf
 #      - Can we do local fixups per global?
 #   - Short immediate constants should use '=!x.' format
+#   - readtok_ subroutines should be real functions
 
 # Rx = Temp var
 # Ry = Stack pointer
