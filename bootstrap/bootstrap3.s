@@ -104,14 +104,14 @@
 =T_DEF___ 0007
 
 :tokens__
-	EOF 
-	IMM 
-	REF 
-	INS 
-	REG 
-	EOL 
-	STR 
-	DEF 
+	EOF\00
+	IMM\00
+	REF\00
+	INS\00
+	REG\00
+	EOL\00
+	STR\00
+	DEF\00
 
 =SC_OPEN_ 0000
 =O_RDONLY 0000
@@ -164,6 +164,97 @@
 	=$0 :SC_EXIT_
 	=#1 0001
 	S 01
+#===========================================================================
+
+
+#===========================================================================
+# Register-friendly stderr logging.
+# Args:
+#   R0: String
+# Returns:
+#   All registers: Unchanged
+#===========================================================================
+:log_____
+	@psh1
+	@psh2
+
+	@psh0
+	@call:strlen__
+	= 20
+	@pop0
+
+	=$1 :SC_WRITE
+	S+1c02  
+	@pop2
+	@pop1
+	@ret.
+
+.stash___
+	____
+#===========================================================================
+
+
+#===========================================================================
+# Register-friendly stderr logging.
+# Args:
+#   R0: Number
+# Returns:
+#   All registers: Unchanged
+#===========================================================================
+:lognum__
+	@psh0
+	@psh1
+	@psh2
+
+	@psh0
+# Clear the buffer
+	=$0 .buffer__
+	= 1a
+	=#2 0010
+	@call:memset__
+	@pop0
+
+	= MM
+
+# Start at the end of the buffer
+	=$1 .buffer__
+	=#x 000e
+	+ 1x
+
+.loop____
+	= 20
+# Get the lowest digit
+	=#x 000a
+	% 2x
+# Get the ASCII version
+	=$x .digits__
+	+ 2x
+	=[22
+# Write it to the buffer
+	[=12
+	- 1b
+	=#x 000a
+# If we still have digits to write, continue
+	/ 0x
+	?>0a
+	@jmp?.loop____
+
+	= 01
+	+ 0b
+	@call:log_____
+
+	@pop2
+	@pop1
+	@pop0
+	@ret.
+
+.buffer__
+	\00\00\00\00\00\00\00\00
+	\00\00\00\00\00\00\00\00
+
+.digits__
+	0123456789__
+
 #===========================================================================
 
 
@@ -711,7 +802,7 @@
 # This is a macro, so search for the definition
 	= 01
 	@call:lookupdf
-	@ret.
+	@jump.ret_____
 
 .labelref
 # Return a reference token
@@ -721,7 +812,6 @@
 	=?2a
 	=^2b
 	=$0 :T_REF___
-	=$1 .buffer__
 	@jump.ret_____
 
 #***************************
@@ -851,7 +941,7 @@
 	@psh0
 	@psh1
 	=$0 .buffer__
-	=#1 0020
+	= 1a
 	=#2 0020
 	@call:memset__
 	@pop1
@@ -900,9 +990,6 @@
 	@call:rewind__
 
 .readtkip
-	=#0 0006
-	@call.logtoken
-
 # Search the instruction table for a match
 	=$0 :instruct
 	=$2 .buffer__
@@ -918,9 +1005,7 @@
 	@jump.readtkis
 
 .readtkir
-# Read instruction address
-	+ 0d
-	=(10
+	= 10
 # Return
 	=$0 :T_INS___
 	@jump.ret_____
@@ -949,10 +1034,6 @@
 .readtkqd
 # Trailing null
 	[=2a
-	=$x .buffer__
-	- 2x
-	= 02
-	@call.logtoken
 
 	=$0 :T_STR___
 	=$1 .buffer__
@@ -967,21 +1048,129 @@
 #***************************
 
 .ret_____
-# Write the token to stderr for debugging
+# If not verbose, just return
 	=$x :isverbos
 	=[xx
 	?=xa
 	@ret?
+
+# Write the token to stderr for debugging
+	@psh0
+	@psh1
+	@psh2
+
 	= 50
 	* 5d
 	=$x :tokens__
 	+ 5x
-	=$3 :SC_WRITE
-	= 4c
-	S+345d  
-	=$x .newline_
-	=$3 :SC_WRITE
-	S+34xb  
+
+	@psh0
+	= 05
+	@call:log_____
+	@pop0
+
+	=$x :T_EOL___
+	?=0x
+	=$x .logeol__
+	=?zx
+
+	=$x :T_INS___
+	?=0x
+	=$x .logins__
+	=?zx
+
+	=$x :T_REG___
+	?=0x
+	=$x .logreg__
+	=?zx
+
+	=$x :T_REF___
+	?=0x
+	=$x .logref__
+	=?zx
+
+	=$x :T_IMM___
+	?=0x
+	=$x .logimm__
+	=?zx
+
+	=$x :T_STR___
+	?=0x
+	=$x .logstr__
+	=?zx
+
+	@jump.logdone_
+
+.log_br_l
+	@psh0
+	=$0 .s_br_l__
+	@call:log_____
+	@pop0
+	@ret.
+.log_br_r
+	@psh0
+	=$0 .s_br_r__
+	@call:log_____
+	@pop0
+	@ret.
+.s_br_l__
+	(\00\00\00
+.s_br_r__
+	) \00\00
+
+.logeol__
+	=$0 .newline_
+	@call:log_____
+	@jump.logdone_
+
+.logins__
+	@call.log_br_l
+	=$0 .buffer__
+	+ 0d
+	[=0a
+	=$0 .buffer__
+	@call:log_____
+	@call.log_br_r
+	@jump.logdone_
+
+.logreg__
+	@call.log_br_l
+	= 01
+	@call:encodreg
+	=$x .buffer__
+	[=x0
+	+ xb
+	[=xa
+	=$0 .buffer__
+	@call:log_____
+	@call.log_br_r
+	@jump.logdone_
+
+.logref__
+	@call.log_br_l
+	= 01
+	@call:log_____
+	@call.log_br_r
+	@jump.logdone_
+
+.logimm__
+	@call.log_br_l
+	= 01
+	@call:lognum__
+	@call.log_br_r
+	@jump.logdone_
+
+.logstr__
+	@call.log_br_l
+	=$0 .buffer__
+	@call:log_____
+	@call.log_br_r
+	@jump.logdone_
+
+.logdone_
+	@pop2
+	@pop1
+	@pop0
 	@ret.
 
 .newline_
@@ -993,28 +1182,6 @@
 	________
 	________
 	________
-
-# r0 = len
-.logtoken
-	=$x :isverbos
-	=[xx
-	?=xa
-	@ret?
-	@psh1
-	@psh2
-	@psh3
-	=$1 .buffer__
-	=#2 0002
-	=$3 :SC_WRITE
-	S+3210  
-	=$1 .space___
-	=#2 0002
-	=$3 :SC_WRITE
-	S+321b  
-	@pop3
-	@pop2
-	@pop1
-	@ret.
 
 .space___
 	:space___
@@ -1296,11 +1463,8 @@
 	[=xa
 	@jmp^.notverb_
 	[=xb
-	=$0 :SC_WRITE
-	=#1 0002
-	=$2 .verbmsg_
-	=#3 000c
-	S+0123  
+	=$0 .verbmsg_
+	@call:log_____
 .notverb_
 # Open argv[1] as ro, store in in_hand_
 	= 0b
@@ -1330,7 +1494,7 @@
 .verbose_
 	-v:__null__
 .verbmsg_
-	Verbose mode:__null__
+	Verbose mode\0a\00
 #===========================================================================
 
 
@@ -1404,6 +1568,8 @@
 # TODO
 
 # Perform a call to a mini-function that will jump to the next address
+	+ 1d
+	=(11
 	@call.insdisp_
 	@jump:mainloop
 
@@ -1938,34 +2104,34 @@
 
 # Instruction table
 :instruct
-	mov 
+	mov\00
 	:i_mov___
 
-	add 
+	add\00
 	:i_add___
 
-	sub 
+	sub\00
 	:i_sub___
 
-	mul 
+	mul\00
 	:i_mul___
 
-	div 
+	div\00
 	:i_div___
 
-	or  
+	or\00\00
 	:i_or____
 
-	and 
+	and\00
 	:i_and___
 
-	xor 
+	xor\00
 	:i_xor___
 
 	push
 	:i_push__
 
-	pop 
+	pop\00
 	:i_pop___
 
 	ld\2eb
@@ -1986,16 +2152,16 @@
 	st\2ed
 	:i_std___
 
-	eq  
+	eq\00\00
 	:i_eq____
 
-	ne  
+	ne\00\00
 	:i_ne____
 
-	gt  
+	gt\00\00
 	:i_gt____
 
-	lt  
+	lt\00\00
 	:i_lt____
 
 	call
@@ -2004,22 +2170,22 @@
 	jump
 	:i_jump__
 
-	ret 
+	ret\00
 	:i_ret___
 
-	sys 
+	sys\00
 	:i_sys___
 
-	db  
+	db\00\00
 	:i_db____
 
-	dw  
+	dw\00\00
 	:i_dw____
 
-	dd  
+	dd\00\00
 	:i_dd____
 
-	ds  
+	ds\00\00
 	:i_ds____
 
 :lastinst

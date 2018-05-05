@@ -296,6 +296,8 @@ int main(int argc, const char** argv) {
 			registers[char_to_register(op3)] *= rhs(op2, op4);
 		} else if (op1 == '/') {
 			registers[char_to_register(op3)] /= rhs(op2, op4);
+		} else if (op1 == '%') {
+			registers[char_to_register(op3)] %= rhs(op2, op4);
 		} else if (op1 == '&') {
 			registers[char_to_register(op3)] &= rhs(op2, op4);
 		} else if (op1 == '|') {
