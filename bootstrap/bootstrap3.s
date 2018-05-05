@@ -606,7 +606,7 @@
 
 	=$x :hash____
 	?=0x
-	=$x .readtok#
+	=$x .cmt_____
 	=?zx
 
 	=$x :period__
@@ -636,7 +636,7 @@
 
 # Return zero at EOF
 	?=0a
-	@jmp?.readtret
+	@jmp?.ret_____
 
 # Make sure it's alpha-numeric
 	@call:isalnum_
@@ -701,7 +701,7 @@
 	=^2b
 	=$0 :T_REF___
 	=$1 .buffer__
-	@jump.readtret
+	@jump.ret_____
 
 .labelchr
 # Store that last char
@@ -712,43 +712,43 @@
 
 # TODO: #define should return a token
 
-.readtok#
+.cmt_____
 	- 22
 	@psh2
-.readtk#l
+.cmtloop_
 # Eat chars until a newline
 	@call:readchar
 	@pop2
 	=$x :newline_
 	?=0x
-	@jmp?.readtk#d
+	@jmp?.cmtdone_
 	=#3 0006
 	?=23
 	=$1 .buffer__
 	+ 12
 	+ 2b
 	[=10
-	@jmp?.readtk#c
+	@jmp?.cmtdef__
 	@psh2
-	@jump.readtk#l
+	@jump.cmtloop_
 
 # Fast look when we don't need to match #define
-.readtk#f
+.cmtfastl
 	@call:readchar
 	=$x :newline_
 	?=0x
-	@jmp?.readtk#d
-	@jump.readtk#f
+	@jmp?.cmtdone_
+	@jump.cmtfastl
 
 # We matched #define, so need to process this in a special way
-.readtk#c
+.cmtdef__
 # NUL terminate, then compare against "define "
 	+ 1b
 	[=1a
 	=$1 .buffer__
-	=$0 .readtk#s
+	=$0 .cmtdstr_
 	@call:strcmp__
-	@jmp^.readtk#f
+	@jmp^.cmtfastl
 # Zero out the buffer
 	=$0 .buffer__
 	- 11
@@ -772,11 +772,11 @@
 	@call:createdf
 
 # Return EOL for a comment
-.readtk#d
+.cmtdone_
 	=$0 :T_EOL___
-	@jump.readtret
+	@jump.ret_____
 
-.readtk#s
+.cmtdstr_
 	define :__null__
 
 #***************************
@@ -814,7 +814,7 @@
 	@call:rewind__
 	@pop1
 	=$0 :T_REG___
-	@jump.readtret
+	@jump.ret_____
 
 #***************************
 
@@ -844,7 +844,7 @@
 	@pop1
 
 	=$0 :T_IMM___
-	@jump.readtret
+	@jump.ret_____
 
 #***************************
 
@@ -926,7 +926,7 @@
 	=(10
 # Return
 	=$0 :T_INS___
-	@jump.readtret
+	@jump.ret_____
 
 .readtkie
 	=$0 .inserr__
@@ -959,17 +959,17 @@
 
 	=$0 :T_STR___
 	=$1 .buffer__
-	@jump.readtret
+	@jump.ret_____
 
 #***************************
 
 .readtknl
 	=$0 :T_EOL___
-	@jump.readtret
+	@jump.ret_____
 
 #***************************
 
-.readtret
+.ret_____
 # Write the token to stderr for debugging
 	=$x :isverbos
 	=[xx
@@ -982,16 +982,13 @@
 	=$3 :SC_WRITE
 	= 4c
 	S+345d  
-	=$x .rtnlbyte
+	=$x .newline_
 	=$3 :SC_WRITE
 	S+34xb  
 	@ret.
 
-.rtnlbyte
+.newline_
 	:newline_
-
-.rtspbyte
-	:space___
 
 # This is enough for 32-byte labels/identifiers/strings
 .buffer__
@@ -1013,7 +1010,7 @@
 	=#2 0002
 	=$3 :SC_WRITE
 	S+3210  
-	=$1 .rtspbyte
+	=$1 .space___
 	=#2 0002
 	=$3 :SC_WRITE
 	S+321b  
@@ -1021,6 +1018,9 @@
 	@pop2
 	@pop1
 	@ret.
+
+.space___
+	:space___
 
 # r0 = offset into readtkbf
 # returns r0 = last char
