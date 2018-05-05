@@ -119,6 +119,12 @@ int sc(uint32_t syscall,
 		return PROGRAM_LENGTH;
 	} else if (syscall == 7) {
 		debug("exit");
+		if (dump) {
+			printf("Dumped memory to /tmp/memory.bin\n");
+			int fd = open("/tmp/memory.bin", O_CREAT | O_TRUNC | O_WRONLY, 0777);
+			write(fd, &program[0], sizeof(program));
+			close(fd);
+		}
 		exit(arg1);
 		return 0;
 	} else {
