@@ -25,7 +25,9 @@
 #   - sys
 #   - push/pop
 #   - #include
-#   - (?) object file support to make C easier?
+#   - object file support
+#   - negative integer literals
+# Polish/performance
 #   - Symbol table with local symbs should be "rolled back" at next global symbol for perf
 #      - Can we do local fixups per global?
 #   - Short immediate constants should use '=!x.' format
