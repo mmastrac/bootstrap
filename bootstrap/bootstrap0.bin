@@ -1,3 +1,4 @@
-=#0 0005=#1 0100=#2 1000S+012   =#1 0104=(11=#8 0000S 81=#2 0108=(22=#3 0601=#9 0000S+923   =#0 0001= 18=#2 1000=#3 0004S+0123  =#0 0002= 19=#2 1000=#3 0004S+0123  =#0 0001= 18=#2 1000=#3 0001S+0123  ?=03=#0 005cJ?0 =#0 0007=#1 0000S 01
+=#0 0005=#1 0100=#2 1000S+012   =#1 0104=(11- 88S 81=#2 0108=(22=#3 0601- 99S+923   =#7 0071=#6 1000=#5 0001J 7 
+=#0 0001S+0865  ?=04=#0 0007- 11S?01= 16=[11=#0 0020?<10J?7 =#0 0002S+0965  J 7 
 
-# Reads from argv[1] and writes to argv[2], skipping every fifth character to allow for more readable code
+# Reads from argv[1] and writes to argv[2], skipping all control characters to allow for more readable code
