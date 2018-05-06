@@ -740,17 +740,14 @@
 
 	=$x :dollar__
 	?=0x
-	=$x .immhex__
-	=?zx
+	@jmp?.immhex__
 
 	=$x :zero____
 	?=0x
-	=$x .immzero_
-	=?zx
+	@jmp?.immzero_
 
 	@call:isdigit_
-	=$x .immdec__
-	=?zx
+	@jmp?.immdec__
 
 	=$0 .errinvch
 	@call:error___
@@ -842,52 +839,42 @@
 
 	=$x :newline_
 	?=0x
-	=$x .eol_____
-	=?zx
+	@jmp?.eol_____
 
 	=$x :hash____
 	?=0x
-	=$x .cmt_____
-	=?zx
+	@jmp?.cmt_____
 
 	=$x :period__
 	?=0x
-	=$x .label___
-	=?zx
+	@jmp?.label___
 
 	=$x :colon___
 	?=0x
-	=$x .label___
-	=?zx
+	@jmp?.label___
 
 	=$x :at______
 	?=0x
-	=$x .label___
-	=?zx
+	@jmp?.label___
 
 	=$x :dollar__
 	?=0x
-	=$x .imm_____
-	=?zx
+	@jmp?.imm_____
 
 	=$x :zero____
 	?=0x
-	=$x .imm_____
-	=?zx
+	@jmp?.imm_____
 
 	@call:isdigit_
-	=$x .imm_____
-	=?zx
+	@jmp?.imm_____
 
 	=$x :quote___
 	?=0x
-	=$x .string__
-	=?zx
+	@jmp?.string__
 
 	=$x :squote__
 	?=0x
-	=$x .charimm_
-	=?zx
+	@jmp?.charimm_
 
 # Return zero at EOF
 	?=0a
@@ -1208,43 +1195,35 @@
 
 	=$x :T_EOL___
 	?=0x
-	=$x .logeol__
-	=?zx
+	@jmp?.logeol__
 
 	=$x :T_INS___
 	?=0x
-	=$x .logins__
-	=?zx
+	@jmp?.logins__
 
 	=$x :T_REG___
 	?=0x
-	=$x .logreg__
-	=?zx
+	@jmp?.logreg__
 
 	=$x :T_REF___
 	?=0x
-	=$x .logref__
-	=?zx
+	@jmp?.logref__
 
 	=$x :T_IMM___
 	?=0x
-	=$x .logimm__
-	=?zx
+	@jmp?.logimm__
 
 	=$x :T_STR___
 	?=0x
-	=$x .logstr__
-	=?zx
+	@jmp?.logstr__
 
 	=$x :T_EOF___
 	?=0x
-	=$x .logeof__
-	=?zx
+	@jmp?.logeof__
 
 	=$x :T_DEF___
 	?=0x
-	=$x .logdef__
-	=?zx
+	@jmp?.logdef__
 
 	@jump.logdone_
 
@@ -1285,16 +1264,13 @@
 	@call:log_____
 	=$x :INS_UNCO
 	?=2x
-	=$x .logins_u
-	=?zx
+	@jmp?.logins_u
 	=$x :INS_IF_T
 	?=2x
-	=$x .logins_t
-	=?zx
+	@jmp?.logins_t
 	=$x :INS_IF_F
 	?=2x
-	=$x .logins_f
-	=?zx
+	@jmp?.logins_f
 .logins_t
 	=$0 .s_ques__
 	@call:log_____
@@ -1394,13 +1370,11 @@
 :isnumber
 	=#x 0030
 	?<0x
-	=$x :retfalse
-	=?zx
+	@jmp?:retfalse
 
 	=#x 003a
 	?<0x
-	=$x :rettrue_
-	=?zx
+	@jmp?:rettrue_
 
 	@jump:retfalse
 #===========================================================================
@@ -1416,13 +1390,11 @@
 :isdigit_
 	=#x 0030
 	?<0x
-	=$x :retfalse
-	=?zx
+	@jmp?:retfalse
 
 	=#x 003a
 	?<0x
-	=$x :rettrue_
-	=?zx
+	@jmp?:rettrue_
 
 	@jump:retfalse
 #===========================================================================
@@ -1438,33 +1410,27 @@
 :isalnum_
 	=#x 0030
 	?<0x
-	=$x :retfalse
-	=?zx
+	@jmp?:retfalse
 
 	=#x 003a
 	?<0x
-	=$x :rettrue_
-	=?zx
+	@jmp?:rettrue_
 
 	=#x 0041
 	?<0x
-	=$x :retfalse
-	=?zx
+	@jmp?:retfalse
 
 	=#x 005b
 	?<0x
-	=$x :rettrue_
-	=?zx
+	@jmp?:rettrue_
 
 	=#x 0061
 	?<0x
-	=$x :retfalse
-	=?zx
+	@jmp?:retfalse
 
 	=#x 007b
 	?<0x
-	=$x :rettrue_
-	=?zx
+	@jmp?:rettrue_
 
 	@jump:retfalse
 #===========================================================================
@@ -1764,18 +1730,15 @@
 # Extract the conditional execution flag
 	=$x :INS_UNCO
 	?=2x
-	=$x .insuncon
-	=?zx
+	@jmp?.insuncon
 
 	=$x :INS_IF_T
 	?=2x
-	=$x .ins_if_t
-	=?zx
+	@jmp?.ins_if_t
 
 	=$x :INS_IF_F
 	?=2x
-	=$x .ins_if_f
-	=?zx
+	@jmp?.ins_if_f
 
 .ins_if_t
 	=$0 :i_jmp_nt

@@ -202,7 +202,7 @@ int main(int argc, const char** argv) {
 		argc--;
 	}
 
-	if (argc <= 2) {
+	if (argc <= 1) {
 		printf("USAGE: vm [-v [-v]] program [arguments...]\n");
 		exit(1);
 	}
