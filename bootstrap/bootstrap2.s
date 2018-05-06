@@ -11,7 +11,6 @@
 #   - Avoid using so many registers (future planned register symbol 
 #     re-allocation) - maybe a lookup func?
 #		- =$x symb / call would look up "symb"
-#   - Backslash for hex escape (ie: \2e -> period, \00 -> null)
 
 # Ra = Zero register
 	- aa

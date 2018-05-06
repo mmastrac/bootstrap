@@ -105,6 +105,10 @@
 # Define
 =T_DEF___ 0007
 
+=INS_UNCO 0000
+=INS_IF_T 0001
+=INS_IF_F 0002
+
 :tokens__
 	EOF\00
 	IMM\00
@@ -1056,14 +1060,11 @@
 	+ 2b
 	[=20
 	+ 2b
-	- 33
 
 # Read until we get a space, tab or newline
 .readtkil
 	@psh2
-	@psh3
 	@call:readchar
-	@pop3
 	@pop2
 	@call:istoksep
 	@jmp?.readtkid
@@ -1074,13 +1075,15 @@
 # If the instruction ends in a ?, this means it is only executed if flag == true
 	=$x :question
 	?=0x
-	=?3b
+	=$x :INS_IF_T
+	=?3x
 	@jmp?.readtkip
 
 # If the instruction ends in a ^, this means it is only executed if flag == false
 	=$x :hat_____
 	?=0x
-	=?3c
+	=$x :INS_IF_F
+	=?3x
 	@jmp?.readtkip
 
 # Store and continue
@@ -1093,25 +1096,28 @@
 .readtkid
 # Put the whitespace back
 	@call:rewind__
+	=$x :INS_UNCO
+	= 3x
 
 .readtkip
 # Search the instruction table for a match
 	=$0 :instruct
 	=$2 .buffer__
 	=(22
-	=$3 :lastinst
+	=$4 :lastinst
 .readtkis
 	=(10
 	?=12
 	@jmp?.readtkir
 	+ 0e
 	+ 0d
-	?=03
+	?=04
 	@jmp?.readtkie
 	@jump.readtkis
 
 .readtkir
 	= 10
+	= 23
 # Return
 	=$0 :T_INS___
 	@jump.ret_____
@@ -1256,7 +1262,10 @@
 	(\00\00\00
 .s_br_r__
 	) \00\00
-
+.s_hat___
+	^\00\00\00
+.s_ques__
+	?\00\00\00
 .logeol__
 .logeof__
 	=$0 .newline_
@@ -1272,6 +1281,27 @@
 	@call.log_br_l
 	= 01
 	@call:log_____
+	=$x :INS_UNCO
+	?=2x
+	=$x .logins_u
+	=?zx
+	=$x :INS_IF_T
+	?=2x
+	=$x .logins_t
+	=?zx
+	=$x :INS_IF_F
+	?=2x
+	=$x .logins_f
+	=?zx
+.logins_t
+	=$0 .s_ques__
+	@call:log_____
+	@jump.logins_u
+.logins_f
+	=$0 .s_hat___
+	@call:log_____
+	@jump.logins_u
+.logins_u
 	@call.log_br_r
 	@jump.logdone_
 
@@ -1730,16 +1760,66 @@
 
 .ins_____
 # Extract the conditional execution flag
-# TODO
+	=$x :INS_UNCO
+	?=2x
+	=$x .insuncon
+	=?zx
 
+	=$x :INS_IF_T
+	?=2x
+	=$x .ins_if_t
+	=?zx
+
+	=$x :INS_IF_F
+	?=2x
+	=$x .ins_if_f
+	=?zx
+
+.ins_if_t
+	=$0 :i_jmp_nt
+	@jump.ins_cond
+
+.ins_if_f
+	=$0 :i_jmp_if
+	@jump.ins_cond
+
+.ins_cond
+	@psh1
+# Write the skip instructions
+	=#1 000c
+	@call:writebuf
+	@call:outtell_
+	- 0e
+	@pop1
+	@psh0
+# Dispatch to the instrution
+	@call.insdisp_
+	@call:outtell_
+	= 10
+	@pop0
+	@psh1
+# Compute the relative jump
+	= 21
+	- 10
+	- 1e
+	@psh1
+# Go back to the relative jump load
+	@call:outseek_
+	@pop0
+	@call:write32_
+	@pop0
+	@call:outseek_
+	@jump:mainloop
+
+.insuncon
 # Perform a call to a mini-function that will jump to the next address
-	+ 1e
-	=(11
 	@call.insdisp_
 	@jump:mainloop
 
 .insdisp_
 # Note: does not return here!
+	+ 1e
+	=(11
 	= z1
 
 .def_____
@@ -2054,6 +2134,10 @@
 	=$z 
 :i_ret__s
 	=(xy+!y\04= zx
+:i_jmp_if
+	=$x ????+?zx
+:i_jmp_nt
+	=$x ????+^zx
 
 :i_mov___
 	=$0 :equals__
