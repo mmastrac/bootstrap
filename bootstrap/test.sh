@@ -52,6 +52,9 @@ diff $TEST/bootstrap3/test4.bin /tmp/t4.bin
 echo Test 3
 ./vm /tmp/b3.bin $TEST/bootstrap3/test5.s /tmp/t5.bin > /dev/null
 diff $TEST/bootstrap3/test5.bin /tmp/t5.bin
+echo Test 3
+./vm /tmp/b3.bin $TEST/bootstrap3/test6.s /tmp/t6.bin > /dev/null
+diff $TEST/bootstrap3/test6.bin /tmp/t6.bin
 
 echo Compile 4
 ./vm /tmp/b3.bin $ROOT/bootstrap4.s /tmp/b4.bin > /dev/null

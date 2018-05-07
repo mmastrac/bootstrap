@@ -106,10 +106,15 @@
 =T_STR___ 0006
 # Define
 =T_DEF___ 0007
+# Include
+=T_INC___ 0008
 
 =INS_UNCO 0000
 =INS_IF_T 0001
 =INS_IF_F 0002
+
+=OPEN_RO_ 0000
+=OPEN_RW_ 0001
 
 :tokens__
 	EOF\00
@@ -120,6 +125,7 @@
 	EOL\00
 	STR\00
 	DEF\00
+	INC\00
 
 =SC_OPEN_ 0000
 =O_RDONLY 0000
@@ -141,10 +147,9 @@
 =SC_GTMEM 0006
 =SC_EXIT_ 0007
 
-
-# Global: Input file handle
-:in_hand_
-	____
+# Stack of input file handles, used for #include
+:in_hands
+	:__null__
 
 # Global: Output file handle
 :out_hand
@@ -281,14 +286,28 @@
 #   R0: Pointer to string (zero terminated)
 #===========================================================================
 :getargv_
-	=$1 :SC_GTARG
-	=$2 :scratch_
-	=#3 1000
-	S+123   
+	=$x :args____
 	* 0d
-	+ 02
+	+ 0x
 	=(00
 	@ret.
+#===========================================================================
+
+
+#===========================================================================
+# Returns:
+#   R0: Argument count (includes argv[0] which is the binary)
+#===========================================================================
+:getargc_
+	=$1 :args____
+	- 00
+.loop____
+	=(x1
+	?=xa
+	@ret?
+	+ 0b
+	+ 1d
+	@jump.loop____
 #===========================================================================
 
 
@@ -416,9 +435,35 @@
 #   R0: Handle
 #===========================================================================
 :open____
+	@psh0
+	@psh1
+
+	@call:is_vrbos
+	@jmp^.nolog___
+
+	@psh0
+	=$0 .opening_
+	@call:log_____
+	@pop0
+	@call:log_____
+	=$0 .as______
+	@call:log_____
+
+	@pop1
+	@psh1
+	* 1d
+	=$x .mode____
+	+ 1x
+	=(01
+	@call:log_____
+
+.nolog___
+	@pop1
+	@pop0
 	=$2 :SC_OPEN_
 	=$3 :O_RDONLY
-	?=1a
+	=$x :OPEN_RO_
+	?=1x
 	@jmp?.readonly
 	=$3 :O_RDWR__
 	=$x :O_TRUNC_
@@ -439,8 +484,19 @@
 	- 0b
 	@ret.
 
+.opening_
+	Opening '\00
+.as______
+	' as \00
+.s_ro____
+	read-only\0a\00
+.s_rw____
+	read/write\0a\00
+.mode____
+	.s_ro____
+	.s_rw____
 .errfail_
-	Failed to open file :__null__
+	Failed to open file \00
 #===========================================================================
 
 
@@ -449,13 +505,12 @@
 # No args/return
 #===========================================================================
 :rewind__
-	=$0 :SC_SEEK_
+	@call:getinhnd
+	=$3 :SC_SEEK_
 	- 11
 	- 1b
 	=$2 :SEEK_CUR
-	=$3 :in_hand_
-	=(33
-	S+0312  
+	S+3012  
 	@ret.
 #===========================================================================
 
@@ -927,22 +982,24 @@
 
 .cmt_____
 	- 22
-	@psh2
 .cmtloop_
 # Eat chars until a newline
+	@psh2
 	@call:readchar
 	@pop2
 	=$x :newline_
 	?=0x
 	@jmp?.cmtdone_
-	=#3 0006
-	?=23
 	=$1 .buffer__
 	+ 12
 	+ 2b
 	[=10
+	=#3 0007
+	?=23
 	@jmp?.cmtdef__
-	@psh2
+	=#3 0008
+	?=23
+	@jmp?.cmtinc__
 	@jump.cmtloop_
 
 # Fast look when we don't need to match #define
@@ -959,12 +1016,28 @@
 	+ 1b
 	[=1a
 	=$1 .buffer__
-	=$0 .cmtdstr_
+	=$0 .cmtdstrd
+	@psh2
 	@call:strcmp__
-	@jmp^.cmtfastl
+	@pop2
+	@jmp^.cmtloop_
 
 # It's a #define token, so return that
 	=$0 :T_DEF___
+	@jump.ret_____
+
+# We matched #include, so need to process this in a special way
+.cmtinc__
+# NUL terminate, then compare against "include "
+	+ 1b
+	[=1a
+	=$1 .buffer__
+	=$0 .cmtdstri
+	@call:strcmp__
+	@jmp^.cmtfastl
+
+# It's an #include token, so return that
+	=$0 :T_INC___
 	@jump.ret_____
 
 # Return EOL for a comment
@@ -972,8 +1045,11 @@
 	=$0 :T_EOL___
 	@jump.ret_____
 
-.cmtdstr_
+.cmtdstrd
 	define :__null__
+
+.cmtdstri
+	include :__null__
 
 #***************************
 
@@ -1136,8 +1212,10 @@
 # Trailing null
 	[=2a
 
+	=$0 .buffer__
+	@call:mallocst
+	= 10
 	=$0 :T_STR___
-	=$1 .buffer__
 	@jump.ret_____
 
 #***************************
@@ -1223,7 +1301,11 @@
 
 	=$x :T_DEF___
 	?=0x
-	@jmp?.logdef__
+	@jmp?.logspace
+
+	=$x :T_INC___
+	?=0x
+	@jmp?.logspace
 
 	@jump.logdone_
 
@@ -1253,7 +1335,7 @@
 	@call:log_____
 	@jump.logdone_
 
-.logdef__
+.logspace
 	=$0 .space___
 	@call:log_____
 	@jump.logdone_
@@ -1461,6 +1543,58 @@
 
 
 #===========================================================================
+# Args:
+#   R0: Filename
+#===========================================================================
+:openinpt
+	=$1 :OPEN_RO_
+	@call:open____
+	@psh0
+	=#0 0008
+	@call:malloc__
+	@pop1
+	(=01
+	=$x :in_hands
+	=(1x
+	(=x0
+	+ 0d
+	(=01
+
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   None
+#===========================================================================
+:popinput
+	=$x :in_hands
+	=(xx
+	+ xd
+	=(xx
+	=$0 :in_hands
+	(=0x
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
+# Returns:
+#   R0: Current input handle
+#===========================================================================
+:getinhnd
+	= MM
+	=$x :in_hands
+	=(0x
+	?=0a
+	@ret?
+	=(00
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
 # Returns:
 #   R0: File offset
 #===========================================================================
@@ -1495,8 +1629,7 @@
 #   R0: Char (zero if EOF)
 #===========================================================================
 :readchar
-	=$0 :in_hand_
-	=(00
+	@call:getinhnd
 	=$1 :SC_READ_
 	=$2 .buffer__
 	[=2a
@@ -1585,7 +1718,7 @@
 # Does not return
 #===========================================================================
 :errtoken
-	=$x .errtoken
+	=$0 .errtoken
 	@jump:error___
 
 .errtoken
@@ -1601,7 +1734,9 @@
 	]})]})]})]})]})]})]})]})
 
 :_isvrbfl
-	__
+	\00
+:_iscmpfl
+	\00
 
 #===========================================================================
 # Args:
@@ -1619,35 +1754,86 @@
 # Main
 #===========================================================================
 :main____
+# Get args size
+	=$1 :SC_GTARG
+	=$2 :args____
+	- 33
+	S+123   
+
+	= 31
+	=$1 :SC_GTARG
+	=$2 :args____
+	S+123   
+
+# Point the heap past the end of args
+	=$x :heap____
+	=(0x
+	+ 01
+	(=x0
+
 	= 0b
+.argsloop
+# Extract args
+	@psh0
 	@call:getargv_
 	=$1 .verbose_
 	@call:strcmp__
+	@pop0
+	@jmp?.isverbos
+
+	@psh0
+	@call:getargv_
+	=$1 .compile_
+	@call:strcmp__
+	@pop0
+	@jmp?.iscompil
+
+	@jump.argsdone
+
+.isverbos
+	= 1b
 	=$x :_isvrbfl
-	[=xa
-	@jmp^.notverb_
-	[=xb
+	[=x1
+	+ 0b
+	@psh0
 	=$0 .verbmsg_
 	@call:log_____
-.notverb_
-# Open argv[1] as ro, store in in_hand_
-	= 0b
-	=$x :_isvrbfl
-	=[xx
-	+ 0x
-	@call:getargv_
-	= 1a
-	@call:open____
-	=$x :in_hand_
-	(=x0
+	@pop0
+	@jump.argsloop
 
-# Open argv[2] as rw, store in out_hand_
-	= 0c
-	=$x :_isvrbfl
-	=[xx
-	+ 0x
-	@call:getargv_
+.iscompil
 	= 1b
+	=$x :_iscmpfl
+	[=x1
+	+ 0b
+	@jump.argsloop
+
+.argsdone
+# Open all files but the last one as input
+	= 10
+.openloop
+	@psh1
+	@call:getargc_
+	@pop1
+	- 0b
+
+	?=10
+	= 01
+	@jmp?.openout_
+
+# Open argv[1] as input
+	+ 1b
+	@psh1
+	@call:getargv_
+	@call:openinpt
+	@pop1
+
+	@jump.openloop
+
+.openout_
+# Open last argument as rw, store in out_hand_
+	@call:getargv_
+	=$1 :OPEN_RW_
 	@call:open____
 	=$x :out_hand
 	(=x0
@@ -1655,9 +1841,11 @@
 	@jump:mainloop
 
 .verbose_
-	-v:__null__
+	-v\00
 .verbmsg_
 	Verbose mode\0a\00
+.compile_
+	-c\00
 #===========================================================================
 
 
@@ -1689,6 +1877,10 @@
 	=$x :T_DEF___
 	?=0x
 	@jmp?.def_____
+
+	=$x :T_INC___
+	?=0x
+	@jmp?.inc_____
 
 	@jump:errtoken
 
@@ -1804,7 +1996,21 @@
 	@call:createdf
 	@jump:mainloop
 
+.inc_____
+	@call:readstr_
+# Filename in r1
+	@psh1
+	@call:readeol_
+	@pop0
+	@call:openinpt
+	@jump:mainloop
+
 .eof_____
+	@call:popinput
+	@call:getinhnd
+	?=0a
+	@jmp^:mainloop
+
 	=$x :fixuptab
 	=(0x
 
@@ -1864,6 +2070,24 @@
 
 .error___
 	Expected EOL:__null__
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   None
+#===========================================================================
+:readstr_
+	@call:readtok_
+	=$x :T_STR___
+	?!0x
+	=$x .error___
+	=?0x
+	@jmp?:error___
+	@ret.
+
+.error___
+	Expected STR:__null__
 #===========================================================================
 
 
@@ -2417,5 +2641,6 @@
 :heap____
 	:scratch_
 
+:args____
 :scratch_
 
