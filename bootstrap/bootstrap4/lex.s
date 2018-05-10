@@ -226,16 +226,15 @@
 #   R0: Lexical token type (or 0 if no token found)
 #===========================================================================
 :_lex
-	mov r10, r0
-	mov r11, r1
-	mov r12, r2
+	%arg handle, buffer, buffer_length
+	%local c
 
 	# Read from the file handle in r0
-	call :read_char
-	mov r13, r0
+	%call :read_char, @handle
+	mov @c, r0
 
 	# Eat whitespace
-	call :_iswhitespace
+	%call :_iswhitespace, @c
 	eq r0, $1
 	jmp? :_lex
 
@@ -243,26 +242,21 @@
 	mov r0, r10
 	mov r1, :string_tokens
 	mov r2, r13
-	call :__lex_attempt_match_table
+	%call :__lex_attempt_match_table, @handle, @buffer, @buffer_length, :string_tokens, @c
 
 	# Attempt to match label/identifier
-	mov r0, r10
-	call :_islabel
+	%call :_islabel, @c
 	eq r0, $1
 	...
 
 	# Attempt to match constants
-	mov r0, r13
-	call :_isdigit
+	%call :_isdigit, @c
 	eq r0, $1
 	
-	jump? :__lex_digit # tail call
+	%tailcall? :__lex_digit, @handle, @buffer, @buffer_length # tail call
 
 	# Attempt to match multi-byte operators
-	mov r0, r10
-	mov r1, :op_tokens
-	mov r2, r13
-	call :__lex_attempt_match_table
+	call :__lex_attempt_match_table, @handle, @buffer, @buffer_length, :op_tokens, @c
 
 	# Attempt to match single-byte operators
 	mov r0, :literal_tokens

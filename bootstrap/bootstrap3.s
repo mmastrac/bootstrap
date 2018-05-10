@@ -24,9 +24,9 @@
 # TODO:
 #   - sys
 #   - push/pop
-#   - #include
 #   - object file support
 #   - negative integer literals
+#   - Include base path
 # Polish/performance
 #   - Symbol table with local symbs should be "rolled back" at next global symbol for perf
 #      - Can we do local fixups per global?

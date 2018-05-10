@@ -1,38 +1,29 @@
 
 
-#===========================================================================
-# R0: File handle
-# R1: Format string
-# Stack: printf arguments
-#===========================================================================
-:_fprintf
-	ret
 
 #===========================================================================
 # R0: Filename (zero terminated)
 # R1: Mode (0 = read, 1 = rw+create)
 #===========================================================================
 :_open
-	eq r1, @OPEN_READ
+	%arg filename, mode
+	eq @mode, @OPEN_READ
 	jump? .read
 # read/write
-	mov r3, @O_RDWR
-	or r3, @O_CREAT
-	or r3, @O_TRUNC
+	mov @tmp1, @O_RDWR
+	or @tmp1, @O_CREAT
+	or @tmp1, @O_TRUNC
 	jump .open
 # readonly
 .read
-	mov r3, @O_RDONLY
+	mov @tmp1, @O_RDONLY
 .open
-	mov @tmp0, @SC_OPEN
-	sys @tmp0 r0 r3
-	mov r0, @tmp0
+	%call :syscall3, @SC_OPEN, @filename, @tmp1
+	mov @tmp0, r0
 	add @tmp0, $1
 	eq @tmp0, $0
-	mov? r0, :open_error
-	jump? :fatal
-	pop r3
-	ret
+	%call? :fatal, :open_error
+	%ret r0
 
 :open_error
 	ds "Failed to open file"
