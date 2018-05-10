@@ -23,10 +23,10 @@
 
 # TODO:
 #   - sys
-#   - push/pop
 #   - object file support
 #   - negative integer literals
 #   - Include base path
+#   - Support //-style comments for C compat
 # Polish/performance
 #   - Symbol table with local symbs should be "rolled back" at next global symbol for perf
 #      - Can we do local fixups per global?
@@ -1584,7 +1584,6 @@
 #   R0: Current input handle
 #===========================================================================
 :getinhnd
-	= MM
 	=$x :in_hands
 	=(0x
 	?=0a
@@ -2233,8 +2232,13 @@
 # Returns:
 #   R0: Register encoding for value
 #===========================================================================
-:readval_
+:readvalo
 	@call:readtok_
+	=$x :T_EOL___
+	?=0x
+	=?0a
+	@ret?
+
 	=$x :T_REG___
 	?=0x
 	@jmp?:encodreg
@@ -2257,6 +2261,19 @@
 
 .x_eq____
 	=$x 
+#===========================================================================
+
+
+#===========================================================================
+# Returns:
+#   R0: Register encoding for value
+#===========================================================================
+:readval_
+	@call:readvalo
+	?=0x
+	@jmp?:errtoken
+
+	@ret.
 #===========================================================================
 
 
@@ -2317,6 +2334,10 @@
 	@ret.
 
 
+:i_push_s
+	-!y\04(=y0
+:i_pop__s
+	=(0y+!y\04
 :i_call_s
 	-!y\04=!x\0c+ xz(=yx=$z 
 :i_jump_s
@@ -2365,15 +2386,33 @@
 	=$1 :space___
 	@jump:i_stnd__
 :i_push__
-	@call:readropt
+	@call:readvalo
 	?=0a
 	@ret?
+	@psh0
+	=$0 :i_push_s
+	=#1 0007
+	@call:writebuf
+	@pop0
+	@call:writech_
 	@jump:i_push__
 :i_pop___
+	@call:i_poprec
+	@ret.
+:i_poprec
 	@call:readropt
 	?=0a
 	@ret?
-	@jump:i_pop___
+	@psh0
+	@call:i_poprec
+	@pop0
+	=$x :i_pop__s
+	+ xc
+	[=x0
+	=$0 :i_pop__s
+	=#1 0008
+	@call:writebuf
+	@ret.
 :i_ldb___
 	=$0 :equals__
 	=$1 :left[___
