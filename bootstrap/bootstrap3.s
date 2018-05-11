@@ -22,7 +22,6 @@
 # @pshN/@popN: Push/pop register N to the stack (supports 0-3)
 
 # TODO:
-#   - sys
 #   - object file support
 #   - negative integer literals
 #   - Include base path
@@ -77,6 +76,7 @@
 =left(___ 0028
 =at______ 0040
 =period__ 002e
+=S_______ 0053
 =x_______ 0078
 =z_______ 007a
 =question 003f
@@ -2505,10 +2505,65 @@
 	@call:writebuf
 	@ret.
 :i_sys___
+# Fill the syscall buffer with spaces
+	=$0 .sys_____
+	=$1 :space___
+	=#2 0008
+	@call:memset__
+# Set the first char to S
+	=$0 .sys_____
+	=$1 :S_______
+	[=01
+# Now pointed at the first reg spot
+	+ 0c
+# First argument is allowed to be a value (makes calls where return value is ignored simpler)
+	@psh0
+	@call:readval_
+	= 10
+	@pop0
+	[=01
+	+ 0b
+# Now read regs until we're done
+.loop____
+	@psh0
 	@call:readropt
-	?=0a
-	@ret?
-	@jump:i_sys___
+	= 10
+	@pop0
+	?=1a
+	@jmp?.write___
+	[=01
+	+ 0b
+	=$x .sys_____
+	= 10
+	- 1x
+	=#x 0009
+	?=1x
+	@jmp^.loop____
+	=$0 .toomany_
+	@call:error___
+.write___
+	=$x .sys_____
+	= 10
+	- 1x
+	=#x 0005
+	?<1x
+	@jmp?.short___
+	=$1 .sys_____
+	+ 1b
+	=$x :plus____
+	[=1x
+	= 1e
+	@jump.writeit_
+.short___
+	= 1d
+.writeit_
+	=$0 .sys_____
+	@call:writebuf
+	@ret.
+.sys_____
+	????????
+.toomany_
+	Too many registers for sys (maximum six)\00
 :i_db____
 	@call:readtok_
 	=$x :T_EOL___
