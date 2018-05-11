@@ -42,7 +42,7 @@
 	lt r0, 'g'
 	jmp? .retletter
 .retnone
-	mov r0, $-1
+	mov r0, -1
 	ret
 .retdigit
 	mov @tmp0, '0'

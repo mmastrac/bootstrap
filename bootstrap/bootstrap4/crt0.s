@@ -1,5 +1,10 @@
 # Entry point for applications built on this basic C runtime
 
+# - Initializes argc/argv
+# - Initializes the stack/heap
+# - Calls _main with argc and argv as parameters
+# - Exits with return value from _main
+
 #include "syscall.h"
 #include "regs.h"
 
@@ -11,10 +16,11 @@
 	sub @sp, 4
 
 	call :__init_args
+	ld.d r0, :__argc
+	mov r1, :__argv
 	call :_main
 
-	mov r1, @SC_EXIT
-	sys r1 r0
+	sys @SC_EXIT r0
 
 :__init_args
 	# Get the size of argv
@@ -25,8 +31,7 @@
 	# Allocate a buffer big enough for argv
 	mov r8, r0
 	call :_malloc
-	mov r1, @SC_GETARGV
-	sys r1 r0 r8
+	sys @SC_GETARGV r0 r8
 
 	st.d :__argv, r0
 

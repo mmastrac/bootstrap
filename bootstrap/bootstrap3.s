@@ -24,7 +24,7 @@
 # TODO:
 #   - object file support
 #   - Support //-style comments for C compat
-#   - Scoped #define
+#   - Scoped #define (ie: should not escape file, #define in a method should be rolled back)
 # Polish/performance
 #   - Symbol table with local symbs should be "rolled back" at next global symbol for perf
 #      - Can we do local fixups per global?
@@ -195,6 +195,8 @@
 #   All registers: Unchanged
 #===========================================================================
 :log_____
+	?=0a
+	@ret?
 	@psh1
 	@psh2
 
@@ -2200,7 +2202,36 @@
 	+ 0d
 	= 03
 	= 12
+
+	@call:is_vrbos
+	@jmp^.nolog1__
+	@psh0
+	=$0 .glo_s___
+	@call:log_____
+	@pop0
+	@psh0
+	@psh1
+	@call:log_____
+	=$0 .loc_s___
+	@call:log_____
+	= 01
+	@call:log_____
+	=$0 .space___
+	@call:log_____
+	@pop1
+	@pop0
+.nolog1__
 	@call:lookupsm
+
+	@call:is_vrbos
+	@jmp^.nolog2__
+	@psh0
+	@call:lognum__
+	=$0 .newline_
+	@call:log_____
+	@pop0
+.nolog2__
+
 	@pop1
 	@psh0
 	= 01
@@ -2213,6 +2244,15 @@
 	+ 0e
 	=(00
 	@jump.dofixups
+
+.glo_s___
+	g\2f\00
+.loc_s___
+	 l\2f\00
+.space___
+	 \00
+.newline_
+	\0a\00
 
 .done____
 	=#0 0000
