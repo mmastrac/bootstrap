@@ -791,7 +791,15 @@
 #   0: Base 8 (octal, unsupported)
 #   $: Base 16
 #   1-9: Base 10
+# Reset the negative flag
+	=$x .isneg___
+	[=xa
+
 	@call:readchar
+
+	=$x :minus___
+	?=0x
+	@jmp?.negative
 
 	=$x :dollar__
 	?=0x
@@ -801,11 +809,19 @@
 	?=0x
 	@jmp?.immzero_
 
+.readdec_
 	@call:isdigit_
 	@jmp?.immdec__
 
 	=$0 .errinvch
 	@call:error___
+
+.negative
+# Set the negative flag
+	=$x .isneg___
+	[=xb
+	@call:readchar
+	@jump.readdec_
 
 .immzero_
 # If the number started with zero, assume hex
@@ -873,7 +889,18 @@
 	@call:rewind__
 	@pop0
 
+	=$x .isneg___
+	=[xx
+	?=xa
+	@ret?
+
+	- xx
+	- x0
+	= 0x
 	@ret.
+
+.isneg___
+	\00
 
 .errinvch
 	Invalid immediate character\00
@@ -917,6 +944,10 @@
 	@jmp?.imm_____
 
 	=$x :zero____
+	?=0x
+	@jmp?.imm_____
+
+	=$x :minus___
 	?=0x
 	@jmp?.imm_____
 
@@ -1727,6 +1758,10 @@
 
 # Syntax highlighters get confused by our unmatched brackets
 # This is an unfortunate necessity
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
 	]})]})]})]})]})]})]})]})
 	]})]})]})]})]})]})]})]})
 	]})]})]})]})]})]})]})]})
@@ -2578,11 +2613,22 @@
 	@jump:errtoken
 :i_db_i__
 	= 01
-	=#1 00ff
-	?>01
-	@jmp?:errtoken
+	=#1 0100
+	?<01
+	@jmp?.ok______
+	- xx
+	- x1
+	- xb
+	?>0x
+	= MM
+	@jmp?.ok______
+	=$0 .toobig_s
+	@call:error___
+.ok______
 	@call:writech_
 	@jump:i_db____
+.toobig_s
+	db value is too large\00
 :i_db_s__
 	@psh1
 	= 01
