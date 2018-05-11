@@ -1,2 +1,2 @@
 # Too large
-dw 0x10000
+dw $10000

@@ -146,6 +146,14 @@
 =SC_GTARG 0005
 =SC_GTMEM 0006
 =SC_EXIT_ 0007
+=SC_OPNAT 0008
+
+# Too large for a normal constant!
+:AT_FDCWD
+	\38\ff\ff\ff
+
+:inclhand
+	____
 
 # Stack of input file handles, used for #include
 :in_hands
@@ -431,10 +439,12 @@
 # Args:
 #   R0: Filename
 #   R1: Mode (0 = read, 1 = write)
+#   R2: Relative (0 = cwd, 1 = include)
 # Returns:
 #   R0: Handle
 #===========================================================================
 :open____
+	@psh2
 	@psh0
 	@psh1
 
@@ -460,7 +470,17 @@
 .nolog___
 	@pop1
 	@pop0
-	=$2 :SC_OPEN_
+	@pop2
+	?=2b
+	@jmp?.relative
+	=$4 :AT_FDCWD
+	=(44
+	@jump.doopen__
+.relative
+	=$4 :inclhand
+	=(44
+.doopen__
+	=$2 :SC_OPNAT
 	=$3 :O_RDONLY
 	=$x :OPEN_RO_
 	?=1x
@@ -471,7 +491,7 @@
 	=$x :O_CREAT_
 	| 3x
 .readonly
-	S+203   
+	S+2403  
 	+ 2b
 	?!2a
 	@jmp?.success_
@@ -553,11 +573,12 @@
 	@ret.
 
 .notfound
+	@call:log_____
 	=$0 .errnotfo
 	@jump:error___
 
 .errnotfo
-	define not found:__null__
+	\3a define not found\00
 #===========================================================================
 
 
@@ -664,11 +685,12 @@
 	@ret.
 
 .notfound
+	@call:log_____
 	=$0 .errnotfo
 	@jump:error___
 
 .errnotfo
-	symbol not found:__null__
+	\3a symbol not found\00
 #===========================================================================
 
 
@@ -797,6 +819,8 @@
 
 	@call:readchar
 
+	= MM
+
 	=$x :minus___
 	?=0x
 	@jmp?.negative
@@ -824,8 +848,12 @@
 	@jump.readdec_
 
 .immzero_
-# If the number started with zero, assume hex
+# If the number started with zero, assume hex (unless it's a token separator)
 	@call:readchar
+	@call:istkspel
+	=?1a
+	@jmp?.immdone_
+
 	=$x :x_______
 	?=0x
 	@jmp?.immhex__
@@ -844,7 +872,7 @@
 	@psh1
 	@call:readchar
 	@pop1
-	@call:istoksep
+	@call:istkspel
 	@jmp?.immdone_
 	=$x :newline_
 	?=0x
@@ -865,7 +893,7 @@
 	@psh1
 	@call:readchar
 	@pop1
-	@call:istoksep
+	@call:istkspel
 	@jmp?.immdone_
 	=$x :newline_
 	?=0x
@@ -1098,10 +1126,7 @@
 	@psh1
 	@call:readchar
 	@pop1
-	@call:istoksep
-	@jmp?.readtkrd
-	=$x :newline_
-	?=0x
+	@call:istkspel
 	@jmp?.readtkrd
 
 	=#x 000a
@@ -1162,10 +1187,7 @@
 	@psh2
 	@call:readchar
 	@pop2
-	@call:istoksep
-	@jmp?.readtkid
-	=$x :newline_
-	?=0x
+	@call:istkspel
 	@jmp?.readtkid
 
 # If the instruction ends in a ?, this means it is only executed if flag == true
@@ -1219,11 +1241,13 @@
 	@jump.ret_____
 
 .readtkie
+	=$0 .buffer__
+	@call:log_____
 	=$0 .inserr__
 	@jump:error___
 
 .inserr__
-	Unknown instruction :__null__
+	\2e Unknown instruction\00
 
 #***************************
 
@@ -1574,6 +1598,38 @@
 
 
 #===========================================================================
+# Token seperator or EOL/EOF
+# Args:
+#   R0: Char
+# Returns:
+#   Flag in appropriate state
+#   R0: Char
+#===========================================================================
+:istkspel
+	=$x :space___
+	?=0x
+	@jmp?:rettrue_
+
+	=$x :tab_____
+	?=0x
+	@jmp?:rettrue_
+
+	=$x :comma___
+	?=0x
+	@jmp?:rettrue_
+
+	=$x :newline_
+	?=0x
+	@jmp?:rettrue_
+
+	?=0a
+	@jmp?:rettrue_
+
+	@jump:retfalse
+#===========================================================================
+
+
+#===========================================================================
 # Args:
 #   R0: Filename
 #===========================================================================
@@ -1771,6 +1827,8 @@
 	\00
 :_iscmpfl
 	\00
+:_islnkfl
+	\00
 
 #===========================================================================
 # Args:
@@ -1788,6 +1846,12 @@
 # Main
 #===========================================================================
 :main____
+# Default include dir is working directory
+	=$x :AT_FDCWD
+	=(xx
+	=$0 :inclhand
+	(=0x
+
 # Get args size
 	=$1 :SC_GTARG
 	=$2 :args____
@@ -1822,6 +1886,20 @@
 	@pop0
 	@jmp?.iscompil
 
+	@psh0
+	@call:getargv_
+	=$1 .link____
+	@call:strcmp__
+	@pop0
+	@jmp?.islink__
+
+	@psh0
+	@call:getargv_
+	=$1 .include_
+	@call:strcmp__
+	@pop0
+	@jmp?.isinclud
+
 	@jump.argsdone
 
 .isverbos
@@ -1842,6 +1920,26 @@
 	+ 0b
 	@jump.argsloop
 
+.islink__
+	= 1b
+	=$x :_islnkfl
+	[=x1
+	+ 0b
+	@jump.argsloop
+
+.isinclud
+	+ 0b
+	@psh0
+	@call:getargv_
+	=$1 :SC_OPEN_
+	=$2 :O_RDONLY
+	S+102   
+	=$x :inclhand
+	(=x1
+	@pop0
+	+ 0b
+	@jump.argsloop
+
 .argsdone
 # Open all files but the last one as input
 	= 10
@@ -1859,6 +1957,7 @@
 	+ 1b
 	@psh1
 	@call:getargv_
+	- 21
 	@call:openinpt
 	@pop1
 
@@ -1868,11 +1967,34 @@
 # Open last argument as rw, store in out_hand_
 	@call:getargv_
 	=$1 :OPEN_RW_
+	= 2a
 	@call:open____
 	=$x :out_hand
 	(=x0
 
+# If we aren't linking, just write directly to output
+	=$x :_islnkfl
+	=[xx
+	?=xa
+	@jmp?:mainloop
+
+# Write a jump to the _start symbol
+	=$0 .startjmp
+	=#1 000c
+	@call:writebuf
+
+# Create a fixup
+	=$0 .start_s_
+	- 11
+	=#2 0004
+	@call:createfx
+
 	@jump:mainloop
+
+.start_s_
+	_start\00
+.startjmp
+	=$x ????= zx
 
 .verbose_
 	-v\00
@@ -1880,6 +2002,10 @@
 	Verbose mode\0a\00
 .compile_
 	-c\00
+.link____
+	-l\00
+.include_
+	-I\00
 #===========================================================================
 
 
@@ -2036,6 +2162,7 @@
 	@psh1
 	@call:readeol_
 	@pop0
+	= 2b
 	@call:openinpt
 	@jump:mainloop
 
@@ -2620,7 +2747,6 @@
 	- x1
 	- xb
 	?>0x
-	= MM
 	@jmp?.ok______
 	=$0 .toobig_s
 	@call:error___
@@ -2648,8 +2774,22 @@
 	@jump:errtoken
 :i_dw_i__
 	= 01
+	=#1 ffff
+	+ 1b
+	?<01
+	@jmp?.ok______
+	- xx
+	- x1
+	- xb
+	?>0x
+	@jmp?.ok______
+	=$0 .toobig_s
+	@call:error___
+.ok______
 	@call:write16_
 	@jump:i_dw____
+.toobig_s
+	dw value is too large\00
 :i_dd____
 	@call:readtok_
 	=$x :T_EOL___

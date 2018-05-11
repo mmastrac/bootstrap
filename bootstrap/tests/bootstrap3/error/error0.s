@@ -1,2 +1,2 @@
 # Too large
-db 0x100
+db $100

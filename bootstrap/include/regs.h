@@ -1,9 +1,9 @@
-// Register definitions
+# Register definitions
 #define pc r61
 #define sp r60
-// The compiler uses r59 for compound ops
+# The compiler uses r59 for compound ops
 #define ctmp r59
-// These are tmp regs free for use by code - no need to restore
+# These are tmp regs free for use by code - no need to restore
 #define tmp0 r58
 #define tmp1 r57
 #define tmp2 r56

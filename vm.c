@@ -138,6 +138,14 @@ int sc(uint32_t syscall,
 		}
 		exit(arg1);
 		return 0;
+	} else if (syscall == 8) {
+		debug("openat");
+		dprintf("%x %s %08x\n", arg1, (const char*)&program[arg2], arg3);
+		int r = openat(arg1 == 0xffffff38 ? AT_FDCWD : (int)arg1, (const char*)&program[arg2], arg3, 0777);
+		if (r < 0) {
+			perror("openat");
+		}
+		return r;
 	} else {
 		printf("%x\n", syscall);
 		invalid();

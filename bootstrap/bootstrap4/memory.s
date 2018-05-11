@@ -1,2 +1,3 @@
 
 :_malloc
+	ret

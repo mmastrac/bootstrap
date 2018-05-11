@@ -1,13 +1,14 @@
 # Entry point for applications built on this basic C runtime
 
-#include "include/syscall.h"
+#include "syscall.h"
+#include "regs.h"
 
 :_start
 	# Initialize the stack
-	mov r0, @SC_GTMEM
+	mov r0, @SC_GETMEMSIZE
 	sys r0
-	mov sp, r0
-	sub sp, 4
+	mov @sp, r0
+	sub @sp, 4
 
 	call :__init_args
 	call :_main
@@ -23,7 +24,7 @@
 
 	# Allocate a buffer big enough for argv
 	mov r8, r0
-	call :malloc
+	call :_malloc
 	mov r1, @SC_GETARGV
 	sys r1 r0 r8
 
