@@ -23,9 +23,9 @@
 
 # TODO:
 #   - object file support
-#   - negative integer literals
 #   - Include base path
 #   - Support //-style comments for C compat
+#   - Scoped #define
 # Polish/performance
 #   - Symbol table with local symbs should be "rolled back" at next global symbol for perf
 #      - Can we do local fixups per global?

@@ -68,6 +68,6 @@ echo Error 3
 ./vm /tmp/b3.bin $TEST/bootstrap3/error/error1.s /tmp/out.bin && exit 1
 
 echo Compile 4
-./vm /tmp/b3.bin $ROOT/bootstrap4.s /tmp/b4.bin
+./vm /tmp/b3.bin $TEST/bootstrap4/test1.s $ROOT/bootstrap4/crt0.s /tmp/b4.bin
 
 echo Done
