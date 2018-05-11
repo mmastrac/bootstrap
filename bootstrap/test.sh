@@ -61,6 +61,9 @@ diff $TEST/bootstrap3/test7.bin /tmp/t7.bin
 echo Test 3
 ./vm /tmp/b3.bin $TEST/bootstrap3/test8.s /tmp/t8.bin
 diff $TEST/bootstrap3/test8.bin /tmp/t8.bin
+echo Test 3
+./vm /tmp/b3.bin -I $ROOT/include $TEST/bootstrap3/test9.s /tmp/t9.bin
+diff $TEST/bootstrap3/test9.bin /tmp/t9.bin
 
 echo Error 3
 ./vm /tmp/b3.bin $TEST/bootstrap3/error/error0.s /tmp/out.bin && exit 1

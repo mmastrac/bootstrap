@@ -77,6 +77,7 @@
 =period__ 002e
 =S_______ 0053
 =x_______ 0078
+=y_______ 0079
 =z_______ 007a
 =question 003f
 =exclaim_ 0021
@@ -88,6 +89,7 @@
 =or______ 007c
 =quote___ 0022
 =squote__ 0027
+=percent_ 0025
 
 # EOF
 =T_EOF___ 0000
@@ -832,6 +834,53 @@
 
 
 #===========================================================================
+# Args/returns: none
+#===========================================================================
+:newglobl
+	=$x :curlocal
+	=#0 0008
+	[=x0
+	=$x :curarg__
+	- 00
+	[=x0
+	@ret.
+#===========================================================================
+
+:curlocal
+	\00
+
+:curarg__
+	\00
+
+#===========================================================================
+# Returns
+#   The next register index to use
+#===========================================================================
+:nextlocl
+	=$x :curlocal
+	=[0x
+	= 10
+	+ 1b
+	[=x1
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
+# Returns
+#   The next argument register index
+#===========================================================================
+:nextarg_
+	=$x :curarg__
+	=[0x
+	= 10
+	+ 1b
+	[=x1
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
 # Returns:
 #   R0: Pointer to label string
 #===========================================================================
@@ -1001,6 +1050,12 @@
 	Invalid immediate character\00
 #===========================================================================
 
+# Syntax highlighters get confused by our unmatched brackets
+# This is an unfortunate necessity
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
 
 #===========================================================================
 # Returns:
@@ -1057,6 +1112,10 @@
 	?=0x
 	@jmp?.charimm_
 
+	=$x :percent_
+	?=0x
+	@jmp?.insperc_
+
 # Return zero at EOF
 	?=0a
 	@jmp?.ret_____
@@ -1076,7 +1135,7 @@
 
 # Otherwise if it's alnum, it's an instruction
 	@call:isalnum_
-	@jmp?.readtoki
+	@jmp?.ins_____
 
 #***************************
 
@@ -1232,8 +1291,13 @@
 
 #***************************
 
+.insperc_
+	@psh0
+	@call:readchar
+	@pop1
+
 # We've read two chars at this point (r1 and r0)
-.readtoki
+.ins_____
 # Clear the token buffer
 	@psh0
 	@psh1
@@ -1776,6 +1840,13 @@
 	@ret.
 #===========================================================================
 
+# Syntax highlighters get confused by our unmatched brackets
+# This is an unfortunate necessity
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+
 
 #===========================================================================
 # Returns:
@@ -1878,17 +1949,6 @@
 	Invalid token encountered:__null__
 #===========================================================================
 
-
-# Syntax highlighters get confused by our unmatched brackets
-# This is an unfortunate necessity
-	]})]})]})]})]})]})]})]})
-	]})]})]})]})]})]})]})]})
-	]})]})]})]})]})]})]})]})
-	]})]})]})]})]})]})]})]})
-	]})]})]})]})]})]})]})]})
-	]})]})]})]})]})]})]})]})
-	]})]})]})]})]})]})]})]})
-	]})]})]})]})]})]})]})]})
 
 :_isvrbfl
 	\00
@@ -2134,6 +2194,9 @@
 	@jump:mainloop
 
 .refgloba
+	@psh0
+	@call:newglobl
+	@pop0
 # Store this as our global
 	=$x :mlglobal
 	(=x0
@@ -2372,6 +2435,12 @@
 #   None
 #===========================================================================
 :readref_
+# Eat whitespace
+	@call:readchar
+	@call:istoksep
+	@jmp?:readref_
+
+	@call:rewind__
 	@call:readlbl_
 	= 10
 	=$0 :T_REF___
@@ -2552,6 +2621,13 @@
 
 	@ret.
 #===========================================================================
+
+# Syntax highlighters get confused by our unmatched brackets
+# This is an unfortunate necessity
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
 
 
 :i_stdbf1
@@ -2924,9 +3000,90 @@
 	?!0a
 	@jmp?:i_ds_alg
 	@ret.
+:i_marg__
+	@call:nextlocl
+	@psh0
+	@call:readref_
+	@call:mallocst
+	@pop2
+	@psh2
+	=$1 :T_REG___
+	@call:createdf
+	@pop1
+
+# Push the old value
+	@call:encodreg
+	@psh0
+	=$0 :i_push_s
+	=#1 0007
+	@call:writebuf
+	@pop0
+	@psh0
+	@call:writech_
+
+	=$0 :equals__
+	@call:writech_
+	=$0 :space___
+	@call:writech_
+	@pop0
+	@call:writech_
+	@call:nextarg_
+	= 10
+	@call:encodreg
+	@call:writech_
+
+	@call:readeol_
+	@ret.
+:i_mret__
+# Pop args/locals off before we return
+	=$0 :plus____
+	@call:writech_
+	=$0 :exclaim_
+	@call:writech_
+	=$0 :y_______
+	@call:writech_
+	@call:nextlocl
+	=#x 0008
+	- 0x
+	* 0d
+	@call:writech_
+
+# Regular return
+	@call:readeol_
+	=$0 :i_ret__s
+	=#1 000c
+	@call:writebuf
+	@ret.
+:i_mlocal
+	@call:nextlocl
+	@psh0
+	@call:readref_
+	@call:mallocst
+	@pop2
+	@psh2
+	=$1 :T_REG___
+	@call:createdf
+	@pop1
+
+# Push the old value
+	@call:encodreg
+	@psh0
+	=$0 :i_push_s
+	=#1 0007
+	@call:writebuf
+	@pop0
+	@call:writech_
+
+	@call:readeol_
+	@ret.
+:i_mcall_
+	@ret.
 
 # Syntax highlighters get confused by our unmatched brackets
 # This is an unfortunate necessity
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
 	]})]})]})]})]})]})]})]})
 
 # Instruction table
@@ -3014,6 +3171,18 @@
 
 	ds\00\00:__null__
 	:i_ds____
+
+	%ret\00\00\00\00
+	:i_mret__
+
+	%call\00\00\00
+	:i_mcall_
+
+	%local\00\00
+	:i_mlocal
+
+	%arg\00\00\00\00
+	:i_marg__
 
 :lastinst
 
