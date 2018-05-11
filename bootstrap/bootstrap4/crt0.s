@@ -43,7 +43,7 @@
 
 # Heap initially points to a special linker-defined symbol "__END__"
 :__heap
-	:__END__
+	dd :__END__
 
 :__argv
 	dd 0

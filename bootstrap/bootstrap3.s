@@ -23,7 +23,6 @@
 
 # TODO:
 #   - object file support
-#   - Include base path
 #   - Support //-style comments for C compat
 #   - Scoped #define
 # Polish/performance
@@ -2172,6 +2171,14 @@
 	?=0a
 	@jmp^:mainloop
 
+# Create an __END__ symbol with the length of the output
+	@call:outtell_
+	= 20
+	=$0 .end_s___
+	- 11
+	@call:createsm
+
+# Do the fixups
 	=$x :fixuptab
 	=(0x
 
@@ -2210,6 +2217,8 @@
 .done____
 	=#0 0000
 	@call:exit____
+.end_s___
+	__END__\00
 #===========================================================================
 
 # Current global label
