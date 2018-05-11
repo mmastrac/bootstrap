@@ -15,14 +15,14 @@
 	mov @sp, r0
 	sub @sp, 4
 
-	call :__init_args
+	call .init_args
 	ld.d r0, :__argc
 	mov r1, :__argv
 	call :_main
 
 	sys @SC_EXIT r0
 
-:__init_args
+.init_args
 	# Get the size of argv
 	mov r0, @SC_GETARGV
 	mov r1, 0

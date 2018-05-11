@@ -279,6 +279,72 @@
 
 
 #===========================================================================
+# Register-friendly stderr logging.
+# Args:
+#   R0: Number
+# Returns:
+#   All registers: Unchanged
+#===========================================================================
+:lognumh_
+	@psh0
+	@psh1
+	@psh2
+
+	@psh0
+# Clear the buffer
+	=$0 .buffer__
+	= 1a
+	=#2 0010
+	@call:memset__
+	@pop0
+
+# Start at the end of the buffer
+	=$1 .buffer__
+	=#x 000e
+	+ 1x
+
+.loop____
+	= 20
+# Get the lowest digit
+	=#x 0010
+	% 2x
+# Get the ASCII version
+	=$x .digits__
+	+ 2x
+	=[22
+# Write it to the buffer
+	[=12
+	- 1b
+	=#x 0010
+# If we still have digits to write, continue
+	/ 0x
+	?>0a
+	@jmp?.loop____
+
+	= 01
+	=$x :x_______
+	[=0x
+	- 0b
+	=$x :zero____
+	[=0x
+	@call:log_____
+
+	@pop2
+	@pop1
+	@pop0
+	@ret.
+
+.buffer__
+	\00\00\00\00\00\00\00\00
+	\00\00\00\00\00\00\00\00
+
+.digits__
+	0123456789abcdef
+
+#===========================================================================
+
+
+#===========================================================================
 # Does not return
 #===========================================================================
 :exit____
@@ -2226,7 +2292,7 @@
 	@call:is_vrbos
 	@jmp^.nolog2__
 	@psh0
-	@call:lognum__
+	@call:lognumh_
 	=$0 .newline_
 	@call:log_____
 	@pop0
@@ -2246,11 +2312,11 @@
 	@jump.dofixups
 
 .glo_s___
-	g\2f\00
+	g\3a\00
 .loc_s___
-	 l\2f\00
+	 l\3a\00
 .space___
-	 \00
+	 \40 \00
 .newline_
 	\0a\00
 
