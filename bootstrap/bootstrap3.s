@@ -935,8 +935,6 @@
 
 	@call:readchar
 
-	= MM
-
 	=$x :minus___
 	?=0x
 	@jmp?.negative
@@ -1942,6 +1940,7 @@
 # Does not return
 #===========================================================================
 :errtoken
+	= MM
 	=$0 .errtoken
 	@jump:error___
 
@@ -3077,7 +3076,27 @@
 	@call:readeol_
 	@ret.
 :i_mcall_
+# Call target, must be immediate or reference
+	@call:readtok_
+	@call:encrefim
+
+# Current output register
+	- 11
+.loop____
+	@psh1
+	@call:readvalo
+	@pop1
+	?=0a
+	@jmp?.write___
+	@jump.loop____
+
+.write___
+	=$0 :i_call_s
+	=#1 0014
+	@call:writebuf
 	@ret.
+.call_s__
+	-!y\04=!x\0c+ xz(=yx=$z 
 
 # Syntax highlighters get confused by our unmatched brackets
 # This is an unfortunate necessity

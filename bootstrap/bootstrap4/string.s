@@ -1,3 +1,5 @@
+#include "regs.h"
+
 # String/memory routines
 
 #===========================================================================
@@ -30,17 +32,17 @@
 #===========================================================================
 :_hexchar
 	lt r0, '0'
-	jmp? .retnone
+	jump? .retnone
 	lt r0, ':'
-	jmp? .retdigit
+	jump? .retdigit
 	lt r0, 'A'
-	jmp? .retnone
+	jump? .retnone
 	lt r0, 'G'
-	jmp? .retLETTER
+	jump? .retLETTER
 	lt r0, 'a'
-	jmp? .retnone
+	jump? .retnone
 	lt r0, 'g'
-	jmp? .retletter
+	jump? .retletter
 .retnone
 	mov r0, -1
 	ret
@@ -67,9 +69,9 @@
 #===========================================================================
 :_isdigit
 	lt r0, '0'
-	jmp? .retfalse
+	jump? .retfalse
 	lt r0, ':'
-	jmp? .rettrue
+	jump? .rettrue
 .retfalse
 	mov r0, $0
 	ret
@@ -87,13 +89,13 @@
 #===========================================================================
 :_isalpha
 	lt r0, 'A'
-	jmp? .retfalse
+	jump? .retfalse
 	lt r0, '['
-	jmp? .rettrue
+	jump? .rettrue
 	lt r0, 'a'
-	jmp? .retfalse
+	jump? .retfalse
 	lt r0, '{'
-	jmp? .rettrue
+	jump? .rettrue
 .retfalse
 	mov r0, $0
 	ret

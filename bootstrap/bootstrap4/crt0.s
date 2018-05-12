@@ -46,6 +46,13 @@
 	add r0, 4
 	jump .argc_loop
 
+:_fatal
+	mov r8, r0
+	call :_strlen
+	sys @SC_WRITE, r8, r0
+	mov r0, 1
+	sys @SC_EXIT, r0
+
 # Heap initially points to a special linker-defined symbol "__END__"
 :__heap
 	dd :__END__

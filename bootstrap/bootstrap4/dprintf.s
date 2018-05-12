@@ -1,4 +1,4 @@
-#include "include/syscall.h"
+#include "syscall.h"
 #include "regs.h"
 
 #===========================================================================
@@ -6,7 +6,8 @@
 # R1: String
 #===========================================================================
 :_dputs
-	%arg file_handle, string_ptr
+	%arg file_handle
+	%arg string_ptr
 	%call :_strlen, @string_ptr
 	%call :syscall3 @SC_WRITE @file_handle r0
 	%ret
@@ -19,10 +20,11 @@
 # Stack: printf arguments
 #===========================================================================
 :_dprintf
-	%arg file_handle, string_ptr
+	%arg file_handle
+	%arg string_ptr
 	%local varargs
-	mov @varargs, sp
-	add @varargs, @__LOCALS_SIZE__
+	mov @varargs, @sp
+	add @varargs, 12 #@__LOCALS_SIZE__
 .loop
 	ld.b @tmp1, r1
 	eq @tmp1, 0
@@ -45,7 +47,7 @@
 	eq @tmp1, 'x'
 	jump? .percent_x
 
-	%call :fatal, .invalid_escape
+	%call :_fatal, .invalid_escape
 
 .percent_percent
 	%call :_dputs, @file_handle, .percent_string
@@ -63,3 +65,4 @@
 
 .percent_string
 	ds "%"
+	ret

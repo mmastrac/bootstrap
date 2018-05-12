@@ -1,8 +1,8 @@
 #include "syscall.h"
 
 :_main
-	mov r0, 0
-	sys @SC_WRITE r0 r1 r2
+	mov r0, :pass
+	call :_dprintf
 	ret
 
 :pass
