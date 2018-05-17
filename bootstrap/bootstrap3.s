@@ -3154,14 +3154,16 @@
 	@call:encrefim
 
 # Current output register
-	- 11
+	- 33
 .loop____
-	@psh1
-	@call:readvalo
-	@pop1
+	@psh3
+	@call:readtok_
+	@pop3
 	=$x :T_EOL___
 	?=0x
 	@jmp?.write___
+	@call:encasgnr
+	+ 3b
 	@jump.loop____
 
 .write___

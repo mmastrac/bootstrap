@@ -25,19 +25,20 @@
 	%local varargs
 	mov @varargs, @sp
 	add @varargs, 12 #@__LOCALS_SIZE__
+	mov @tmp0, 1
 .loop
-	ld.b @tmp1, r1
+	ld.b @tmp1, @string_ptr
 	eq @tmp1, 0
 	%ret?
 	eq @tmp1, '%'
 	jump? .percent
 	# Write that char
-	sys @tmp0 r1 @tmp1
-	add r1, 1
+	sys @SC_WRITE @file_handle @string_ptr @tmp0
+	add @string_ptr, 1
 	jump .loop
 .percent
-	add r1, 1
-	ld.b @tmp1, r1
+	add @string_ptr, 1
+	ld.b @tmp1, @string_ptr
 	eq @tmp1, 's'
 	jump? .percent_s
 	eq @tmp1, '%'

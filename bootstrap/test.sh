@@ -74,5 +74,7 @@ echo Compile 4
 ./vm /tmp/b3.bin -l -I $ROOT/include $TEST/bootstrap4/test1.s $ROOT/bootstrap4/crt0.s bootstrap/bootstrap4/memory.s bootstrap/bootstrap4/string.s bootstrap/bootstrap4/sys.s /tmp/b4.bin
 echo Compile 4
 ./vm /tmp/b3.bin -l -I $ROOT/include $TEST/bootstrap4/test2.s $ROOT/bootstrap4/crt0.s bootstrap/bootstrap4/memory.s bootstrap/bootstrap4/string.s bootstrap/bootstrap4/sys.s bootstrap/bootstrap4/string.s bootstrap/bootstrap4/dprintf.s /tmp/b4.bin
+echo Compile 4
+./vm /tmp/b3.bin -l -I $ROOT/include $TEST/bootstrap4/test3.s $ROOT/bootstrap4/crt0.s bootstrap/bootstrap4/memory.s bootstrap/bootstrap4/string.s bootstrap/bootstrap4/sys.s bootstrap/bootstrap4/string.s bootstrap/bootstrap4/dprintf.s /tmp/b4.bin
 
 echo Done
