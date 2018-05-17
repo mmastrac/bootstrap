@@ -91,6 +91,11 @@
 =squote__ 0027
 =percent_ 0025
 
+# Compiler temporary
+=R_ctmp__ 003b
+# Compiler temporary for %call
+=R_ctmp2_ 003a
+
 # EOF
 =T_EOF___ 0000
 # Immediate constant (data = value)
@@ -703,6 +708,7 @@
 .zero____
 	?=01
 	@ret.
+#===========================================================================
 
 
 #===========================================================================
@@ -2511,6 +2517,9 @@
 
 
 #===========================================================================
+# Writes four bytes with either the immediate or a reference that will be
+# fixed up later on. The argument to this function is a token.
+#
 # Args:
 #   R0: Token type
 #   R1: Token value
@@ -2569,6 +2578,40 @@
 	@pop0
 	@call:write32_
 	@ret.
+#===========================================================================
+
+
+#===========================================================================
+# Writes an assignment from a register token to another register by index
+#
+# Args:
+#  R0: Token type (must be T_REG___)
+#  R1: From
+#  R2: (unused)
+#  R3: To
+#===========================================================================
+:encasgnr
+	=$x :T_REG___
+	?!x0
+	@jmp?:errtoken
+
+	@call:encodreg
+	=$2 .from____
+	[=20
+	= 13
+	@call:encodreg
+	=$2 .to______
+	[=20
+	=$0 .buffer__
+	= 1d
+	@call:writebuf
+	@ret.
+.buffer__
+	=\20
+.to______
+	?
+.from____
+	?
 #===========================================================================
 
 
@@ -3007,28 +3050,22 @@
 	@psh2
 	=$1 :T_REG___
 	@call:createdf
-	@pop1
 
 # Push the old value
-	@call:encodreg
-	@psh0
 	=$0 :i_push_s
 	=#1 0007
 	@call:writebuf
-	@pop0
-	@psh0
-	@call:writech_
-
-	=$0 :equals__
-	@call:writech_
-	=$0 :space___
-	@call:writech_
-	@pop0
-	@call:writech_
-	@call:nextarg_
-	= 10
+	@pop1
+	@psh1
 	@call:encodreg
 	@call:writech_
+
+	@call:nextarg_
+	= 10
+	=$0 :T_REG___
+	@pop3
+
+	@call:encasgnr
 
 	@call:readeol_
 	@ret.
@@ -3075,7 +3112,7 @@
 	@call:readeol_
 	@ret.
 :i_mcall_
-# Call target, must be immediate or reference
+# Call target, must be immediate or reference, assigned to x
 	@call:readtok_
 	@call:encrefim
 
@@ -3095,7 +3132,7 @@
 	@call:writebuf
 	@ret.
 .call_s__
-	-!y\04=!x\0c+ xz(=yx=$z 
+	-!y\04=!x\08+ xz(=yx= zw
 
 # Syntax highlighters get confused by our unmatched brackets
 # This is an unfortunate necessity
