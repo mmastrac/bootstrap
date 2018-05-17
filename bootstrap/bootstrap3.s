@@ -91,6 +91,10 @@
 =squote__ 0027
 =percent_ 0025
 
+# Program counter
+=R_pc____ 003d
+# Stack pointer
+=R_sp____ 003c
 # Compiler temporary
 =R_ctmp__ 003b
 # Compiler temporary for %call
@@ -2582,7 +2586,8 @@
 
 
 #===========================================================================
-# Writes an assignment from a register token to another register by index
+# Writes an assignment from a register, immediate or reference token to
+# another register by index.
 #
 # Args:
 #  R0: Token type (must be T_REG___)
@@ -2592,25 +2597,49 @@
 #===========================================================================
 :encasgnr
 	=$x :T_REG___
-	?!x0
-	@jmp?:errtoken
+	?=x0
+	@jmp?.reg_____
 
+# Reference or immediate (we don't check this as encrefim will)
+	@psh0
+	@psh1
+	@psh2
+	= 13
 	@call:encodreg
-	=$2 .from____
+	=$x .to_i____
+	[=x0
+	=$0 .buffer_i
+	= 1d
+	@call:writebuf
+	@pop2
+	@pop1
+	@pop0
+	@call:encrefim
+	@ret.
+
+.buffer_i
+	=$
+.to_i____
+	?\20
+
+.reg_____
+	@call:encodreg
+	=$2 .from_r__
 	[=20
 	= 13
 	@call:encodreg
-	=$2 .to______
+	=$2 .to_r____
 	[=20
-	=$0 .buffer__
+	=$0 .buffer_r
 	= 1d
 	@call:writebuf
 	@ret.
-.buffer__
+
+.buffer_r
 	=\20
-.to______
+.to_r____
 	?
-.from____
+.from_r__
 	?
 #===========================================================================
 
@@ -2631,23 +2660,10 @@
 	@jmp?:encodreg
 
 # If it's not a register, assign it to x
-	@psh0
-	@psh1
-	@psh2
-	=$0 .x_eq____
-	= 1d
-	@call:writebuf
-	@pop2
-	@pop1
-	@pop0
-
-	@call:encrefim
-
+	=$3 :R_ctmp__
+	@call:encasgnr
 	=$0 :x_______
 	@ret.
-
-.x_eq____
-	=$x 
 #===========================================================================
 
 
@@ -2881,16 +2897,8 @@
 	@ret.
 :i_jump_r
 # Emit faster jump to a register
-	@psh1
-	=$0 :equals__
-	@call:writech_
-	=$0 :space___
-	@call:writech_
-	=$0 :z_______
-	@call:writech_
-	@pop1
-	@call:encodreg
-	@call:writech_
+	=$3 :R_pc____
+	@call:encasgnr
 	@ret.
 :i_ret___
 	@call:readeol_
