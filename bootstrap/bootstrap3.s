@@ -691,6 +691,16 @@
 # Write the struct as the latest
 	=$x :deftab__
 	(=x0
+
+# If we're in a global, just return
+	=$x :inglobal
+	=[xx
+	?=xb
+	@ret?
+
+	=$x :lastdef_
+	(=x0
+
 	@ret.
 #===========================================================================
 
@@ -847,6 +857,15 @@
 # Args/returns: none
 #===========================================================================
 :newglobl
+# Roll the current definition back to the last global one
+	=$x :lastdef_
+	=(0x
+	=$x :deftab__
+	(=x0
+
+	=$x :inglobal
+	[=xb
+
 	=$x :curlocal
 	=#0 0008
 	[=x0
@@ -860,6 +879,12 @@
 	\00
 
 :curarg__
+	\00
+
+:lastdef_
+	:__null__
+
+:inglobal
 	\00
 
 #===========================================================================
@@ -1771,19 +1796,28 @@
 #===========================================================================
 # Args:
 #   R0: Filename
+#   R2: Include file = 1
 #===========================================================================
 :openinpt
+	@psh2
 	=$1 :OPEN_RO_
 	@call:open____
 	@psh0
-	=#0 0008
+	=#0 000c
 	@call:malloc__
 	@pop1
+# Store the file handle
 	(=01
+# Write this new record to the open stack
 	=$x :in_hands
 	=(1x
 	(=x0
 	+ 0d
+# Store the input mode
+	@pop2
+	(=02
+	+ 0d
+# Store the next record
 	(=01
 
 	@ret.
@@ -1797,6 +1831,7 @@
 :popinput
 	=$x :in_hands
 	=(xx
+	+ xd
 	+ xd
 	=(xx
 	=$0 :in_hands
