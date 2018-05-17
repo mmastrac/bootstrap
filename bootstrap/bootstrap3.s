@@ -24,7 +24,6 @@
 # TODO:
 #   - object file support
 #   - Support //-style comments for C compat
-#   - Scoped #define (ie: should not escape file, #define in a method should be rolled back)
 # Polish/performance
 #   - Symbol table with local symbs should be "rolled back" at next global symbol for perf
 #      - Can we do local fixups per global?
@@ -849,6 +848,22 @@
 # Write the struct as the latest
 	=$x :fixuptab
 	(=x0
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
+# Args/returns: none
+#===========================================================================
+:newfile_
+	=$x :inglobal
+	[=xa
+	=$x :mlglobal
+	(=xa
+	=$x :deftab__
+	(=xa
+	=$x :lastdef_
+	(=xa
 	@ret.
 #===========================================================================
 
@@ -1799,6 +1814,7 @@
 #   R2: Include file = 1
 #===========================================================================
 :openinpt
+	= MM
 	@psh2
 	=$1 :OPEN_RO_
 	@call:open____
@@ -1814,6 +1830,7 @@
 	(=x0
 	+ 0d
 # Store the input mode
+	= MM
 	@pop2
 	(=02
 	+ 0d
@@ -1829,10 +1846,28 @@
 #   None
 #===========================================================================
 :popinput
+	= MM
+	= MM
+# Load the current input record
+	=$x :in_hands
+	=(xx
+# Determine which mode this record was in
+	+ xd
+	=(0x
+	?=0b
+	@jmp?.include_
+
+# This is a new global file, so reset all global stuff
+	@call:newfile_
+
+# Reload the current input record
 	=$x :in_hands
 	=(xx
 	+ xd
+
+.include_
 	+ xd
+# Pop the previous record
 	=(xx
 	=$0 :in_hands
 	(=0x
@@ -2127,7 +2162,7 @@
 	+ 1b
 	@psh1
 	@call:getargv_
-	- 21
+	- 22
 	@call:openinpt
 	@pop1
 
