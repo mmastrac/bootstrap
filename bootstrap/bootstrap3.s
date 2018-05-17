@@ -2499,6 +2499,13 @@
 	@jump:encodreg
 #===========================================================================
 
+# Syntax highlighters get confused by our unmatched brackets
+# This is an unfortunate necessity
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+
 
 #===========================================================================
 # Args:
@@ -2590,7 +2597,7 @@
 # another register by index.
 #
 # Args:
-#  R0: Token type (must be T_REG___)
+#  R0: Token type
 #  R1: From
 #  R2: (unused)
 #  R3: To
@@ -2645,24 +2652,62 @@
 
 
 #===========================================================================
+# Writes a push from a register, immediate or reference token to
+# another register by index.
+#
+# Args:
+#  R0: Token type
+#  R1: From
+#  R2: (unused)
+#===========================================================================
+:encpush_
+	=$x :T_REG___
+	?=0x
+	@jmp?.reg_____
+
+# Assign to ctmp, then push that
+	=$3 :R_ctmp__
+	@call:encasgnr
+
+	=$0 :T_REG___
+	=$1 :R_ctmp__
+
+.reg_____
+	@call:encodreg
+	=$x .from____
+	[=x0
+	=$0 .buffer__
+	= 1e
+	@call:writebuf
+	@ret.
+
+.buffer__
+	-!y\04(=y
+.from____
+	?
+#===========================================================================
+
+
+#===========================================================================
 # Returns:
-#   R0: Register encoding for value
+#   R0: T_REG___ or T_EOL___
+#   R1: Register index
 #===========================================================================
 :readvalo
 	@call:readtok_
 	=$x :T_EOL___
 	?=0x
-	=?0a
 	@ret?
 
 	=$x :T_REG___
 	?=0x
-	@jmp?:encodreg
+	@ret?
 
 # If it's not a register, assign it to x
 	=$3 :R_ctmp__
 	@call:encasgnr
-	=$0 :x_______
+	=$0 :T_REG___
+	=$1 :R_ctmp__
 	@ret.
 #===========================================================================
 
@@ -2673,18 +2718,14 @@
 #===========================================================================
 :readval_
 	@call:readvalo
-	?=0x
+	=$x :T_REG___
+	?!0x
 	@jmp?:errtoken
+
+	@call:encodreg
 
 	@ret.
 #===========================================================================
-
-# Syntax highlighters get confused by our unmatched brackets
-# This is an unfortunate necessity
-	]})]})]})]})]})]})]})]})
-	]})]})]})]})]})]})]})]})
-	]})]})]})]})]})]})]})]})
-	]})]})]})]})]})]})]})]})
 
 
 :i_stdbf1
@@ -2744,8 +2785,6 @@
 	@ret.
 
 
-:i_push_s
-	-!y\04(=y0
 :i_pop__s
 	=(0y+!y\04
 :i_call_s
@@ -2797,14 +2836,10 @@
 	@jump:i_stnd__
 :i_push__
 	@call:readvalo
-	?=0a
+	=$x :T_EOL___
+	?=0x
 	@ret?
-	@psh0
-	=$0 :i_push_s
-	=#1 0007
-	@call:writebuf
-	@pop0
-	@call:writech_
+	@call:encpush_
 	@jump:i_push__
 :i_pop___
 	@call:i_poprec
@@ -3057,22 +3092,20 @@
 	@pop2
 	@psh2
 	=$1 :T_REG___
+	@psh1
 	@call:createdf
 
 # Push the old value
-	=$0 :i_push_s
-	=#1 0007
-	@call:writebuf
+	@pop0
 	@pop1
 	@psh1
-	@call:encodreg
-	@call:writech_
-
+	@psh0
+	@call:encpush_
+# Assign to next arg
 	@call:nextarg_
 	= 10
-	=$0 :T_REG___
+	@pop0
 	@pop3
-
 	@call:encasgnr
 
 	@call:readeol_
@@ -3105,17 +3138,13 @@
 	@pop2
 	@psh2
 	=$1 :T_REG___
+	@psh1
 	@call:createdf
-	@pop1
 
 # Push the old value
-	@call:encodreg
-	@psh0
-	=$0 :i_push_s
-	=#1 0007
-	@call:writebuf
 	@pop0
-	@call:writech_
+	@pop1
+	@call:encpush_
 
 	@call:readeol_
 	@ret.
@@ -3130,7 +3159,8 @@
 	@psh1
 	@call:readvalo
 	@pop1
-	?=0a
+	=$x :T_EOL___
+	?=0x
 	@jmp?.write___
 	@jump.loop____
 
