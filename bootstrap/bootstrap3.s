@@ -2797,6 +2797,13 @@
 	@ret.
 #===========================================================================
 
+# Syntax highlighters get confused by our unmatched brackets
+# This is an unfortunate necessity
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+
 
 :i_stdbf1
 	____
@@ -3219,9 +3226,10 @@
 	@call:readeol_
 	@ret.
 :i_mcall_
-# Call target, must be immediate or reference, assigned to x
+# Call target, must be immediate or reference, assigned to ctmp2
 	@call:readtok_
-	@call:encrefim
+	=$3 :R_ctmp2_
+	@call:encasgnr
 
 # Current output register
 	- 33
@@ -3232,12 +3240,14 @@
 	=$x :T_EOL___
 	?=0x
 	@jmp?.write___
+	@psh3
 	@call:encasgnr
+	@pop3
 	+ 3b
 	@jump.loop____
 
 .write___
-	=$0 :i_call_s
+	=$0 .call_s__
 	=#1 0014
 	@call:writebuf
 	@ret.

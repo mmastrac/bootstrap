@@ -163,7 +163,10 @@ int char_to_register(uint8_t reg) {
 	if (reg >= 'a' && reg <= 'z') {
 		return reg - 'a' + 36;
 	}
-	return 0;
+	if (reg == ' ') {
+		return 0;
+	}
+	invalid();
 }
 
 uint8_t hexchar(const char hex) {

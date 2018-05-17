@@ -8,8 +8,10 @@
 :_dputs
 	%arg file_handle
 	%arg string_ptr
+	%local length
 	%call :_strlen, @string_ptr
-	%call :syscall3 @SC_WRITE @file_handle r0
+	mov @length, r0
+	%call :syscall4 @SC_WRITE @file_handle @string_ptr @length
 	%ret
 #===========================================================================
 
@@ -24,9 +26,10 @@
 	%arg string_ptr
 	%local varargs
 	mov @varargs, @sp
-	add @varargs, 12 #@__LOCALS_SIZE__
+	add @varargs, 16 #@__LOCALS_SIZE__
 	mov @tmp0, 1
 .loop
+	db "= MM"
 	ld.b @tmp1, @string_ptr
 	eq @tmp1, 0
 	%ret?
@@ -39,6 +42,7 @@
 .percent
 	add @string_ptr, 1
 	ld.b @tmp1, @string_ptr
+	add @string_ptr, 1
 	eq @tmp1, 's'
 	jump? .percent_s
 	eq @tmp1, '%'
@@ -54,7 +58,8 @@
 	%call :_dputs, @file_handle, .percent_string
 	jump .loop
 .percent_s
-	%call :_dputs, @file_handle, @varargs
+	ld.d @tmp1, @varargs
+	%call :_dputs, @file_handle, @tmp1
 	add @varargs, 4
 	jump .loop
 .percent_x
