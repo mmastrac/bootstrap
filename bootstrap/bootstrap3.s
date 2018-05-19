@@ -3223,18 +3223,19 @@
 	@ret.
 :i_mret__
 # Pop args/locals off before we return
-	=$0 :plus____
-	@call:writech_
-	=$0 :exclaim_
-	@call:writech_
-	=$0 :y_______
-	@call:writech_
 	@call:nextlocl
-	=#x 0008
-	- 0x
-	* 0d
-	@call:writech_
+.loop____
+	?=0e
+	@jmp?.done____
+	- 0b
+	@psh0
+	= 10
+	=$0 :T_REG___
+	@call:encpop__
+	@pop0
+	@jump.loop____
 
+.done____
 # Regular return
 	@call:readeol_
 	=$0 :i_ret__s
