@@ -2897,8 +2897,6 @@
 	@ret.
 
 
-:i_pop__s
-	=(0y+!y\04
 :i_call_s
 	-!y\04=!x\0c+ xz(=yx=$z 
 :i_jump_s
