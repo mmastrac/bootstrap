@@ -10,3 +10,5 @@
 #define tmp1 r56
 #define tmp2 r55
 #define tmp3 r54
+
+#define ret r0

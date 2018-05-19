@@ -24,6 +24,7 @@
 # TODO:
 #   - object file support
 #   - Support //-style comments for C compat
+#   - "deferred" strings - $"xxx" -> written at end of file then a fixup written back
 # Polish/performance
 #   - Symbol table with local symbs should be "rolled back" at next global symbol for perf
 #      - Can we do local fixups per global?

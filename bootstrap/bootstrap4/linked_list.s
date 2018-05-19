@@ -15,11 +15,13 @@
 
 #===========================================================================
 # Creates an uninitialized node with the size in r0 (automatically including
-# space for the link field)
+# space for the link field at the beginning)
 #===========================================================================
 :_ll_create_node
-	add r0, $4
+	add r0, 4
 	call :_malloc
+	# Return a pointer to the buffer
+	add r0, 4
 	ret
 #===========================================================================
 

@@ -29,7 +29,6 @@
 	add @varargs, @__LOCALS_SIZE__
 	mov @tmp0, 1
 .loop
-	db "= MM"
 	ld.b @tmp1, @string_ptr
 	eq @tmp1, 0
 	%ret?
