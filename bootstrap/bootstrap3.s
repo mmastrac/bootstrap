@@ -2540,34 +2540,38 @@
 	@call:readtok_
 	=$x :T_REG___
 	?!0x
-	=$x :eexpregi
+	=$x .error___
 	=?0x
 	@jmp?:error___
 	@jump:encodreg
 
-:eexpregi
-	Expected register   :__null__
+.error___
+	Expected register\00
 #===========================================================================
 
 
 #===========================================================================
 # Returns:
-#   Register encoding in r0
+#   R0: Token type (T_REG___ or T_EOL___)
+#   R1: Register index
 #===========================================================================
 :readropt
 	@call:readtok_
 	=$x :T_EOL___
 	?=0x
-	-?00
 	@ret?
 
 	=$x :T_REG___
 	?!0x
-	=$x :eexpregi
+	=$x .error___
 	=?0x
 	@jmp?:error___
-	@jump:encodreg
+	@ret.
+
+.error___
+	Expected register or EOL\00
 #===========================================================================
+
 
 # Syntax highlighters get confused by our unmatched brackets
 # This is an unfortunate necessity
@@ -2759,6 +2763,37 @@
 
 
 #===========================================================================
+# Writes a pop to a register by index.
+#
+# Args:
+#  R0: Token type
+#  R1: From
+#  R2: (unused)
+#===========================================================================
+:encpop__
+	=$x :T_REG___
+	?=0x
+	@jmp?.reg_____
+
+	@call:errtoken
+
+.reg_____
+	@call:encodreg
+	=$x .to______
+	[=x0
+	=$0 .buffer__
+	= 1e
+	@call:writebuf
+	@ret.
+
+.buffer__
+	=(
+.to______
+	?y+!y\04
+#===========================================================================
+
+
+#===========================================================================
 # Returns:
 #   R0: T_REG___ or T_EOL___
 #   R1: Register index
@@ -2923,17 +2958,15 @@
 	@ret.
 :i_poprec
 	@call:readropt
-	?=0a
+	=$x :T_EOL___
+	?=0x
 	@ret?
 	@psh0
+	@psh1
 	@call:i_poprec
+	@pop1
 	@pop0
-	=$x :i_pop__s
-	+ xc
-	[=x0
-	=$0 :i_pop__s
-	=#1 0008
-	@call:writebuf
+	@call:encpop__
 	@ret.
 :i_ldb___
 	=$0 :equals__
@@ -3041,10 +3074,12 @@
 .loop____
 	@psh0
 	@call:readropt
+	=$x :T_EOL___
+	?=0x
+	@jmp?.write___
+	@call:encodreg
 	= 10
 	@pop0
-	?=1a
-	@jmp?.write___
 	[=01
 	+ 0b
 	=$x .sys_____
@@ -3056,6 +3091,7 @@
 	=$0 .toomany_
 	@call:error___
 .write___
+	@pop0
 	=$x .sys_____
 	= 10
 	- 1x
