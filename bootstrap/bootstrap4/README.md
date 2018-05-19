@@ -23,3 +23,7 @@ Macros are prefixed with `%` to indicate that they are "local-variable" aware. `
 | `%arg` `[name...]` | Allocates argument register(s), saving the previous value to the stack and copying the argument value to it | `%arg x, y` |
 
 
+## Linker symbols/macros
+
+:__END__ Points to the end of the binary in memory
+@__LOCALS_SIZE__ Equal to size of locals on stack

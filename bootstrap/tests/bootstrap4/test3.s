@@ -4,10 +4,11 @@
 	push :pass
 	%call :_dprintf, 2, :string
 	pop r0
+	sub r0, r0
 	ret
 
 :string
-	ds "x%sx" 0xa
+	ds "%s!" 0xa
 
 :pass
-	ds "Pass!" 10
+	ds "Pass"

@@ -29,6 +29,7 @@
 #      - Can we do local fixups per global?
 #   - Short immediate constants should use '=!x.' format
 #   - readtok_ subroutines should be real functions
+#   - macro for locals/args copy (ie: r0->r4, r1->r5, pushed/restored automatically)
 
 # Rx = Temp var
 # Ry = Stack pointer
@@ -1198,6 +1199,22 @@
 
 # This is a macro, so search for the definition
 	= 01
+	@psh0
+	=$1 .localsiz
+	@call:strcmp__
+	@pop0
+	@jmp^.notlocal
+
+# Special macro: @__LOCALS_SIZE__
+	=$0 :T_IMM___
+	=$1 :curlocal
+	=[11
+	- 1e
+	+ 1b
+	* 1d
+	@jump.ret_____
+
+.notlocal
 	@call:lookupdf
 	@jump.ret_____
 
@@ -1481,8 +1498,11 @@
 	=$0 .errinvch
 	@jump:error___
 
+.localsiz
+	__LOCALS_SIZE__\00
+
 .errinvch
-	Invalid character   :__null__
+	Invalid character\00
 #===========================================================================
 
 
@@ -2317,7 +2337,7 @@
 	- 0e
 	@pop1
 	@psh0
-# Dispatch to the instrution
+# Dispatch to the instruction
 	@call.insdisp_
 	@call:outtell_
 	= 10

@@ -26,7 +26,7 @@
 	%arg string_ptr
 	%local varargs
 	mov @varargs, @sp
-	add @varargs, 16 #@__LOCALS_SIZE__
+	add @varargs, @__LOCALS_SIZE__
 	mov @tmp0, 1
 .loop
 	db "= MM"
