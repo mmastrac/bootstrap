@@ -23,7 +23,6 @@
 
 # TODO:
 #   - object file support
-#   - Support //-style comments for C compat
 # Polish/performance
 #   - Symbol table with local symbs should be "rolled back" at next global symbol for perf
 #      - Can we do local fixups per global?
@@ -93,6 +92,7 @@
 =squote__ 0027
 =percent_ 0025
 =bslash__ 005c
+=fslash__ 002f
 
 # Program counter
 =R_pc____ 003d
@@ -1334,6 +1334,40 @@
 
 #***************************
 
+.jumptabl
+# Return zero at EOF
+	:__null__
+	.ret_____
+	:newline_
+	.eol_____
+	:hash____
+	.cmt_____
+	:fslash__
+	.ccmt____
+	:period__
+	.label___
+	:colon___
+	.label___
+	:at______
+	.label___
+	:amp_____
+	.strimm__
+	:dollar__
+	.imm_____
+	:zero____
+	.imm_____
+	:minus___
+	.imm_____
+	:quote___
+	.string__
+	:squote__
+	.charimm_
+	:percent_
+	.insperc_
+	:JUMPEND_
+
+#***************************
+
 .label___
 	@psh0
 	@call:readlbl_
@@ -1383,6 +1417,24 @@
 	= 10
 	=$0 :T_SIM___
 	@jump.ret_____
+
+#***************************
+
+.ccmt____
+	@call:readchar
+	=$x :fslash__
+	?=0x
+	@jmp?.ccmtloop
+
+	=$0 .errinvch
+	@jump:error___
+
+.ccmtloop
+	@call:readchar
+	=$x :newline_
+	?=0x
+	@jmp?.cmtdone_
+	@jump.ccmtloop
 
 #***************************
 
@@ -1645,36 +1697,6 @@
 
 .errinvch
 	Invalid character\00
-
-.jumptabl
-# Return zero at EOF
-	:__null__
-	.ret_____
-	:newline_
-	.eol_____
-	:hash____
-	.cmt_____
-	:period__
-	.label___
-	:colon___
-	.label___
-	:at______
-	.label___
-	:amp_____
-	.strimm__
-	:dollar__
-	.imm_____
-	:zero____
-	.imm_____
-	:minus___
-	.imm_____
-	:quote___
-	.string__
-	:squote__
-	.charimm_
-	:percent_
-	.insperc_
-	:JUMPEND_
 
 #===========================================================================
 
