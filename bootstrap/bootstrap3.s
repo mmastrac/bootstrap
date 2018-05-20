@@ -190,7 +190,6 @@
 #   Stack 1: Table
 #===========================================================================
 :jumptabl
-	= MM
 # Stash the return value in .ret_____
 	@pop0
 	=$x .ret_____
@@ -224,17 +223,17 @@
 	+ 3d
 # Put the address in Rx
 	=(x3
-	@pop1
-	@pop2
 	@pop3
+	@pop2
+	@pop1
 # Jump (not call)
 	= zx
 
 .done____
 # Restore
-	@pop1
-	@pop2
 	@pop3
+	@pop2
+	@pop1
 
 # Manual jump
 	=$x .ret_____
@@ -1689,47 +1688,35 @@
 	@call:log_____
 	@pop0
 
-	=$x :T_EOL___
-	?=0x
-	@jmp?.logeol__
-
-	=$x :T_INS___
-	?=0x
-	@jmp?.logins__
-
-	=$x :T_REG___
-	?=0x
-	@jmp?.logreg__
-
-	=$x :T_REF___
-	?=0x
-	@jmp?.logref__
-
-	=$x :T_IMM___
-	?=0x
-	@jmp?.logimm__
-
-	=$x :T_STR___
-	?=0x
-	@jmp?.logstr__
-
-	=$x :T_EOF___
-	?=0x
-	@jmp?.logeof__
-
-	=$x :T_DEF___
-	?=0x
-	@jmp?.logspace
-
-	=$x :T_INC___
-	?=0x
-	@jmp?.logspace
-
-	=$x :T_SIM___
-	?=0x
-	@jmp?.logstimm
+	@psh0
+	=$0 .jumptabl
+	@psh0
+	@call.jumptabl
 
 	@jump.logdone_
+
+.jumptabl
+	:T_EOL___
+	.logeol__
+	:T_INS___
+	.logins__
+	:T_REG___
+	.logreg__
+	:T_REF___
+	.logref__
+	:T_IMM___
+	.logimm__
+	:T_STR___
+	.logstr__
+	:T_EOF___
+	.logeof__
+	:T_DEF___
+	.logspace
+	:T_INC___
+	.logspace
+	:T_SIM___
+	.logstimm
+	:JUMPEND_
 
 .log_br_l
 	@psh0
@@ -2425,33 +2412,27 @@
 # Read a token
 	@call:readtok_
 
-# EOF?
-	=$x :T_EOF___
-	?=0x
-	@jmp?.eof_____
-
-# EOL?
-	=$x :T_EOL___
-	?=0x
-	@jmp?:mainloop
-
-	=$x :T_REF___
-	?=0x
-	@jmp?.ref_____
-
-	=$x :T_INS___
-	?=0x
-	@jmp?.ins_____
-
-	=$x :T_DEF___
-	?=0x
-	@jmp?.def_____
-
-	=$x :T_INC___
-	?=0x
-	@jmp?.inc_____
+	@psh0
+	=$0 .jumptabl
+	@psh0
+	@call:jumptabl
 
 	@jump:errtoken
+
+.jumptabl
+	:T_EOF___
+	.eof_____
+	:T_EOL___
+	:mainloop
+	:T_REF___
+	.ref_____
+	:T_INS___
+	.ins_____
+	:T_DEF___
+	.def_____
+	:T_INC___
+	.inc_____
+	:JUMPEND_
 
 .ref_____
 # Make a copy of this label string
