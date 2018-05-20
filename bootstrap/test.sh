@@ -64,6 +64,9 @@ diff $TEST/bootstrap3/test8.bin /tmp/t8.bin
 echo Test 3
 ./vm /tmp/b3.bin -I $ROOT/include $TEST/bootstrap3/test9.s /tmp/t9.bin
 diff $TEST/bootstrap3/test9.bin /tmp/t9.bin
+echo Test 3
+./vm /tmp/b3.bin $TEST/bootstrap3/test10.s /tmp/t10.bin
+diff $TEST/bootstrap3/test10.bin /tmp/t10.bin
 
 echo Error 3
 ./vm /tmp/b3.bin $TEST/bootstrap3/error/error0.s /tmp/out.bin && exit 1
@@ -78,6 +81,9 @@ echo Compile 4
 ./vm /tmp/t4.bin
 echo Compile 4
 ./vm /tmp/b3.bin -l -I $ROOT/include $TEST/bootstrap4/test3.s $ROOT/bootstrap4/crt0.s bootstrap/bootstrap4/memory.s bootstrap/bootstrap4/string.s bootstrap/bootstrap4/sys.s bootstrap/bootstrap4/string.s bootstrap/bootstrap4/dprintf.s /tmp/t4.bin
+./vm /tmp/t4.bin
+echo Compile 4
+./vm /tmp/b3.bin -l -I $ROOT/include $TEST/bootstrap4/test4.s $ROOT/bootstrap4/crt0.s bootstrap/bootstrap4/memory.s bootstrap/bootstrap4/string.s bootstrap/bootstrap4/sys.s bootstrap/bootstrap4/string.s bootstrap/bootstrap4/dprintf.s /tmp/t4.bin
 ./vm /tmp/t4.bin
 
 echo Done

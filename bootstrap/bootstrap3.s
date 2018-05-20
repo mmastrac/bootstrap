@@ -24,7 +24,6 @@
 # TODO:
 #   - object file support
 #   - Support //-style comments for C compat
-#   - "deferred" strings - $"xxx" -> written at end of file then a fixup written back
 # Polish/performance
 #   - Symbol table with local symbs should be "rolled back" at next global symbol for perf
 #      - Can we do local fixups per global?
@@ -68,6 +67,7 @@
 =question 003f
 =hat_____ 005e
 =zero____ 0030
+=amp_____ 0026
 =comma___ 002c
 =plus____ 002b
 =minus___ 002d
@@ -77,6 +77,7 @@
 =at______ 0040
 =period__ 002e
 =S_______ 0053
+=n_______ 006e
 =x_______ 0078
 =y_______ 0079
 =z_______ 007a
@@ -91,6 +92,7 @@
 =quote___ 0022
 =squote__ 0027
 =percent_ 0025
+=bslash__ 005c
 
 # Program counter
 =R_pc____ 003d
@@ -119,6 +121,8 @@
 =T_DEF___ 0007
 # Include
 =T_INC___ 0008
+# String immediate
+=T_SIM___ 0009
 
 =INS_UNCO 0000
 =INS_IF_T 0001
@@ -137,6 +141,7 @@
 	STR\00
 	DEF\00
 	INC\00
+	SIM\00
 
 =SC_OPEN_ 0000
 =O_RDONLY 0000
@@ -706,7 +711,6 @@
 #===========================================================================
 
 
-
 #===========================================================================
 # Args:
 #   R0: String A (or 0)
@@ -855,6 +859,36 @@
 
 
 #===========================================================================
+# Args:
+#   R0: Immediate string
+#   R1: Fixup address
+#===========================================================================
+:createsi
+	@psh0
+	@psh1
+# Allocate a record
+	=#0 0010
+	@call:malloc__
+# Read the current record
+	=$x :defsttab
+	=(xx
+# Write everything to the struct
+	= 10
+	@pop2
+	(=12
+	+ 1d
+	@pop2
+	(=12
+	+ 1d
+	(=1x
+# Write the struct as the latest
+	=$x :defsttab
+	(=x0
+	@ret.
+#===========================================================================
+
+
+#===========================================================================
 # Args/returns: none
 #===========================================================================
 :newfile_
@@ -934,7 +968,7 @@
 
 #===========================================================================
 # Returns:
-#   R0: Pointer to label string
+#   R0: Pointer to label string (not malloc'd)
 #===========================================================================
 :readlbl_
 	= 1a
@@ -968,6 +1002,87 @@
 	________
 	________
 	________
+#===========================================================================
+
+
+# Syntax highlighters get confused by our unmatched brackets
+# This is an unfortunate necessity
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+	]})]})]})]})]})]})]})]})
+
+#===========================================================================
+# Returns:
+#   R0: Pointer to string (not malloc'd)
+#===========================================================================
+:readstr_
+# Eat whitespace
+	@call:rdcskwsp
+	=$x :quote___
+	?!0x
+	=$x .errinvch
+	=?0x
+	@jmp?:error___
+
+	=$2 .buffer__
+.loop____
+	@psh2
+	@call:readchar
+	@pop2
+	=$x :quote___
+	?=0x
+	@jmp?.done____
+	=$x :bslash__
+	?=0x
+	@jmp?.escape__
+	[=20
+	+ 2b
+	@jump.loop____
+.escape__
+	@psh2
+	@call:readchar
+	@pop2
+	=#1 ffff
+
+	=$x :n_______
+	?=0x
+	=$x :newline_
+	=?1x
+
+	=$x :zero____
+	?=0x
+	=$x :__null__
+	=?1x
+
+	=#x ffff
+	?=1x
+	=$x .errescap
+	=?0x
+	@jmp?:error___
+
+	[=21
+	+ 2b
+	@jump.loop____
+.done____
+# Trailing null
+	[=2a
+
+	=$0 .buffer__
+	@ret.
+
+# This is enough for 32-byte labels/identifiers/strings
+.buffer__
+	________
+	________
+	________
+	________
+
+.errescap
+	Invalid escape\00
+
+.errinvch
+	Invalid character (expected double quote)\00
 #===========================================================================
 
 
@@ -1100,6 +1215,7 @@
 	Invalid immediate character\00
 #===========================================================================
 
+
 # Syntax highlighters get confused by our unmatched brackets
 # This is an unfortunate necessity
 	]})]})]})]})]})]})]})]})
@@ -1113,11 +1229,8 @@
 #   R1: Token data
 #===========================================================================
 :readtok_
-	@call:readchar
-
 # Whitespace is ignored
-	@call:istoksep
-	@jmp?:readtok_
+	@call:rdcskwsp
 
 	=$x :newline_
 	?=0x
@@ -1138,6 +1251,10 @@
 	=$x :at______
 	?=0x
 	@jmp?.label___
+
+	=$x :amp_____
+	?=0x
+	@jmp?.strimm__
 
 	=$x :dollar__
 	?=0x
@@ -1227,6 +1344,16 @@
 	=?2a
 	=^2b
 	=$0 :T_REF___
+	@jump.ret_____
+
+#***************************
+
+.strimm__
+	@call:readstr_
+	@call:mallocst
+# Immediate strings create temp symbols
+	= 10
+	=$0 :T_SIM___
 	@jump.ret_____
 
 #***************************
@@ -1449,22 +1576,8 @@
 #***************************
 
 .string__
-	=$2 .buffer__
-.stringl_
-	@psh2
-	@call:readchar
-	@pop2
-	=$x :quote___
-	?=0x
-	@jmp?.stringd_
-	[=20
-	+ 2b
-	@jump.stringl_
-.stringd_
-# Trailing null
-	[=2a
-
-	=$0 .buffer__
+	@call:rewind__
+	@call:readstr_
 	@call:mallocst
 	= 10
 	=$0 :T_STR___
@@ -1562,6 +1675,10 @@
 	?=0x
 	@jmp?.logspace
 
+	=$x :T_SIM___
+	?=0x
+	@jmp?.logstimm
+
 	@jump.logdone_
 
 .log_br_l
@@ -1648,6 +1765,13 @@
 	@jump.logdone_
 
 .logstr__
+	@call.log_br_l
+	= 01
+	@call:log_____
+	@call.log_br_r
+	@jump.logdone_
+
+.logstimm
 	@call.log_br_l
 	= 01
 	@call:log_____
@@ -1835,7 +1959,6 @@
 #   R2: Include file = 1
 #===========================================================================
 :openinpt
-	= MM
 	@psh2
 	=$1 :OPEN_RO_
 	@call:open____
@@ -1851,7 +1974,6 @@
 	(=x0
 	+ 0d
 # Store the input mode
-	= MM
 	@pop2
 	(=02
 	+ 0d
@@ -1867,8 +1989,6 @@
 #   None
 #===========================================================================
 :popinput
-	= MM
-	= MM
 # Load the current input record
 	=$x :in_hands
 	=(xx
@@ -1962,6 +2082,19 @@
 	@ret.
 .buffer__
 	????
+#===========================================================================
+
+
+#===========================================================================
+# Reads a char, skipping whitespace.
+# Returns:
+#   R0: Char (zero if EOF)
+#===========================================================================
+:rdcskwsp
+	@call:readchar
+	@call:istoksep
+	@jmp?:rdcskwsp
+	@ret.
 #===========================================================================
 
 
@@ -2387,8 +2520,8 @@
 
 .inc_____
 	@call:readstr_
-# Filename in r1
-	@psh1
+# Filename in r0
+	@psh0
 	@call:readeol_
 	@pop0
 	= 2b
@@ -2400,6 +2533,43 @@
 	@call:getinhnd
 	?=0a
 	@jmp^:mainloop
+
+# Write the deferred strings
+	=$4 :defsttab
+.fixupsi_
+	=(44
+	?=4a
+	@jmp?.donesi__
+	@call:outtell_
+	= 50
+# The fixup address
+	=(64
+	+ 4d
+# The string pointer
+	=(74
+	+ 4d
+	= 07
+	@call:strlen__
+	= 10
+	+ 1b
+	= 07
+# Write the string at the end (NUL terminated)
+	@call:writebuf
+# Get our new location
+	@call:outtell_
+	= 70
+# Seek to the old location
+	= 06
+	@call:outseek_
+# Write the fixup
+	= 05
+	@call:write32_
+# Seek back to the end
+	= 07
+	@call:outseek_
+	@jump.fixupsi_
+
+.donesi__
 
 # Create an __END__ symbol with the length of the output
 	@call:outtell_
@@ -2515,30 +2685,9 @@
 # Args:
 #   None
 #===========================================================================
-:readstr_
-	@call:readtok_
-	=$x :T_STR___
-	?!0x
-	=$x .error___
-	=?0x
-	@jmp?:error___
-	@ret.
-
-.error___
-	Expected STR:__null__
-#===========================================================================
-
-
-#===========================================================================
-# Args:
-#   None
-#===========================================================================
 :readref_
 # Eat whitespace
-	@call:readchar
-	@call:istoksep
-	@jmp?:readref_
-
+	@call:rdcskwsp
 	@call:rewind__
 	@call:readlbl_
 	= 10
@@ -2640,6 +2789,10 @@
 	?=0x
 	@jmp?.imm_____
 
+	=$x :T_SIM___
+	?=0x
+	@jmp?.strimm__
+
 	@jump:errtoken
 
 .ref_____
@@ -2678,6 +2831,17 @@
 	@jump.enc32___
 .imm_____
 	@psh1
+	@jump.enc32___
+
+.strimm__
+	@psh1
+	@call:outtell_
+	= 10
+	@pop0
+	@call:createsi
+# Use a fake address for now
+	=#0 1234
+	@psh0
 	@jump.enc32___
 
 .enc32___
@@ -3430,6 +3594,11 @@
 # Linked list of fixups:
 # [fixup address] [global symbol pointer] [local symbol pointer] [prev fixup]
 :fixuptab
+	:__null__
+
+# Deferred string table
+# [fixup address] [string address in memory] [prev string]
+:defsttab
 	:__null__
 
 # Current heap pointer
