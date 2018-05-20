@@ -1164,19 +1164,27 @@
 	=$x .isneg___
 	[=xa
 
-	@call:readchar
+	@call:rdcskwsp
 
-	=$x :minus___
-	?=0x
-	@jmp?.negative
+	@psh0
+	=$0 .jumptabl
+	@psh0
+	@call:jumptabl
 
-	=$x :dollar__
-	?=0x
-	@jmp?.immhex__
+	@call:isdigit_
+	@jmp?.readdec_
 
-	=$x :zero____
-	?=0x
-	@jmp?.immzero_
+	=$0 .errinvch
+	@call:error___
+
+.jumptabl
+	:minus___
+	.negative
+	:dollar__
+	.immhex__
+	:zero____
+	.immzero_
+	:JUMPEND_
 
 .readdec_
 	@call:isdigit_
