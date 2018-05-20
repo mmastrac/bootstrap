@@ -242,6 +242,8 @@
 
 .ret_____
 	:__null__
+#===========================================================================
+
 
 #===========================================================================
 # Args:
@@ -1533,64 +1535,64 @@
 	+ 2b
 
 # Read until we get a space, tab or newline
-.readtkil
+.insloop_
 	@psh2
 	@call:readchar
 	@pop2
 	@call:istkspel
-	@jmp?.readtkid
+	@jmp?.insdone_
 
 # If the instruction ends in a ?, this means it is only executed if flag == true
 	=$x :question
 	?=0x
 	=$x :INS_IF_T
 	=?3x
-	@jmp?.readtkip
+	@jmp?.inssrch_
 
 # If the instruction ends in a ^, this means it is only executed if flag == false
 	=$x :hat_____
 	?=0x
 	=$x :INS_IF_F
 	=?3x
-	@jmp?.readtkip
+	@jmp?.inssrch_
 
 # Store and continue
 # TODO: We should probably check if this is alpha
 # .. or use the new helper function
 	[=20
 	+ 2b
-	@jump.readtkil
+	@jump.insloop_
 
-.readtkid
+.insdone_
 # Put the whitespace back
 	@call:rewind__
 	=$x :INS_UNCO
 	= 3x
 
-.readtkip
+.inssrch_
 # Search the instruction table for a match
 	=$0 :instruct
 	=$2 .buffer__
 	=(22
 	=$4 :lastinst
-.readtkis
+.inssrchl
 	=(10
 	?=12
-	@jmp?.readtkir
+	@jmp?.insfound
 	+ 0e
 	+ 0d
 	?=04
-	@jmp?.readtkie
-	@jump.readtkis
+	@jmp?.inserror
+	@jump.inssrchl
 
-.readtkir
+.insfound
 	= 10
 	= 23
 # Return
 	=$0 :T_INS___
 	@jump.ret_____
 
-.readtkie
+.inserror
 	=$0 .buffer__
 	@call:log_____
 	=$0 .inserr__
