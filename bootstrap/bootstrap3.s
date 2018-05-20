@@ -164,6 +164,8 @@
 =SC_EXIT_ 0007
 =SC_OPNAT 0008
 
+=JUMPEND_ fefe
+
 # Too large for a normal constant!
 :AT_FDCWD
 	\38\ff\ff\ff
@@ -178,6 +180,69 @@
 # Global: Output file handle
 :out_hand
 	____
+
+
+#===========================================================================
+# Special jump table proc
+# Preserves all registers except x
+# Args:
+#   Stack 0: Lookup
+#   Stack 1: Table
+#===========================================================================
+:jumptabl
+	= MM
+# Stash the return value in .ret_____
+	@pop0
+	=$x .ret_____
+	(=x0
+# Table address
+	@pop0
+	= x0
+# Lookup value
+	@pop0
+
+# Preserve R0-R3
+	@psh1
+	@psh2
+	@psh3
+
+# R3 holds the table
+	= 3x
+# R2 holds the magic constant
+	=$2 :JUMPEND_
+
+.loop____
+	=(13
+	?=12
+	@jmp?.done____
+	?=10
+	@jmp?.found___
+	+ 3e
+	@jump.loop____
+
+.found___
+	+ 3d
+# Put the address in Rx
+	=(x3
+	@pop1
+	@pop2
+	@pop3
+# Jump (not call)
+	= zx
+
+.done____
+# Restore
+	@pop1
+	@pop2
+	@pop3
+
+# Manual jump
+	=$x .ret_____
+	=(xx
+	= zx
+
+.ret_____
+	:__null__
 
 #===========================================================================
 # Args:
@@ -1232,60 +1297,14 @@
 # Whitespace is ignored
 	@call:rdcskwsp
 
-	=$x :newline_
-	?=0x
-	@jmp?.eol_____
-
-	=$x :hash____
-	?=0x
-	@jmp?.cmt_____
-
-	=$x :period__
-	?=0x
-	@jmp?.label___
-
-	=$x :colon___
-	?=0x
-	@jmp?.label___
-
-	=$x :at______
-	?=0x
-	@jmp?.label___
-
-	=$x :amp_____
-	?=0x
-	@jmp?.strimm__
-
-	=$x :dollar__
-	?=0x
-	@jmp?.imm_____
-
-	=$x :zero____
-	?=0x
-	@jmp?.imm_____
-
-	=$x :minus___
-	?=0x
-	@jmp?.imm_____
+# Default jump table
+	@psh0
+	=$0 .jumptabl
+	@psh0
+	@call:jumptabl
 
 	@call:isdigit_
 	@jmp?.imm_____
-
-	=$x :quote___
-	?=0x
-	@jmp?.string__
-
-	=$x :squote__
-	?=0x
-	@jmp?.charimm_
-
-	=$x :percent_
-	?=0x
-	@jmp?.insperc_
-
-# Return zero at EOF
-	?=0a
-	@jmp?.ret_____
 
 # Make sure it's alpha-numeric
 	@call:isalnum_
@@ -1617,6 +1636,37 @@
 
 .errinvch
 	Invalid character\00
+
+.jumptabl
+# Return zero at EOF
+	:__null__
+	.ret_____
+	:newline_
+	.eol_____
+	:hash____
+	.cmt_____
+	:period__
+	.label___
+	:colon___
+	.label___
+	:at______
+	.label___
+	:amp_____
+	.strimm__
+	:dollar__
+	.imm_____
+	:zero____
+	.imm_____
+	:minus___
+	.imm_____
+	:quote___
+	.string__
+	:squote__
+	.charimm_
+	:percent_
+	.insperc_
+	:JUMPEND_
+
 #===========================================================================
 
 
