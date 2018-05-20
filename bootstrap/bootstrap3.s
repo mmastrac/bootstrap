@@ -1699,7 +1699,7 @@
 	@psh0
 	=$0 .jumptabl
 	@psh0
-	@call.jumptabl
+	@call:jumptabl
 
 	@jump.logdone_
 
