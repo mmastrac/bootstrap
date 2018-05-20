@@ -51,10 +51,10 @@
 	eq @tmp1, 'x'
 	jump? .percent_x
 
-	%call :_fatal, .invalid_escape
+	%call :_fatal, &"Invalid % escape"
 
 .percent_percent
-	%call :_dputs, @file_handle, .percent_string
+	%call :_dputs, @file_handle, &"%"
 	jump .loop
 .percent_s
 	ld.d @tmp1, @varargs
@@ -65,9 +65,3 @@
 .percent_d
 	jump .loop
 
-.invalid_escape
-	ds "Invalid % escape"
-
-.percent_string
-	ds "%"
-	ret

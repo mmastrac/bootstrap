@@ -46,11 +46,8 @@
 .done
 	push @total
 	push @passed
-	%call :dprintf, .count
+	%call :dprintf, &"Passed %d of %d test(s)\n"
 	pop @total
 	pop @passed
 	%ret
-
-.count
-	ds "Passed %d of %d test(s)" 10
 #===========================================================================

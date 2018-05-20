@@ -3370,15 +3370,9 @@
 	@jump:i_dd____
 :i_ds____
 	@call:i_db____
-:i_ds_alg
-# Alignment loop
+# Trailing NUL
 	- 00
 	@call:writech_
-	@call:outtell_
-	=#1 0003
-	& 01
-	?!0a
-	@jmp?:i_ds_alg
 	@ret.
 :i_marg__
 	@call:nextlocl

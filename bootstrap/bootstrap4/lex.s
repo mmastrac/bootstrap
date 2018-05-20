@@ -80,105 +80,40 @@
 :literal_tokens
 	ds ";{},:=()[].&!~-+*/%<>^|?"
 
-:string_auto
-	ds "auto"
-:string_break
-	ds "break"
-:string_case
-	ds "case"
-:string_char
-	ds "char"
-:string_const
-	ds "const"
-:string_continue
-	ds "continue"
-:string_default
-	ds "default"
-:string_do
-	ds "do"
-:string_double
-	ds "double"
-:string_else
-	ds "else"
-:string_enum
-	ds "enum"
-:string_extern
-	ds "extern"
-:string_float
-	ds "float"
-:string_for
-	ds "for"
-:string_goto
-	ds "goto"
-:string_if
-	ds "if"
-:string_int
-	ds "int"
-:string_long
-	ds "long"
-:string_register
-	ds "register"
-:string_return
-	ds "return"
-:string_short
-	ds "short"
-:string_signed
-	ds "signed"
-:string_sizeof
-	ds "sizeof"
-:string_static
-	ds "static"
-:string_struct
-	ds "struct"
-:string_switch
-	ds "switch"
-:string_typedef
-	ds "typedef"
-:string_union
-	ds "union"
-:string_unsigned
-	ds "unsigned"
-:string_void
-	ds "void"
-:string_volatile
-	ds "volatile"
-:string_while
-	ds "while"
-
 # String-like tokens
 :string_tokens
-	dd :string_auto, 		@TOKEN_AUTO
-	dd :string_break, 		@TOKEN_BREAK
-	dd :string_case, 		@TOKEN_CASE
-	dd :string_char, 		@TOKEN_CHAR
-	dd :string_const, 		@TOKEN_CONST
-	dd :string_continue, 	@TOKEN_CONTINUE
-	dd :string_default, 	@TOKEN_DEFAULT
-	dd :string_do, 			@TOKEN_DO
-	dd :string_double, 		@TOKEN_DOUBLE
-	dd :string_else, 		@TOKEN_ELSE
-	dd :string_enum, 		@TOKEN_ENUM
-	dd :string_extern, 		@TOKEN_EXTERN
-	dd :string_float, 		@TOKEN_FLOAT
-	dd :string_for, 		@TOKEN_FOR
-	dd :string_goto, 		@TOKEN_GOTO
-	dd :string_if, 			@TOKEN_IF
-	dd :string_int, 		@TOKEN_INT
-	dd :string_long, 		@TOKEN_LONG
-	dd :string_register, 	@TOKEN_REGISTER
-	dd :string_return, 		@TOKEN_RETURN
-	dd :string_short, 		@TOKEN_SHORT
-	dd :string_signed, 		@TOKEN_SIGNED
-	dd :string_sizeof, 		@TOKEN_SIZEOF
-	dd :string_static, 		@TOKEN_STATIC
-	dd :string_struct, 		@TOKEN_STRUCT
-	dd :string_switch, 		@TOKEN_SWITCH
-	dd :string_typedef, 	@TOKEN_TYPEDEF
-	dd :string_union, 		@TOKEN_UNION
-	dd :string_unsigned, 	@TOKEN_UNSIGNED
-	dd :string_void, 		@TOKEN_VOID
-	dd :string_volatile, 	@TOKEN_VOLATILE
-	dd :string_while, 		@TOKEN_WHILE
+	dd &"auto", 		@TOKEN_AUTO
+	dd &"break", 		@TOKEN_BREAK
+	dd &"case", 		@TOKEN_CASE
+	dd &"char", 		@TOKEN_CHAR
+	dd &"const", 		@TOKEN_CONST
+	dd &"continue", 	@TOKEN_CONTINUE
+	dd &"default", 		@TOKEN_DEFAULT
+	dd &"do", 			@TOKEN_DO
+	dd &"double", 		@TOKEN_DOUBLE
+	dd &"else", 		@TOKEN_ELSE
+	dd &"enum", 		@TOKEN_ENUM
+	dd &"extern", 		@TOKEN_EXTERN
+	dd &"float", 		@TOKEN_FLOAT
+	dd &"for", 			@TOKEN_FOR
+	dd &"goto", 		@TOKEN_GOTO
+	dd &"if", 			@TOKEN_IF
+	dd &"int", 			@TOKEN_INT
+	dd &"long", 		@TOKEN_LONG
+	dd &"register", 	@TOKEN_REGISTER
+	dd &"return", 		@TOKEN_RETURN
+	dd &"short", 		@TOKEN_SHORT
+	dd &"signed", 		@TOKEN_SIGNED
+	dd &"sizeof", 		@TOKEN_SIZEOF
+	dd &"static", 		@TOKEN_STATIC
+	dd &"struct", 		@TOKEN_STRUCT
+	dd &"switch", 		@TOKEN_SWITCH
+	dd &"typedef", 		@TOKEN_TYPEDEF
+	dd &"union", 		@TOKEN_UNION
+	dd &"unsigned", 	@TOKEN_UNSIGNED
+	dd &"void", 		@TOKEN_VOID
+	dd &"volatile", 	@TOKEN_VOLATILE
+	dd &"while", 		@TOKEN_WHILE
 	dd 0
 
 # Multi-byte operators
@@ -252,7 +187,7 @@
 	# Attempt to match constants
 	%call :_isdigit, @c
 	eq r0, $1
-	
+
 	%tailcall? :__lex_digit, @handle, @buffer, @buffer_length # tail call
 
 	# Attempt to match multi-byte operators
