@@ -62,7 +62,6 @@
 =space___ 0020
 =equals__ 003d
 =dollar__ 0024
-=letterr_ 0072
 =question 003f
 =hat_____ 005e
 =zero____ 0030
@@ -71,12 +70,14 @@
 =plus____ 002b
 =minus___ 002d
 =left[___ 005b
+=right]__ 005d
 =left{___ 007b
 =left(___ 0028
 =at______ 0040
 =period__ 002e
 =S_______ 0053
 =n_______ 006e
+=r_______ 0072
 =x_______ 0078
 =y_______ 0079
 =z_______ 007a
@@ -113,16 +114,18 @@
 =T_INS___ 0003
 # Register (data = reg #)
 =T_REG___ 0004
+# Register indirect (data = reg #)
+=T_RGI___ 0005
 # EOL
-=T_EOL___ 0005
+=T_EOL___ 0006
 # String
-=T_STR___ 0006
+=T_STR___ 0007
 # Define
-=T_DEF___ 0007
+=T_DEF___ 0008
 # Include
-=T_INC___ 0008
+=T_INC___ 0009
 # String immediate
-=T_SIM___ 0009
+=T_SIM___ 000a
 
 =INS_UNCO 0000
 =INS_IF_T 0001
@@ -137,6 +140,7 @@
 	REF\00
 	INS\00
 	REG\00
+	RGI\00
 	EOL\00
 	STR\00
 	DEF\00
@@ -1320,18 +1324,12 @@
 	@call:isalnum_
 	@jmp^.readtinv
 
-# This might be an instruction or register at this point, so read a second char
-	@psh0
-	@call:readchar
-	@pop1
-
-# If this one is a number, it's a register
-	@call:isnumber
-	@jmp?.readtokr
-
 # Otherwise if it's alnum, it's an instruction
 	@call:isalnum_
 	@jmp?.ins_____
+
+# Anything else is invalid
+	@jump.readtinv
 
 #***************************
 
@@ -1365,6 +1363,10 @@
 	.charimm_
 	:percent_
 	.insperc_
+	:left[___
+	.regind__
+	:r_______
+	.regmaybe
 	:JUMPEND_
 
 #***************************
@@ -1512,35 +1514,36 @@
 
 #***************************
 
-# We've read two chars at this point
-.readtokr
-# Make sure the first one was an 'r'
-	=$x :letterr_
-	?!1x
-	@jmp?.readtinv
-
-	=$x :zero____
-	- 0x
-	= 10
-.readtkrl
-	@psh1
+.regind__
+	@call:readregr
+	@psh0
 	@call:readchar
+	=$x :right]__
+	?!0x
+	@jmp?.errinvch
+
+	=$0 :T_RGI___
 	@pop1
-	@call:istkspel
-	@jmp?.readtkrd
+	@jump.ret_____
 
-	=#x 000a
-	* 1x
-	=$x :zero____
-	- 0x
-	+ 10
-	@jump.readtkrl
+#***************************
 
-.readtkrd
+.regmaybe
+	@call:readchar
+	@call:isdigit_
+	@jmp?.regyes__
 
-	@psh1
 	@call:rewind__
-	@pop1
+	@jump.ins_____
+
+.regyes__
+# Rewind the digit and the "r"
+	@call:rewind__
+	@call:rewind__
+
+.reg_____
+	@call:readregr
+	= 10
 	=$0 :T_REG___
 	@jump.ret_____
 
@@ -1566,26 +1569,16 @@
 #***************************
 
 .insperc_
-	@psh0
-	@call:readchar
-	@pop1
+	@jump.ins_____
 
-# We've read two chars at this point (r1 and r0)
 .ins_____
+	@call:rewind__
 # Clear the token buffer
-	@psh0
-	@psh1
 	=$0 .buffer__
 	= 1a
 	=#2 0020
 	@call:memset__
-	@pop1
-	@pop0
 	=$2 .buffer__
-	[=21
-	+ 2b
-	[=20
-	+ 2b
 
 # Read until we get a space, tab or newline
 .insloop_
@@ -2768,16 +2761,77 @@
 
 #===========================================================================
 # Returns:
-#   Register encoding in r0
+#   R0: Register index
+#===========================================================================
+:readregr
+# First char must be "r"
+	@call:rdcskwsp
+	=$x :r_______
+	?=0x
+	=$0 .error___
+	@jmp^:error___
+
+# Second char must be a digit
+	@call:readchar
+	@call:isdigit_
+	=$x .error___
+	=^0x
+	@jmp^:error___
+
+	=$x :zero____
+	- 0x
+	= 10
+
+.loop____
+	@psh1
+	@call:readchar
+	@pop1
+	@call:isdigit_
+	@jmp^.done____
+
+	=#x 000a
+	* 1x
+	=$x :zero____
+	- 0x
+
+	+ 10
+	@jump.loop____
+
+.done____
+# If the register is > 64, that's an error
+	=#0 003f
+	?>10
+	=$x .invalid_
+	=?0x
+	@jmp?:error___
+
+	@psh1
+	@call:rewind__
+	@pop0
+	@ret.
+
+.error___
+	Expected register (rXX)\00
+
+.invalid_
+	Invalid register (r0-r63 expected)\00
+#===========================================================================
+
+
+#===========================================================================
+# Returns:
+#   R0: Token type (T_REG___)
+#   R1: Register index
 #===========================================================================
 :readreg_
 	@call:readtok_
+
 	=$x :T_REG___
 	?!0x
 	=$x .error___
 	=?0x
 	@jmp?:error___
-	@jump:encodreg
+	@ret.
 
 .error___
 	Expected register\00
@@ -3102,6 +3156,7 @@
 	(=21
 # Target register
 	@call:readreg_
+	@call:encodreg
 	@psh0
 # Source register/value
 	@call:readval_
@@ -3130,6 +3185,7 @@
 	@psh0
 # Target register
 	@call:readreg_
+	@call:encodreg
 	@psh0
 	=$1 :i_stdbf1
 	=(01
