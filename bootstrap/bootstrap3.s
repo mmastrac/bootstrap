@@ -646,6 +646,7 @@
 	?!2a
 	@jmp?.success_
 
+	@call:log_____
 	=$0 .errfail_
 	@jump:error___
 
@@ -666,7 +667,7 @@
 	.s_ro____
 	.s_rw____
 .errfail_
-	Failed to open file \00
+	\3a Failed to open file\00
 #===========================================================================
 
 
