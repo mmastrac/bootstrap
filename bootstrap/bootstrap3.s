@@ -1728,6 +1728,8 @@
 	.logins__
 	:T_REG___
 	.logreg__
+	:T_RGI___
+	.logreg__
 	:T_REF___
 	.logref__
 	:T_IMM___
@@ -2840,6 +2842,26 @@
 
 #===========================================================================
 # Returns:
+#   R0: Token type (T_RGI___)
+#   R1: Register index
+#===========================================================================
+:readrgi_
+	@call:readtok_
+
+	=$x :T_RGI___
+	?!0x
+	=$x .error___
+	=?0x
+	@jmp?:error___
+	@ret.
+
+.error___
+	Expected register-indirect\00
+#===========================================================================
+
+
+#===========================================================================
+# Returns:
 #   R0: Token type (T_REG___ or T_EOL___)
 #   R1: Register index
 #===========================================================================
@@ -2970,8 +2992,8 @@
 
 
 #===========================================================================
-# Writes an assignment from a register, immediate or reference token to
-# another register by index.
+# Writes an assignment from a register/register indirect, immediate, or 
+# reference token, to another register by index.
 #
 # Args:
 #  R0: Token type
@@ -2983,6 +3005,10 @@
 	=$x :T_REG___
 	?=x0
 	@jmp?.reg_____
+
+	=$x :T_RGI___
+	?=x0
+	@jmp?.rgi_____
 
 # Reference or immediate (we don't check this as encrefim will)
 	@psh0
@@ -3019,11 +3045,31 @@
 	@call:writebuf
 	@ret.
 
+.rgi_____
+	@call:encodreg
+	=$2 .from_n__
+	[=20
+	= 13
+	@call:encodreg
+	=$2 .to_n____
+	[=20
+	=$0 .buffer_n
+	= 1d
+	@call:writebuf
+	@ret.
+
 .buffer_r
 	=\20
 .to_r____
 	?
 .from_r__
+	?
+
+.buffer_n
+	=(
+.to_n____
+	?
+.from_n__
 	?
 #===========================================================================
 
@@ -3180,25 +3226,100 @@
 :i_stndst
 	=$2 :i_stdbf1
 	(=20
-# Source register/value
-	@call:readval_
-	@psh0
-# Target register
-	@call:readreg_
-	@call:encodreg
-	@psh0
+# Target memory location register
+	@call:readrgi_
+	@psh1
+# Source register/immediate, tossed into ctmp
+	@call:readtok_
+	=$x :T_REG___
+	?=0x
+	@jmp?.simple__
+
+	=$3 :R_ctmp__
+	@call:encasgnr
+
 	=$1 :i_stdbf1
 	=(01
 	@call:writech_
 	=$0 :equals__
 	@call:writech_
+
 	@pop1
-	@pop0
+	@call:encodreg
+	@call:writech_
+
+	=$1 :R_ctmp__
+	@call:encodreg
+	@call:writech_
+
+	@ret.
+
+.simple__
+# Optimize direct store of a register value
 	@psh1
+
+	=$1 :i_stdbf1
+	=(01
 	@call:writech_
-	@pop0
+	=$0 :equals__
 	@call:writech_
-	@call:readeol_
+
+	@pop2
+	@pop1
+	@psh2
+	@call:encodreg
+	@call:writech_
+
+	@pop1
+	@call:encodreg
+	@call:writech_
+
+	@ret.
+
+# Standard load instruction
+:i_stndld
+	=$2 :i_stdbf1
+	(=21
+
+	=$0 :equals__
+	@call:writech_
+
+	=$2 :i_stdbf1
+	=(02
+	@call:writech_
+
+# Target memory location register
+	@call:readreg_
+	@call:encodreg
+	@call:writech_
+
+# Source indirect
+	@call:readrgi_
+	@call:encodreg
+	@call:writech_
+
+	@ret.
+
+.simple__
+# Optimize direct store of a register value
+	@psh1
+
+	=$1 :i_stdbf1
+	=(01
+	@call:writech_
+	=$0 :equals__
+	@call:writech_
+
+	@pop2
+	@pop1
+	@psh2
+	@call:encodreg
+	@call:writech_
+
+	@pop1
+	@call:encodreg
+	@call:writech_
+
 	@ret.
 
 
@@ -3274,17 +3395,17 @@
 :i_ldb___
 	=$0 :equals__
 	=$1 :left[___
-	@jump:i_stnd__
+	@jump:i_stndld
 	@ret.
 :i_ldw___
 	=$0 :equals__
 	=$1 :left{___
-	@jump:i_stnd__
+	@jump:i_stndld
 	@ret.
 :i_ldd___
 	=$0 :equals__
 	=$1 :left(___
-	@jump:i_stnd__
+	@jump:i_stndld
 	@ret.
 :i_stb___
 	=$0 :left[___

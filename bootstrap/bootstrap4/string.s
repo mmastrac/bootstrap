@@ -12,7 +12,7 @@
 	push r1, r2
 	mov r1, r0
 .loop
-	ld.b r2, r0
+	ld.b r2, [r0]
 	eq r2, $0
 	jump? .ret
 	add r0, $1
