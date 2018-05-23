@@ -75,6 +75,7 @@
 =left(___ 0028
 =at______ 0040
 =period__ 002e
+=L_______ 004c
 =S_______ 0053
 =n_______ 006e
 =r_______ 0072
@@ -108,24 +109,28 @@
 =T_EOF___ 0000
 # Immediate constant (data = value)
 =T_IMM___ 0001
+# Immediate indirect (data = value)
+=T_IMI___ 0002
 # Reference (constant or label, data = ptr to zero-terminated label)
-=T_REF___ 0002
+=T_REF___ 0003
+# Reference indirect (constant or label, data = ptr to zero-terminated label)
+=T_RFI___ 0004
 # Instruction (data = ins handler function)
-=T_INS___ 0003
+=T_INS___ 0005
 # Register (data = reg #)
-=T_REG___ 0004
+=T_REG___ 0006
 # Register indirect (data = reg #)
-=T_RGI___ 0005
+=T_RGI___ 0007
 # EOL
-=T_EOL___ 0006
+=T_EOL___ 0008
 # String
-=T_STR___ 0007
+=T_STR___ 0009
 # Define
-=T_DEF___ 0008
+=T_DEF___ 000a
 # Include
-=T_INC___ 0009
+=T_INC___ 000b
 # String immediate
-=T_SIM___ 000a
+=T_SIM___ 000c
 
 =INS_UNCO 0000
 =INS_IF_T 0001
@@ -137,7 +142,9 @@
 :tokens__
 	EOF\00
 	IMM\00
+	IMI\00
 	REF\00
+	RFI\00
 	INS\00
 	REG\00
 	RGI\00
@@ -1208,18 +1215,14 @@
 	@jump.readdec_
 
 .immzero_
-# If the number started with zero, assume hex (unless it's a token separator)
+# If the number started with zero, look for 'x' to signify hex, otherwise done
 	@call:readchar
-	@call:istkspel
-	=?1a
-	@jmp?.immdone_
-
 	=$x :x_______
 	?=0x
 	@jmp?.immhex__
 
-	=$0 .errinvch
-	@call:error___
+	- 11
+	@jump.immdone_
 
 .immdec__
 # Populate with the first digit we read
@@ -1232,8 +1235,8 @@
 	@psh1
 	@call:readchar
 	@pop1
-	@call:istkspel
-	@jmp?.immdone_
+	@call:isdigit_
+	@jmp^.immdone_
 	=$x :newline_
 	?=0x
 	@jmp?.immdone_
@@ -1308,6 +1311,20 @@
 #   R1: Token data
 #===========================================================================
 :readtok_
+	@call:_readtok
+# If not verbose, just return
+	@call:is_vrbos
+	@ret^
+
+	@jump:logtoken
+#===========================================================================
+
+#===========================================================================
+# Returns:
+#   R0: Token type
+#   R1: Token data
+#===========================================================================
+:_readtok
 # Whitespace is ignored
 	@call:rdcskwsp
 
@@ -1364,7 +1381,7 @@
 	:percent_
 	.insperc_
 	:left[___
-	.regind__
+	.ind_____
 	:r_______
 	.regmaybe
 	:JUMPEND_
@@ -1514,17 +1531,49 @@
 
 #***************************
 
-.regind__
-	@call:readregr
+.ind_____
+# Recursive call, but skip logging
+	@call:_readtok
+
+	=$x :T_REG___
+	?=0x
+	=$x :T_RGI___
+	=?0x
+	@jmp?.ind_done
+
+	=$x :T_IMM___
+	?=0x
+	=$x :T_IMI___
+	=?0x
+	@jmp?.ind_done
+
+	=$x :T_REF___
+	?=0x
+	=$x :T_RFI___
+	=?0x
+	@jmp?.ind_done
+
+	@jump.readtinv
+
+.ind_done
 	@psh0
+	@psh1
+	@psh2
+
 	@call:readchar
 	=$x :right]__
 	?!0x
-	@jmp?.errinvch
+	=$0 .indbrerr
+	@jmp?:error___
 
-	=$0 :T_RGI___
+	@pop2
 	@pop1
+	@pop0
 	@jump.ret_____
+
+
+.indbrerr
+	Expected ]\00
 
 #***************************
 
@@ -1622,11 +1671,12 @@
 	=(22
 	=$4 :lastinst
 .inssrchl
+# Note that we only match the first four chars for each instruction
 	=(10
 	?=12
 	@jmp?.insfound
 	+ 0e
-	+ 0d
+	+ 0e
 	?=04
 	@jmp?.inserror
 	@jump.inssrchl
@@ -1666,11 +1716,7 @@
 #***************************
 
 .ret_____
-# If not verbose, just return
-	@call:is_vrbos
-	@ret^
-
-	@jump:logtoken
+	@ret.
 
 # This is enough for 32-byte labels/identifiers/strings
 .buffer__
@@ -1732,7 +1778,11 @@
 	.logreg__
 	:T_REF___
 	.logref__
+	:T_RFI___
+	.logref__
 	:T_IMM___
+	.logimm__
+	:T_IMI___
 	.logimm__
 	:T_STR___
 	.logstr__
@@ -2554,11 +2604,16 @@
 	@call.insdisp_
 	@jump:mainloop
 
-.insdisp_
 # Note: does not return here!
+.insdisp_
+# Load R0 w/the instruction address
 	+ 1e
+	=(01
+# Load R1 w/the instruction data
+	+ 1d
 	=(11
-	= z1
+# Jump to R0
+	= z0
 
 .def_____
 # Definition name
@@ -3010,7 +3065,16 @@
 	?=x0
 	@jmp?.rgi_____
 
+	=$x :T_RFI___
+	?=x0
+	@jmp?.refind__
+
+	=$x :T_IMI___
+	?=x0
+	@jmp?.immind__
+
 # Reference or immediate (we don't check this as encrefim will)
+.refimm__
 	@psh0
 	@psh1
 	@psh2
@@ -3026,6 +3090,28 @@
 	@pop0
 	@call:encrefim
 	@ret.
+
+.refind__
+
+# Load output w/the address
+	@psh3
+	=$0 :T_REF___
+	@call.refimm__
+	@pop3
+# Now do the register indirect thing
+	= 13
+	@jump.rgi_____
+
+.immind__
+
+# Load output w/the address
+	@psh3
+	=$0 :T_IMM___
+	@call.refimm__
+	@pop3
+# Now do the register indirect thing
+	= 13
+	@jump.rgi_____
 
 .buffer_i
 	=$
@@ -3181,6 +3267,56 @@
 	@ret.
 #===========================================================================
 
+
+#===========================================================================
+# Returns:
+#   R0: Register encoding for address
+#===========================================================================
+:readind_
+	@call:readtok_
+
+	@psh0
+	=$0 .jumptabl
+	@psh0
+	@call:jumptabl
+
+	=$0 .error___
+	@jump:error___
+
+.error___
+	Expected indirect (eg\3a [rXX], [\3aref], [immediate])\00
+
+.jumptabl
+	:T_RGI___
+	.rgi_____
+	:T_IMI___
+	.imi_____
+	:T_RFI___
+	.rfi_____
+	:JUMPEND_
+
+.rgi_____
+	@call:encodreg
+	@ret.
+
+.imi_____
+	=$0 :T_IMM___
+	@jump.imm_____
+
+.rfi_____
+	=$0 :T_REF___
+	@jump.imm_____
+
+.imm_____
+# If it's not a register, assign it to x
+	=$3 :R_ctmp__
+	@call:encasgnr
+	=$1 :R_ctmp__
+	@call:encodreg
+	@ret.
+#===========================================================================
+
+
 # Syntax highlighters get confused by our unmatched brackets
 # This is an unfortunate necessity
 	]})]})]})]})]})]})]})]})
@@ -3189,138 +3325,140 @@
 	]})]})]})]})]})]})]})]})
 
 
-:i_stdbf1
-	____
-:i_stdbf2
-	____
-
+#===========================================================================
+# The vast majority of opcodes can be encoded with this method.
+#
+# If the second char is ' ', we treat it as a flexible opcode where we can
+# use some additional characters:
+#
+#   ' ': The fourth char in the opcode is a register
+#   '$': The fourth char in the opcode is a space and the next four bytes are
+#        a 32-bit constant
+#   '!': The fourth char in the opcode is a byte representing the exact vaule
+#   '?': The instruction is skipped if the flag is false
+#   '^': The instruction is skipped if the flag is true
+#
+# The LHS of any standard opcode must be a register, but the RHS is flexible
+# and may be a register, an immediate, a reference, or an indirection of any
+# of those.
+#
+# In the case of a load instruction (which we handle here as well), the RHS
+# _must_ be an indirection. This is more for clarity of assembly rather than
+# any technical reason.
+#
+# In the case of a store instruction, the LHS _must_ be an indirection, but
+# if the LHS is a non-register indirection, we special-case it. Again, this
+# is for clarity of assembly code.
+#
+# TODO: We should propagate the instruction conditional flag here if we can
+# safely do so (ie: mov? r0, r1 -> =?01).
+#
+# Args:
+#   R0: A pointer to 32-bit metadata for the instruction
+#===========================================================================
 # Standard instruction
 :i_stnd__
-	=$2 :i_stdbf1
-	(=20
-	=$2 :i_stdbf2
-	(=21
-# Target register
-	@call:readreg_
-	@call:encodreg
-	@psh0
-# Source register/value
-	@call:readval_
-	@psh0
-	=$1 :i_stdbf1
-	=(01
-	@call:writech_
-	=$1 :i_stdbf2
-	=(01
-	@call:writech_
-	@pop1
-	@pop0
-	@psh1
-	@call:writech_
-	@pop0
-	@call:writech_
-	@call:readeol_
-	@ret.
+# Copy the first two metadata bytes to the buffer
+	=$x .buf_____
+	=[10
+	[=x1
+	+ 0b
+	+ xb
+	=[10
+	[=x1
+	+ 0b
 
-# Standard store instruction
-:i_stndst
-	=$2 :i_stdbf1
-	(=20
-# Target memory location register
-	@call:readrgi_
-	@psh1
-# Source register/immediate, tossed into ctmp
+# Check for load/store
+	=[10
+	=$x :L_______
+	?=1x
+	=?1b
+	=^1a
+	=$x .isload__
+	[=x1
+
+	=[10
+	=$x :S_______
+	?=1x
+	=?1b
+	=^1a
+	=$x .isstore_
+	[=x1
+
+# Target
 	@call:readtok_
-	=$x :T_REG___
-	?=0x
-	@jmp?.simple__
-
-	=$3 :R_ctmp__
-	@call:encasgnr
-
-	=$1 :i_stdbf1
-	=(01
-	@call:writech_
-	=$0 :equals__
-	@call:writech_
-
-	@pop1
-	@call:encodreg
-	@call:writech_
-
-	=$1 :R_ctmp__
-	@call:encodreg
-	@call:writech_
-
-	@ret.
-
-.simple__
-# Optimize direct store of a register value
 	@psh1
-
-	=$1 :i_stdbf1
-	=(01
-	@call:writech_
-	=$0 :equals__
-	@call:writech_
-
-	@pop2
-	@pop1
 	@psh2
-	@call:encodreg
-	@call:writech_
 
+	@psh0
+	=$0 .jumptabl
+	@psh0
+	@call:jumptabl
+
+	=$0 .invtoken
+	@call:error___
+
+.jumptabl
+	:T_REG___
+	.std_____
+	:T_RGI___
+	.rgi_____
+	:T_RFI___
+	.ind_____
+	:T_IMI___
+	.ind_____
+	:JUMPEND_
+
+# Standard-type instruction
+.std_____
 	@pop1
-	@call:encodreg
-	@call:writech_
-
-	@ret.
-
-# Standard load instruction
-:i_stndld
-	=$2 :i_stdbf1
-	(=21
-
-	=$0 :equals__
-	@call:writech_
-
-	=$2 :i_stdbf1
-	=(02
-	@call:writech_
-
-# Target memory location register
-	@call:readreg_
-	@call:encodreg
-	@call:writech_
-
-# Source indirect
-	@call:readrgi_
-	@call:encodreg
-	@call:writech_
-
-	@ret.
-
-.simple__
-# Optimize direct store of a register value
-	@psh1
-
-	=$1 :i_stdbf1
-	=(01
-	@call:writech_
-	=$0 :equals__
-	@call:writech_
-
 	@pop2
-	@pop1
-	@psh2
+# Easy: write the register to the buffer
 	@call:encodreg
-	@call:writech_
+	=$x .bufreg1_
+	[=x0
 
+# Now read whatever is in position #2 and write it out
+	=$x .isload__
+	=[xx
+	?=xb
+	@jmp?.stdload_
+.stdload_
+	@call:readind_
+	@jump.stddone_
+	@call:readval_
+.stddone_
+	=$x .bufreg2_
+	[=x0
+	@jump.fin_____
+
+.rgi_____
 	@pop1
-	@call:encodreg
-	@call:writech_
+	@pop2
 
+.ind_____
+	@pop1
+	@pop2
+
+
+.fin_____
+	=$0 .buf_____
+	= 1d
+	@call:writebuf
 	@ret.
+
+.isload__
+.isstore_
+.buf_____
+	??
+.bufreg1_
+	?
+.bufreg2_
+	?
+
+.invtoken
+	Unexpected token in first position\00
+#===========================================================================
 
 
 :i_call_s
@@ -3334,42 +3472,6 @@
 :i_jmp_nt
 	=$x ????+^zx
 
-:i_mov___
-	=$0 :equals__
-	=$1 :space___
-	@jump:i_stnd__
-:i_add___
-	=$0 :plus____
-	=$1 :space___
-	@jump:i_stnd__
-:i_sub___
-	=$0 :minus___
-	=$1 :space___
-	@jump:i_stnd__
-:i_mul___
-	=$0 :multiply
-	=$1 :space___
-	@jump:i_stnd__
-:i_div___
-	=$0 :div_____
-	=$1 :space___
-	@jump:i_stnd__
-:i_or____
-	=$0 :or______
-	=$1 :space___
-	@jump:i_stnd__
-:i_and___
-	=$0 :and_____
-	=$1 :space___
-	@jump:i_stnd__
-:i_xor___
-	=$0 :hat_____
-	=$1 :space___
-	@jump:i_stnd__
-:i_sub___
-	=$0 :minus___
-	=$1 :space___
-	@jump:i_stnd__
 :i_push__
 	@call:readvalo
 	=$x :T_EOL___
@@ -3391,53 +3493,6 @@
 	@pop1
 	@pop0
 	@call:encpop__
-	@ret.
-:i_ldb___
-	=$0 :equals__
-	=$1 :left[___
-	@jump:i_stndld
-	@ret.
-:i_ldw___
-	=$0 :equals__
-	=$1 :left{___
-	@jump:i_stndld
-	@ret.
-:i_ldd___
-	=$0 :equals__
-	=$1 :left(___
-	@jump:i_stndld
-	@ret.
-:i_stb___
-	=$0 :left[___
-	@jump:i_stndst
-	@ret.
-:i_stw___
-	=$0 :left{___
-	@jump:i_stndst
-	@ret.
-:i_std___
-	=$0 :left(___
-	@jump:i_stndst
-	@ret.
-:i_eq____
-	=$0 :question
-	=$1 :equals__
-	@jump:i_stnd__
-	@ret.
-:i_ne____
-	=$0 :question
-	=$1 :exclaim_
-	@jump:i_stnd__
-	@ret.
-:i_gt____
-	=$0 :question
-	=$1 :gt______
-	@jump:i_stnd__
-	@ret.
-:i_lt____
-	=$0 :equals__
-	=$1 :lt______
-	@jump:i_stnd__
 	@ret.
 :i_call__
 # Note that call doesn't support a register target yet - this is possible but would complicate
@@ -3718,101 +3773,139 @@
 
 # Instruction table
 :instruct
+# Standard ALU-type instructions
 	mov\00:__null__
-	:i_mov___
+	:i_stnd__
+	= ??
 
 	add\00:__null__
-	:i_add___
+	:i_stnd__
+	+ ??
 
 	sub\00:__null__
-	:i_sub___
+	:i_stnd__
+	- ??
 
 	mul\00:__null__
-	:i_mul___
+	:i_stnd__
+	* ??
 
 	div\00:__null__
-	:i_div___
+	:i_stnd__
+	/= ??
 
 	or\00\00:__null__
-	:i_or____
+	:i_stnd__
+	|= ??
 
 	and\00:__null__
-	:i_and___
+	:i_stnd__
+	&= ??
 
 	xor\00:__null__
-	:i_xor___
+	:i_stnd__
+	^= ??
 
+# Load/store
+	ld\2eb:__null__
+	:i_stnd__
+	=[L?
+
+	ld\2ew:__null__
+	:i_stnd__
+	={L?
+
+	ld\2ed:__null__
+	:i_stnd__
+	=(L?
+
+	st\2eb:__null__
+	:i_stnd__
+	]=S?
+
+	st\2ew:__null__
+	:i_stnd__
+	}=S?
+
+	st\2ed:__null__
+	:i_stnd__
+	)=S?
+
+# Compare
+	eq\00\00:__null__
+	:i_stnd__
+	?=??
+
+	ne\00\00:__null__
+	:i_stnd__
+	?!??
+
+	gt\00\00:__null__
+	:i_stnd__
+	?>??
+
+	lt\00\00:__null__
+	:i_stnd__
+	?<??
+
+# Push/pop/PC
 	push:__null__
 	:i_push__
+	????
 
 	pop\00:__null__
 	:i_pop___
-
-	ld\2eb:__null__
-	:i_ldb___
-
-	ld\2ew:__null__
-	:i_ldw___
-
-	ld\2ed:__null__
-	:i_ldd___
-
-	st\2eb:__null__
-	:i_stb___
-
-	st\2ew:__null__
-	:i_stw___
-
-	st\2ed:__null__
-	:i_std___
-
-	eq\00\00:__null__
-	:i_eq____
-
-	ne\00\00:__null__
-	:i_ne____
-
-	gt\00\00:__null__
-	:i_gt____
-
-	lt\00\00:__null__
-	:i_lt____
+	????
 
 	call:__null__
 	:i_call__
+	????
 
 	jump:__null__
 	:i_jump__
+	????
 
 	ret\00:__null__
 	:i_ret___
+	????
 
 	sys\00:__null__
 	:i_sys___
+	????
 
+# Data
 	db\00\00:__null__
 	:i_db____
+	????
 
 	dw\00\00:__null__
 	:i_dw____
+	????
 
 	dd\00\00:__null__
 	:i_dd____
+	????
 
 	ds\00\00:__null__
 	:i_ds____
+	????
 
+# "Macros" with more complex behaviour
 	%ret\00\00\00\00
 	:i_mret__
+	????
 
 	%call\00\00\00
 	:i_mcall_
+	????
 
 	%local\00\00
 	:i_mlocal
+	????
 
 	%arg\00\00\00\00
 	:i_marg__
+	????
 
 :lastinst
 
