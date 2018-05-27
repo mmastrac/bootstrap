@@ -15,7 +15,24 @@
 	add @tmp0, 1
 	st.d [:__assertion], @tmp0
 	mov r0, 2
-	call :dprintf
+	call :_dprintf
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: Must be non-zero
+#   R1: printf args
+#===========================================================================
+:_test_assert_zero
+	eq r0, 0
+	%ret?
+	ld.d @tmp0, [:__assertion]
+	add @tmp0, 1
+	st.d [:__assertion], @tmp0
+	mov r0, 2
+	call :_dprintf
 	%ret
 #===========================================================================
 
@@ -46,7 +63,7 @@
 .done
 	push @total
 	push @passed
-	%call :dprintf, &"Passed %d of %d test(s)\n"
+	%call :_dprintf, &"Passed %d of %d test(s)\n"
 	pop @total
 	pop @passed
 	%ret
