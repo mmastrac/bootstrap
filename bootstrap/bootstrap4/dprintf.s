@@ -29,7 +29,7 @@
 	add @varargs, @__LOCALS_SIZE__
 	mov @tmp0, 1
 .loop
-	ld.b @tmp1, @string_ptr
+	ld.b @tmp1, [@string_ptr]
 	eq @tmp1, 0
 	%ret?
 	eq @tmp1, '%'
@@ -40,7 +40,7 @@
 	jump .loop
 .percent
 	add @string_ptr, 1
-	ld.b @tmp1, @string_ptr
+	ld.b @tmp1, [@string_ptr]
 	add @string_ptr, 1
 	eq @tmp1, 's'
 	jump? .percent_s
@@ -57,7 +57,7 @@
 	%call :_dputs, @file_handle, &"%"
 	jump .loop
 .percent_s
-	ld.d @tmp1, @varargs
+	ld.d @tmp1, [@varargs]
 	%call :_dputs, @file_handle, @tmp1
 	add @varargs, 4
 	jump .loop

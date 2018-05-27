@@ -71,6 +71,7 @@
 =minus___ 002d
 =left[___ 005b
 =right]__ 005d
+=undersc_ 005f
 =left{___ 007b
 =left(___ 0028
 =at______ 0040
@@ -1928,7 +1929,7 @@
 #===========================================================================
 :islabelc
 # Underscore is cool
-	=#x 005f
+	=$x :undersc_
 	?=0x
 	@ret?
 
@@ -3861,15 +3862,15 @@
 
 	st\2eb:__null__
 	:i_stnd__
-	]=S?
+	[=S?
 
 	st\2ew:__null__
 	:i_stnd__
-	}=S?
+	{=S?
 
 	st\2ed:__null__
 	:i_stnd__
-	)=S?
+	(=S?
 
 # Compare
 	eq\00\00:__null__

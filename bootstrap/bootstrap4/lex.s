@@ -13,6 +13,8 @@
 #	mov r0, @IDENTIFIER
 #	ret
 
+#include "regs.h"
+
 #define TRUE 1
 #define FALSE 0
 #define NULL 0
@@ -160,12 +162,12 @@
 	%arg string
 	%local mark
 
-	%call __lex_mark
+	%call :__lex_mark
 	mov @mark, @ret
 
 .loop
-	%call __lex_read
-	ld.b @tmp0, @string
+	%call :__lex_read
+	ld.b @tmp0, [@string]
 
 	eq @tmp0, @ret
 	%call^ :__lex_rewind, @mark
@@ -196,26 +198,26 @@
 	%arg table
 	%arg c
 .str_loop
-	ld.d @tmp0, @table
+	ld.d @tmp0, [@table]
 
 	# Table searched, string not found
-	eq @tmp, @NULL
+	eq @tmp0, @NULL
 	mov? @ret, @NULL
 	%ret?
 
 	# See if this string is a potential match
-	ld.b @tmp0, @tmp0
+	ld.b @tmp0, [@tmp0]
 	eq @tmp0, @c
 	add^ @table, 8
 	jump^ .str_loop
 
 	# Possible match, call __lex_attempt_match
-	ld.d @tmp0, @table
+	ld.d @tmp0, [@table]
 	add @tmp0, 1
 	%call :__lex_attempt_match, @fd, @buffer, @buffer_length, @tmp0
 	eq @ret, @TRUE
 	add? @table, 4
-	ld.d? @table, @table
+	ld.d? @table, [@table]
 	mov? @ret, @table
 	%ret?
 
@@ -252,21 +254,18 @@
 	# Attempt to match label/identifier
 	%call :_islabel, @c
 	eq r0, @TRUE
-	...
 
 	# Attempt to match constants
 	%call :_isdigit, @c
 	eq r0, @TRUE
-	%tcall? :__lex_digit, @handle, @buffer, @buffer_length # tail call
+	#%tcall? :__lex_digit, @handle, @buffer, @buffer_length # tail call
+	%call? :__lex_digit, @fd, @buffer, @buffer_length # tail call
+	%ret?
 
 	# Attempt to match multi-byte operators
-	call :__lex_attempt_match_table, @handle, @buffer, @buffer_length, :op_tokens, @c
+	%call :__lex_attempt_match_table, @fd, @buffer, @buffer_length, :multibyte_op_tokens, @c
 
 	# Attempt to match single-byte operators
-	%call :__lex_attempt_match_table, @fd, @buffer, @buffer_length, :multibyte_op_tokens, @c
-	eq @ret, @NULL
-	jump^ .done
-
 	%call :_strchr, :literal_tokens, @c
 	eq @ret, @NULL
 	sub^ @ret, :literal_tokens
@@ -275,14 +274,14 @@
 	%call :_fatal, &"Unexpected character 0x%x"
 
 .token_loop
-	ld.b r1, r0
+	ld.b r1, [r0]
 	eq r1, $0
-	jmp? .token_done
+	jump? .token_done
 	eq r1, r13
 	mov? r0, r13
 	ret?
 	add r0, $1
-	jmp .token_loop
+	jump .token_loop
 .token_done
 	mov r0, $0
 	ret
@@ -298,13 +297,13 @@
 #===========================================================================
 :_islabel
 	eq r0, '_'
-	jmp? .rettrue
+	jump? .rettrue
 	call :_isdigit
 	eq r0, $1
-	jmp? .rettrue
+	jump? .rettrue
 	call :_isalpha
 	eq r0, $1
-	jmp? .rettrue
+	jump? .rettrue
 	mov r0, $0
 	ret
 .rettrue

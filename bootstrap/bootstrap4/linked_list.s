@@ -10,7 +10,7 @@
 #===========================================================================
 :_ll_init
 	%call :_malloc, 4
-	st.d @ret, $0
+	st.d [@ret], $0
 	ret
 #===========================================================================
 
@@ -40,10 +40,10 @@
 	%arg list
 	%arg node
 	%local old
-	ld.d @old, @list
-	st.d @list, @node
+	ld.d @old, [@list]
+	st.d [@list], @node
 	sub @node, 4
-	st.d @node, @old
+	st.d [@node], @old
 	%ret
 #===========================================================================
 
@@ -61,7 +61,7 @@
 	%arg func
 	%local record
 .loop
-	ld.d @record, list
+	ld.d @record, [@list]
 	mov r0, @record
 	add r0, 4
 	%call @func, r0

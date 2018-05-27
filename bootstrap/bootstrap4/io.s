@@ -1,12 +1,16 @@
+#define OPEN_READ $0
+#define OPEN_WRITE $1
 
-
+#include "regs.h"
+#include "syscall.h"
 
 #===========================================================================
 # R0: Filename (zero terminated)
 # R1: Mode (0 = read, 1 = rw+create)
 #===========================================================================
 :_open
-	%arg filename, mode
+	%arg filename
+	%arg mode
 	eq @mode, @OPEN_READ
 	jump? .read
 # read/write
@@ -22,8 +26,8 @@
 	mov @tmp0, r0
 	add @tmp0, $1
 	eq @tmp0, $0
-	%call? :fatal, :open_error
-	%ret r0
+	%call? :_fatal, :open_error
+	%ret
 
 :open_error
 	ds "Failed to open file"

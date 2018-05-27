@@ -16,7 +16,7 @@
 	sub @sp, 4
 
 	call .init_args
-	ld.d r0, :__argc
+	ld.d r0, [:__argc]
 	mov r1, :__argv
 	call :_main
 
@@ -33,14 +33,14 @@
 	call :_malloc
 	sys @SC_GETARGV r0 r8
 
-	st.d :__argv, r0
+	st.d [:__argv], r0
 
 	# Initialize __argc to the appropriate value
 	mov r1, 0
 .argc_loop
-	ld.d r2, r0
+	ld.d r2, [r0]
 	eq r2, 0
-	st.d? :__argc, r1
+	st.d? [:__argc], r1
 	ret?
 	add r1, 1
 	add r0, 4
