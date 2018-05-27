@@ -3739,7 +3739,8 @@
 	@ret.
 :i_mret__
 # Pop args/locals off before we return
-	@call:nextlocl
+	=$x :curlocal
+	=[0x
 .loop____
 	?=0e
 	@jmp?.done____
@@ -3834,6 +3835,10 @@
 	div\00:__null__
 	:i_stnd__
 	/ ??
+
+	mod\00:__null__
+	:i_stnd__
+	% ??
 
 	or\00\00:__null__
 	:i_stnd__

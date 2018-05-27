@@ -49,7 +49,7 @@
 
 
 #===========================================================================
-# ll_node* ll_search(ll_head* ll, ll_func* func)
+# ll_node* ll_search(ll_head* ll, ll_func* func, int data)
 #
 # Given a search function in r0, returns the first node that matches, or
 # zero if no nodes match.
@@ -59,12 +59,13 @@
 :_ll_search
 	%arg list
 	%arg func
+	%arg data
 	%local record
 .loop
 	ld.d @record, [@list]
 	mov r0, @record
 	add r0, 4
-	%call @func, r0
+	%call @func, r0, @data
 	eq r0, 0
 	jump? .loop
 	mov r0, @record

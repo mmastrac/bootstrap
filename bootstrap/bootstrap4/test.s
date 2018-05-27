@@ -15,7 +15,10 @@
 	add @tmp0, 1
 	st.d [:__assertion], @tmp0
 	mov r0, 2
+	push r1
+	mov r1, &"Assertion failed: %s\n"
 	call :_dprintf
+	pop r1
 	%ret
 #===========================================================================
 
@@ -32,7 +35,31 @@
 	add @tmp0, 1
 	st.d [:__assertion], @tmp0
 	mov r0, 2
+	push r1
+	mov r1, &"Assertion failed: %s\n"
 	call :_dprintf
+	pop r1
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: Arg 1
+#   R1: Arg 2
+#   R2: printf args
+#===========================================================================
+:_test_assert_equal
+	eq r0, r1
+	%ret?
+	ld.d @tmp0, [:__assertion]
+	add @tmp0, 1
+	st.d [:__assertion], @tmp0
+	mov r0, 2
+	push r2
+	mov r1, &"Assertion failed: %s\n"
+	call :_dprintf
+	pop r2
 	%ret
 #===========================================================================
 
@@ -48,23 +75,37 @@
 	%local test
 	mov @passed, 0
 	mov @total, 0
+	ld.d @tmp0, [@tests]
+	push @tmp0
+	%call :_dprintf, 2, &"Suite: %s\n"
+	pop @tmp0
+	add @tests, 4
 .loop
+	mov @tmp0, 0
+	st.d [:__assertion], @tmp0
 	ld.d @test, [@tests]
 	eq @test, 0
 	jump? .done
 	add @total, 1
 	add @tests, 4
+	ld.d @tmp0, [@tests]
+	add @tests, 4
+	push @tmp0
+	%call :_dprintf, 2, &"  - %s\n"
+	pop @tmp0
 	%call @test
 	ld.d @tmp0, [:__assertion]
 	eq @tmp0, 0
-	jump? .loop
-	add @total, 1
+	add? @passed, 1
+	jump .loop
 
 .done
+	%call :_dprintf, 2, &"Done\n"
 	push @total
 	push @passed
-	%call :_dprintf, &"Passed %d of %d test(s)\n"
-	pop @total
+	%call :_dprintf, 2, &"Passed %d of %d test(s)\n"
 	pop @passed
+	pop @total
+	mov @ret, 0
 	%ret
 #===========================================================================
