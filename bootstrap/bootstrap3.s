@@ -2564,11 +2564,11 @@
 	@jmp?.ins_if_f
 
 .ins_if_t
-	=$0 :i_jmp_nt
+	=$0 .i_jmp_nt
 	@jump.ins_cond
 
 .ins_if_f
-	=$0 :i_jmp_if
+	=$0 .i_jmp_if
 	@jump.ins_cond
 
 .ins_cond
@@ -2606,14 +2606,14 @@
 
 # Note: does not return here!
 .insdisp_
-# Load R0 w/the instruction address
+# Load R2 w/the instruction address
 	+ 1e
-	=(01
-# Load R1 w/the instruction data
+	=(21
+# Point R0 at the instruction data
 	+ 1d
-	=(11
-# Jump to R0
-	= z0
+	= 01
+# Jump to R2
+	= z2
 
 .def_____
 # Definition name
@@ -2771,6 +2771,11 @@
 	@call:exit____
 .end_s___
 	__END__\00
+.i_jmp_if
+	=$x ????+?zx
+.i_jmp_nt
+	=$x ????+^zx
+
 #===========================================================================
 
 # Current global label
@@ -3360,13 +3365,9 @@
 :i_stnd__
 # Copy the first two metadata bytes to the buffer
 	=$x .buf_____
-	=[10
-	[=x1
-	+ 0b
-	+ xb
-	=[10
-	[=x1
-	+ 0b
+	={10
+	{=x1
+	+ 0c
 
 # Check for load/store
 	=[10
@@ -3390,17 +3391,26 @@
 	@psh1
 	@psh2
 
+# Loads the appropriate jump table (normal vs store)
 	@psh0
-	=$0 .jumptabl
+	=$0 .whichjmp
+	=$x .isstore_
+	=[xx
+	* xd
+	+ 0x
+	=(00
 	@psh0
 	@call:jumptabl
 
 	=$0 .invtoken
 	@call:error___
 
-.jumptabl
-	:T_REG___
-	.std_____
+.whichjmp
+	.jumptabl
+	.jumptabs
+
+# The jumptable for store
+.jumptabs
 	:T_RGI___
 	.rgi_____
 	:T_RFI___
@@ -3409,10 +3419,16 @@
 	.ind_____
 	:JUMPEND_
 
+# Regular jumptable
+.jumptabl
+	:T_REG___
+	.std_____
+	:JUMPEND_
+
 # Standard-type instruction
 .std_____
-	@pop1
 	@pop2
+	@pop1
 # Easy: write the register to the buffer
 	@call:encodreg
 	=$x .bufreg1_
@@ -3423,10 +3439,10 @@
 	=[xx
 	?=xb
 	@jmp?.stdload_
+	@call:readval_
+	@jump.stddone_
 .stdload_
 	@call:readind_
-	@jump.stddone_
-	@call:readval_
 .stddone_
 	=$x .bufreg2_
 	[=x0
@@ -3435,11 +3451,12 @@
 .rgi_____
 	@pop1
 	@pop2
+	@jump.fin_____
 
 .ind_____
 	@pop1
 	@pop2
-
+	@jump.fin_____
 
 .fin_____
 	=$0 .buf_____
@@ -3448,7 +3465,9 @@
 	@ret.
 
 .isload__
+	?
 .isstore_
+	?
 .buf_____
 	??
 .bufreg1_
@@ -3467,10 +3486,6 @@
 	=$z 
 :i_ret__s
 	=(xy+!y\04= zx
-:i_jmp_if
-	=$x ????+?zx
-:i_jmp_nt
-	=$x ????+^zx
 
 :i_push__
 	@call:readvalo
@@ -3792,19 +3807,19 @@
 
 	div\00:__null__
 	:i_stnd__
-	/= ??
+	/ ??
 
 	or\00\00:__null__
 	:i_stnd__
-	|= ??
+	| ??
 
 	and\00:__null__
 	:i_stnd__
-	&= ??
+	& ??
 
 	xor\00:__null__
 	:i_stnd__
-	^= ??
+	^ ??
 
 # Load/store
 	ld\2eb:__null__
