@@ -3274,12 +3274,12 @@
 
 
 #===========================================================================
+# Args:
+#   R0-R2: Token
 # Returns:
 #   R0: Register encoding for address
 #===========================================================================
-:readind_
-	@call:readtok_
-
+:encind__
 	@psh0
 	=$0 .jumptabl
 	@psh0
@@ -3321,6 +3321,14 @@
 	@ret.
 #===========================================================================
 
+
+#===========================================================================
+# Returns:
+#   R0: Register encoding for address
+#===========================================================================
+:readind_
+	@call:readtok_
+	@jump:encind__
 
 # Syntax highlighters get confused by our unmatched brackets
 # This is an unfortunate necessity
@@ -3449,13 +3457,30 @@
 	@jump.fin_____
 
 .rgi_____
-	@pop1
 	@pop2
+	@pop1
+# Easy: write the register to the buffer
+	@call:encodreg
+	=$x .bufreg1_
+	[=x0
+# Next bit can be anything
+	@call:readval_
+	=$x .bufreg2_
+	[=x0
 	@jump.fin_____
 
 .ind_____
-	@pop1
 	@pop2
+	@pop1
+# This one is a complex encoding
+	@call:encind__
+	=$x .bufreg1_
+	[=x0
+# Next has to be a simple reg
+	@call:readreg_
+	@call:encodreg
+	=$x .bufreg2_
+	[=x0
 	@jump.fin_____
 
 .fin_____

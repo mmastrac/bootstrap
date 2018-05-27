@@ -1,7 +1,8 @@
 # Various forms of load
-ld.d r0, [r0]
-ld.d r0, [4]
-ld.d r0, [:memory]
+ld.d r0, [r0]      # =(00
+ld.d r0, [4]       # =$x ....=(0x
+ld.d r0, [:memory] # =$x ....=(0x
+
 # Equivalent version w/mov
 mov r0, [r0]
 mov r0, [4]
@@ -19,8 +20,8 @@ st.d [r0], 4
 st.d [r0], :memory
 st.d [r0], [r0]
 st.d [r0], [4]
+# We can legally store one memory location to another
 st.d [r0], [:memory]
-
 st.d [:memory], r0
 st.d [4], r0
 
