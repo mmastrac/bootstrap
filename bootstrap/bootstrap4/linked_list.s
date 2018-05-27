@@ -41,8 +41,8 @@
 	%arg node
 	%local old
 	ld.d @old, [@list]
-	st.d [@list], @node
 	sub @node, 4
+	st.d [@list], @node
 	st.d [@node], @old
 	%ret
 #===========================================================================
@@ -61,13 +61,22 @@
 	%arg func
 	%arg data
 	%local record
+	mov @record, @list
 .loop
-	ld.d @record, [@list]
+	ld.d @record, [@record]
+
+	# Not found
+	eq @record, 0
+	mov? @ret, 0
+	jump? .done
+
 	mov r0, @record
 	add r0, 4
 	%call @func, r0, @data
 	eq r0, 0
 	jump? .loop
-	mov r0, @record
+	mov @ret, @record
+	add @ret, 4
+.done
 	%ret
 #===========================================================================
