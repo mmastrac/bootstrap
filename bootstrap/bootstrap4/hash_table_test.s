@@ -43,12 +43,3 @@
 	%call :_test_assert_equal, @ret, 4, &"Expected BB = 4"
 
 	%ret
-
-.node_a
-	ds "A"
-.node_b
-	ds "B"
-.node_c
-	ds "C"
-.node_d
-	ds "D"

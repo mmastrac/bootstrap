@@ -1,6 +1,6 @@
 #include "regs.h"
 
-#define HT_OVERHEAD 12
+#define HT_OVERHEAD 20
 #define HT_NODE_SIZE 12
 
 #===========================================================================
@@ -25,7 +25,7 @@
 	st.d [@ret], @key_hash_function
 	add @ret, 4
 	st.d [@ret], @key_compare_function
-	add @ret, 4
+	add @ret, 12
 	# Zero the buckets
 .loop
 	eq @buckets, 0
@@ -60,8 +60,11 @@
 	mov? @ret, 0
 	jump? .done
 	# Exists, so now search it
-	st.d [:__ht_ll_lookup_hash], @hash
-	st.d [:__ht_ll_lookup_key_ptr], @key
+	mov @tmp1, @ht
+	add @tmp1, 12
+	st.d [@tmp1], @hash
+	add @tmp1, 4
+	st.d [@tmp1], @key
 	%call :_ll_search, @tmp0, :__ht_ll_lookup_func, @ht
 	eq @ret, 0
 	jump? .done
@@ -114,29 +117,27 @@
 #===========================================================================
 
 
-# Global data for __ht_ll_lookup_func
-:__ht_ll_lookup_hash
-	dd 0
-:__ht_ll_lookup_key_ptr
-	dd 0
-
 #===========================================================================
 # Lookup func
 #===========================================================================
 :__ht_ll_lookup_func
 	%arg node
 	%arg ht
+	mov @tmp1, @ht
+	add @tmp1, 12
 	# Quick check on hash
 	ld.d @tmp0, [@node]
-	ne @tmp0, [:__ht_ll_lookup_hash]
+	ne @tmp0, [@tmp1]
 	mov? @ret, 0
 	jump? .ret
 	# If hash matches, call lookup func
+	add @tmp1, 4
+	mov @tmp2, [@tmp1]
 	add @node, 4
 	ld.d @tmp0, [@node]
 	add @ht, 8
 	ld.d @tmp1, [@ht]
-	%call @tmp1, @tmp0, [:__ht_ll_lookup_key_ptr]
+	%call @tmp1, @tmp0, @tmp2
 .ret
 	%ret
 #===========================================================================
