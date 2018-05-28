@@ -89,7 +89,7 @@ echo Compile 4
 ./vm /tmp/b3.bin -l -I $ROOT/include $TEST/bootstrap4/test4.s $ROOT/bootstrap4/crt0.s bootstrap/bootstrap4/memory.s bootstrap/bootstrap4/string.s bootstrap/bootstrap4/sys.s bootstrap/bootstrap4/dprintf.s /tmp/t4.bin
 ./vm /tmp/t4.bin
 echo Compile 4
-./vm /tmp/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/crt0.s bootstrap/bootstrap4/memory.s bootstrap/bootstrap4/string.s bootstrap/bootstrap4/sys.s bootstrap/bootstrap4/dprintf.s bootstrap/bootstrap4/linked_list.s bootstrap/bootstrap4/test*.s bootstrap/bootstrap4/*_test.s /tmp/t4.bin
+./vm /tmp/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/crt0.s bootstrap/bootstrap4/memory.s bootstrap/bootstrap4/string.s bootstrap/bootstrap4/sys.s bootstrap/bootstrap4/dprintf.s bootstrap/bootstrap4/linked_list.s bootstrap/bootstrap4/hash_table.s bootstrap/bootstrap4/test*.s bootstrap/bootstrap4/*_test.s /tmp/t4.bin
 ./vm /tmp/t4.bin
 echo Compile 4
 ./vm /tmp/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/*.s /tmp/t4.bin

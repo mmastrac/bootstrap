@@ -1,0 +1,156 @@
+#include "regs.h"
+
+#define HT_OVERHEAD 12
+#define HT_NODE_SIZE 12
+
+#===========================================================================
+# ht* ht_init(void* key_hash_function, void* key_compare_function)
+#
+# Creates a hash table
+#===========================================================================
+:_ht_init
+	%arg key_hash_function
+	%arg key_compare_function
+	%local ht
+	%local buckets
+	mov @buckets, 13
+	mov @tmp0, @buckets
+	mul @tmp0, 4
+	add @tmp0, @HT_OVERHEAD
+	%call :_malloc, @tmp0
+	mov @ht, @ret
+	# Bucket count
+	st.d [@ret], @buckets
+	add @ret, 4
+	st.d [@ret], @key_hash_function
+	add @ret, 4
+	st.d [@ret], @key_compare_function
+	add @ret, 4
+	# Zero the buckets
+.loop
+	eq @buckets, 0
+	mov? r0, @ht
+	%ret?
+	st.d, [@ret], 0
+	add @ret, 4
+	sub @buckets, 1
+	jump .loop
+#===========================================================================
+
+
+#===========================================================================
+# void* ht_lookup(void* ht, void* key)
+#===========================================================================
+:_ht_lookup
+	%arg ht
+	%arg key
+	%local hash
+	%call :__ht_hash @ht, @key
+	mov @hash, @ret
+	# Which bucket?
+	ld.d @tmp0, [@ht]
+	mov @tmp1, @hash
+	mod @tmp1, @tmp0
+	mul @tmp1, 4
+	add @tmp1, @HT_OVERHEAD
+	add @tmp1, @ht
+	# If the bucket is NULL, the item doesn't exist
+	ld.d @tmp0, [@tmp1]
+	eq @tmp0, 0
+	mov? @ret, 0
+	jump? .done
+	# Exists, so now search it
+	st.d [:__ht_ll_lookup_hash], @hash
+	st.d [:__ht_ll_lookup_key_ptr], @key
+	%call :_ll_search, @tmp0, :__ht_ll_lookup_func, @ht
+	eq @ret, 0
+	jump? .done
+	add @ret, 8
+	ld.d @ret, [@ret]
+.done
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# void* ht_insert(void* ht, void* key, void* value)
+#===========================================================================
+:_ht_insert
+	%arg ht
+	%arg key
+	%arg value
+	%local hash
+	%local ll
+	%local llptr
+	%local node
+	%call :__ht_hash @ht, @key
+	mov @hash, @ret
+	# Which bucket?
+	ld.d @tmp0, [@ht]
+	mov @llptr, @hash
+	mod @llptr, @tmp0
+	mul @llptr, 4
+	add @llptr, @HT_OVERHEAD
+	add @llptr, @ht
+	# If the bucket is NULL, create it
+	ld.d @ll, [@llptr]
+	ne @ll, 0
+	jump? .exists
+	%call :_ll_init
+	mov @ll, @ret
+	st.d [@llptr], @ll
+.exists
+	%call :_ll_create_node, @HT_NODE_SIZE
+	mov @node, @ret
+	mov @tmp0, @node
+	st.d [@tmp0], @hash
+	add @tmp0, 4
+	st.d [@tmp0], @key
+	add @tmp0, 4
+	st.d [@tmp0], @value
+
+	%call :_ll_insert_head, @ll, @node
+	%ret
+#===========================================================================
+
+
+# Global data for __ht_ll_lookup_func
+:__ht_ll_lookup_hash
+	dd 0
+:__ht_ll_lookup_key_ptr
+	dd 0
+
+#===========================================================================
+# Lookup func
+#===========================================================================
+:__ht_ll_lookup_func
+	%arg node
+	%arg ht
+	# Quick check on hash
+	ld.d @tmp0, [@node]
+	ne @tmp0, [:__ht_ll_lookup_hash]
+	mov? @ret, 0
+	jump? .ret
+	# If hash matches, call lookup func
+	add @node, 4
+	ld.d @tmp0, [@node]
+	add @ht, 8
+	ld.d @tmp1, [@ht]
+	%call @tmp1, @tmp0, [:__ht_ll_lookup_key_ptr]
+.ret
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# Hashes a key based on the hash function in the table
+#===========================================================================
+:__ht_hash
+	%arg ht
+	%arg key
+	mov @tmp0, @ht
+	add @tmp0, 4
+	ld.d @tmp0, [@tmp0]
+	%call @tmp0 @key
+	%ret
+#===========================================================================

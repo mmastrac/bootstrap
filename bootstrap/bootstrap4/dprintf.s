@@ -93,3 +93,23 @@
 	db 0 0 0 0 0 0 0 0
 .digit_buffer_end
 	db 0
+
+
+#===========================================================================
+# Quick logger to stderr that doesn't require stack manipulation
+#===========================================================================
+:_quicklog
+	%arg fmt
+	%arg arg0
+	%arg arg1
+	%arg arg2
+	%arg arg3
+	%arg arg4
+	%arg arg5
+	%arg arg6
+	%arg arg7
+	push @arg7, @arg6, @arg5, @arg4, @arg3, @arg2, @arg1, @arg0
+	%call :_dprintf, 2, @fmt
+	pop @arg7, @arg6, @arg5, @arg4, @arg3, @arg2, @arg1, @arg0
+	%ret
+#===========================================================================
