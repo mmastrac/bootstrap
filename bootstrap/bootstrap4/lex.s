@@ -1,4 +1,4 @@
-# C lexer, complete for C89
+	# C lexer, complete for C89
 
 # Can be linked against the basic parser in bootstrap4, or a more complete parser
 # to generate assembly.
@@ -149,7 +149,7 @@
 	dd 0
 
 #===========================================================================
-# int _lex_attempt_match_table(int fd, char* buffer, int buffer_length,
+# int _lex_attempt_match_table(lex_file* file, char* buffer, int buffer_length,
 #                              char* string)
 #
 # Returns:
@@ -186,7 +186,7 @@
 
 
 #===========================================================================
-# int _lex_attempt_match_table(int fd, char* buffer, int buffer_length,
+# int _lex_attempt_match_table(lex_file* file, char* buffer, int buffer_length,
 #                              void* table, int first_char)
 # Returns:
 #   Token from the table, or zero if no match
@@ -225,7 +225,7 @@
 	jump^ .str_loop
 
 #===========================================================================
-# int lex(int fd, char* buffer, int buffer_length)
+# int lex(lex_file* file, char* buffer, int buffer_length)
 #
 # Returns:
 #   Lexical token type (or NULL if no token found)
@@ -238,7 +238,7 @@
 
 .whitespace_loop
 	# Read from the file handle in r0
-	%call :read_char, @fd
+	%call :__lex_read, @fd
 	mov @c, @ret
 
 	# Eat whitespace
@@ -288,6 +288,14 @@
 .done
 	%ret
 
+#===========================================================================
+# int _lex_digit(lex_file* file, char* buffer, int buffer_length)
+#===========================================================================
+:__lex_digit
+	%arg fd
+	%arg buffer
+	%arg buffer_length
+	%ret
 
 #===========================================================================
 # Args:

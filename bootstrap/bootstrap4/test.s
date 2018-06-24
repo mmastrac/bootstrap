@@ -100,7 +100,6 @@
 	jump .loop
 
 .done
-	%call :_dprintf, 2, &"Done\n"
 	push @total
 	push @passed
 	%call :_dprintf, 2, &"Passed %d of %d test(s)\n"
