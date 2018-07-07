@@ -32,6 +32,33 @@
 
 
 #===========================================================================
+# ll_node* node ll_remove_head(ll_head* ll)
+#
+# Removes the head node, returning the old node.
+#===========================================================================
+:_ll_remove_head
+	%arg list
+	%local old
+
+	ld.d @old, [@list]
+	eq @old, 0
+
+	# If the list is already empty, just return 0
+	mov? @ret, 0
+	%ret?
+
+	# Set up the next node
+	mov @tmp0, @old
+	ld.d @tmp0, [@tmp0]
+	st.d [@list], @tmp0
+
+	mov @ret, @old
+	eq @ret, 0
+	add^ @ret, 4
+	%ret
+
+
+#===========================================================================
 # void ll_insert_head(ll_head* ll, ll_node* node)
 #
 # Inserts a node at the head of the list, updating the list's head pointer.

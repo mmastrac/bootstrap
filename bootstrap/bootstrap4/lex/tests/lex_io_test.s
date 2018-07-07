@@ -9,6 +9,7 @@
 	%local ll
 	%local node
 	%local lex
+	%local file
 
 # Create the include list
 	%call :_ll_init
@@ -24,5 +25,10 @@
 
 # Open a file
 	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex/tests/lex_io_test/test.c"
+	mov @file, @ret
+
+	%call :__lex_read, @file
+	mov @tmp0, @ret
+	%call :_test_assert_equal, 'i', @tmp0, &"Expected first char to be 'i'"
 
 	%ret

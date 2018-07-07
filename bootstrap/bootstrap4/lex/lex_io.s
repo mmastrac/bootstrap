@@ -39,7 +39,10 @@
 #===========================================================================
 # lex_file* _lex_open_include(lex* lex, lex_file* parent, char* name)
 #
-# Opens a lexer file as an include.
+# Opens a lexer file as an include. Returns the same file as parent if
+# successful, otherwise 0. Future reads will take place from the include
+# file until it reaches EOF (at which time it will return a virtual EOL and
+# return to the parent file).
 #===========================================================================
 :__lex_open_include
 	%arg lex
