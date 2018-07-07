@@ -130,11 +130,17 @@
 	add @node, 4
 	st.d [@node], 3
 
+	%call :_ll_get_head, @ll
+	%call :_test_assert_equal, @ret, @nodec, &"Expected node C"
+
 	%call :_ll_search, @ll, :_linked_list_test_find_string, .node_a
 	%call :_test_assert_equal, @ret, @nodea, &"Expected node A"
 
 	%call :_ll_remove_head, @ll
 	%call :_test_assert_equal, @ret, @nodec, &"Expected node C"
+
+	%call :_ll_get_head, @ll
+	%call :_test_assert_equal, @ret, @nodeb, &"Expected node B"
 
 	%call :_ll_search, @ll, :_linked_list_test_find_string, .node_a
 	%call :_test_assert_equal, @ret, @nodea, &"Expected node A"
@@ -142,11 +148,17 @@
 	%call :_ll_remove_head, @ll
 	%call :_test_assert_equal, @ret, @nodeb, &"Expected node B"
 
+	%call :_ll_get_head, @ll
+	%call :_test_assert_equal, @ret, @nodea, &"Expected node A"
+
 	%call :_ll_search, @ll, :_linked_list_test_find_string, .node_a
 	%call :_test_assert_equal, @ret, @nodea, &"Expected node A"
 
 	%call :_ll_remove_head, @ll
 	%call :_test_assert_equal, @ret, @nodea, &"Expected node A"
+
+	%call :_ll_get_head, @ll
+	%call :_test_assert_equal, @ret, 0, &"Expected NULL"
 
 	%call :_ll_search, @ll, :_linked_list_test_find_string, .node_a
 	%call :_test_assert_equal, @ret, 0, &"Expected NULL"
