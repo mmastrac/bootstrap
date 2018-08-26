@@ -161,23 +161,30 @@
 	%arg buffer_length
 	%arg string
 	%local mark
+	%local char
 
-	%call :__lex_mark
+	%call :__lex_mark, @fd
 	mov @mark, @ret
 
 .loop
-	%call :__lex_read
-	ld.b @tmp0, [@string]
+	ld.b @char, [@string]
 
-	eq @tmp0, @ret
-	%call^ :__lex_rewind, @mark
-	mov^ @ret, @FALSE
-	%ret^
-
-	# If it's a match, we leave the stream as-is
-	eq @tmp0, @NULL
+	# If it's a match, we leave the stream as-is but don't read any more chars
+	eq @char, @NULL
 	mov? @ret, @TRUE
 	%ret?
+
+	%call :__lex_read, @fd
+
+	push @ret
+	mov @tmp0, @ret
+	pop @ret
+
+	eq @char, @ret
+
+	%call^ :__lex_rewind, @fd, @mark
+	mov^ @ret, @FALSE
+	%ret^
 
 	# Check the next byte
 	add @string, 1

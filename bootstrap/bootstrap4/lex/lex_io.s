@@ -86,6 +86,15 @@
 # Marks the current position in the stream
 #===========================================================================
 :__lex_mark
+	%arg file
+	%local fd
+
+	mov @tmp0, @file
+	add @tmp0, 4
+	ld.d @fd, [@tmp0]
+
+	%call :syscall4, @SC_SEEK, @fd, 0, @SEEK_CUR
+
 	%ret
 #===========================================================================
 
@@ -96,6 +105,15 @@
 # Rewinds to the marked position
 #===========================================================================
 :__lex_rewind
+	%arg file
+	%arg pos
+	%local fd
+
+	mov @tmp0, @file
+	add @tmp0, 4
+	ld.d @fd, [@tmp0]
+
+	%call :syscall4, @SC_SEEK, @fd, @pos, @SEEK_SET
+
 	%ret
 #===========================================================================
-
