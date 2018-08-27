@@ -41,3 +41,7 @@ This assembler also allows for more complex macros that make procedure calls, ar
 functionality, the compiler defines a calling convention that determines which registers are caller- or callee-saved.
 
 See `README.md` under `bootstrap4` for more details (TODO: move this to bootstrap3!)
+
+## bootstrap4/
+
+This is the first stage C compiler that compilers a (very reduced) subset of C. Currently a work-in-progress.
