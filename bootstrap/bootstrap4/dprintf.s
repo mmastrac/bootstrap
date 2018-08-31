@@ -55,6 +55,8 @@
 	jump? .percent_d
 	eq @tmp1, 'x'
 	jump? .percent_x
+	eq @tmp1, 'c'
+	jump? .percent_c
 
 	%call :_fatal, &"Invalid % escape"
 
@@ -87,6 +89,19 @@
 	%call :_dputs, @file_handle, @tmp0
 	add @varargs, 4
 	jump .loop
+
+.percent_c
+	ld.b @tmp0, [@varargs]
+	mov @tmp1, .byte_buffer
+	st.b [@tmp1], @tmp0
+	mov @tmp0, .byte_buffer
+	mov @tmp1, 1
+	sys @SC_WRITE @file_handle @tmp0 @tmp1
+	add @varargs, 4
+	jump .loop
+
+.byte_buffer
+	db 0
 
 .digit_buffer
 	db 0 0 0 0 0 0 0 0

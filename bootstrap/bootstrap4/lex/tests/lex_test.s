@@ -4,6 +4,7 @@
 
 // TODO: move this to a lex.h file
 #define TOKEN_INT 		116
+#define TOKEN_IDENTIFIER 	133
 
 :_lex_test
 	dd &"lex"
@@ -40,5 +41,13 @@
 	%call :_lex, @file, @buf, @BUFFER_SIZE
 	mov @tmp0, @ret
 	%call :_test_assert_equal, @TOKEN_INT, @tmp0, &"Expected first token to be 'int'"
+
+	%call :_lex, @file, @buf, @BUFFER_SIZE
+	mov @tmp0, @ret
+	%call :_test_assert_equal, @TOKEN_IDENTIFIER, @tmp0, &"Expected second token to be an identifier"
+
+	%call :_lex, @file, @buf, @BUFFER_SIZE
+	mov @tmp0, @ret
+	%call :_test_assert_equal, '(', @tmp0, &"Expected third token to be a left parenthesis"
 
 	%ret

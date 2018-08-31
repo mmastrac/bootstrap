@@ -176,10 +176,6 @@
 
 	%call :__lex_read, @fd
 
-	push @ret
-	mov @tmp0, @ret
-	pop @ret
-
 	eq @char, @ret
 
 	%call^ :__lex_rewind, @fd, @mark
@@ -194,7 +190,7 @@
 
 #===========================================================================
 # int _lex_attempt_match_table(lex_file* file, char* buffer, int buffer_length,
-#                              void* table, int first_char)
+#                              void* table, char first_char)
 # Returns:
 #   Token from the table, or zero if no match
 #===========================================================================
@@ -233,6 +229,41 @@
 #===========================================================================
 
 
+
+#===========================================================================
+# void _lex_consume_identifier(lex_file* file, char* buffer,
+#                              int buffer_length, char first_char)
+#===========================================================================
+:__lex_consume_identifier
+	%arg fd
+	%arg buffer
+	%arg buffer_length
+	%arg c
+	%local mark
+
+	st.b [@buffer], @c
+.loop
+	%call :__lex_mark, @fd
+	mov @mark, @ret
+
+	%call :__lex_read, @fd
+	st.b [@buffer], @ret
+
+	# If done, return
+	%call :_islabel, @ret
+	eq @ret, @NULL
+	jump? .done
+
+	add @buffer, 1
+	jump .loop
+
+.done
+	%call :__lex_rewind, @fd, @mark
+	mov @ret, @TOKEN_IDENTIFIER
+	%ret
+#===========================================================================
+
+
 #===========================================================================
 # int lex(lex_file* file, char* buffer, int buffer_length)
 #
@@ -246,13 +277,13 @@
 	%local c
 
 .whitespace_loop
-	# Read from the file handle in r0
+	# Read from the file handle
 	%call :__lex_read, @fd
 	mov @c, @ret
 
 	# Eat whitespace
 	%call :_iswhitespace, @c
-	eq r0, @TRUE
+	eq @ret, @TRUE
 	jump? .whitespace_loop
 
 	# Attempt to match multi-byte string tokens
@@ -262,38 +293,37 @@
 
 	# Attempt to match label/identifier
 	%call :_islabel, @c
-	eq r0, @TRUE
+	eq r0, @FALSE
+	jump? .not_identifier
 
+	%call :__lex_consume_identifier, @fd, @buffer, @buffer_length, @c
+	%ret
+
+.not_identifier
 	# Attempt to match constants
 	%call :_isdigit, @c
-	eq r0, @TRUE
-	#%tcall? :__lex_digit, @handle, @buffer, @buffer_length # tail call
-	%call? :__lex_digit, @fd, @buffer, @buffer_length # tail call
-	%ret?
+	eq r0, @FALSE
+	jump? .not_digit
 
+	#%tcall? :__lex_digit, @handle, @buffer, @buffer_length # tail call
+	%call :__lex_digit, @fd, @buffer, @buffer_length # tail call
+	%ret
+
+.not_digit
 	# Attempt to match multi-byte operators
 	%call :__lex_attempt_match_table, @fd, @buffer, @buffer_length, :multibyte_op_tokens, @c
 
 	# Attempt to match single-byte operators
 	%call :_strchr, :literal_tokens, @c
 	eq @ret, @NULL
-	sub^ @ret, :literal_tokens
-	jump^ .done
+	jump? .not_single_byte
 
+	mov @ret, @c
+	%ret
+
+.not_single_byte
 	%call :_fatal, &"Unexpected character 0x%x"
 
-.token_loop
-	ld.b r1, [r0]
-	eq r1, $0
-	jump? .token_done
-	eq r1, r13
-	mov? r0, r13
-	ret?
-	add r0, $1
-	jump .token_loop
-.token_done
-	mov r0, $0
-	ret
 .done
 	%ret
 #===========================================================================
@@ -317,17 +347,22 @@
 #   R0: 1 if true
 #===========================================================================
 :_islabel
+	push r0
 	eq r0, '_'
 	jump? .rettrue
 	call :_isdigit
 	eq r0, $1
 	jump? .rettrue
+	pop r0
+	push r0
 	call :_isalpha
 	eq r0, $1
 	jump? .rettrue
+	pop r0
 	mov r0, $0
 	ret
 .rettrue
+	pop r0
 	mov r0, $1
 	ret
 #===========================================================================
