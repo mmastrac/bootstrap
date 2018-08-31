@@ -14,11 +14,13 @@
 	ld.d @tmp0, [:__assertion]
 	add @tmp0, 1
 	st.d [:__assertion], @tmp0
-	mov r0, 2
 	push r1
-	mov r1, &"Assertion failed: %s\n"
+	push r0
+	mov r0, 2
+	mov r1, &"Assertion failed: %s (%d == 0)\n"
 	call :_dprintf
 	pop r1
+	pop r0
 	%ret
 #===========================================================================
 
@@ -34,11 +36,13 @@
 	ld.d @tmp0, [:__assertion]
 	add @tmp0, 1
 	st.d [:__assertion], @tmp0
-	mov r0, 2
 	push r1
-	mov r1, &"Assertion failed: %s\n"
+	push r0
+	mov r0, 2
+	mov r1, &"Assertion failed: %s (%d != 0)\n"
 	call :_dprintf
 	pop r1
+	pop r0
 	%ret
 #===========================================================================
 
@@ -55,11 +59,13 @@
 	ld.d @tmp0, [:__assertion]
 	add @tmp0, 1
 	st.d [:__assertion], @tmp0
-	mov r0, 2
+	push r0
+	push r1
 	push r2
-	mov r1, &"Assertion failed: %s\n"
-	call :_dprintf
+	%call :_dprintf, 2, &"Assertion failed: %s (%d != %d)\n"
 	pop r2
+	pop r1
+	pop r0
 	%ret
 #===========================================================================
 

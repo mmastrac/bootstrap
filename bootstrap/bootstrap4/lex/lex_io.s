@@ -72,6 +72,10 @@
 	add @tmp0, 4
 	ld.d @fd, [@tmp0]
 	%call :syscall4, @SC_READ, @fd, .buffer, 1
+	eq @ret, 0
+	mov? @ret, -1
+	%ret?
+
 	ld.b @ret, [.buffer]
 	%ret
 
