@@ -72,7 +72,14 @@
 
 	%call :_test_assert_equal, @tmp0, @tmp1, &"Incorrect token"
 
-	add @next_token, 8
+	add @next_token, 4
+
+	ld.d @tmp0, [@next_token]
+	%call :_strcmp, @tmp0, @buf
+
+	%call :_test_assert_equal, @ret, 0, &"Incorrect token string"
+
+	add @next_token, 4
 	ld.d @tmp0, [@next_token]
 	eq @tmp0, 0
 	jump^ .loop

@@ -101,6 +101,9 @@
 	%arg string
 	%local mark
 	%local char
+	%local orig_string
+
+	mov @orig_string, @string
 
 	%call :__lex_mark, @fd
 	mov @mark, @ret
@@ -110,8 +113,7 @@
 
 	# If it's a match, we leave the stream as-is but don't read any more chars
 	eq @char, @NULL
-	mov? @ret, @TRUE
-	%ret?
+	jump? .match
 
 	%call :__lex_read, @fd
 
@@ -124,6 +126,12 @@
 	# Check the next byte
 	add @string, 1
 	jump .loop
+
+.match
+	sub @orig_string, 1
+	%call :_strcpy, @buffer, @orig_string
+	mov @ret, @TRUE
+	%ret
 #===========================================================================
 
 
@@ -181,6 +189,7 @@
 	%local mark
 
 	st.b [@buffer], @c
+	add @buffer, 1
 .loop
 	%call :__lex_mark, @fd
 	mov @mark, @ret
@@ -197,6 +206,7 @@
 	jump .loop
 
 .done
+	st.b [@buffer], 0
 	%call :__lex_rewind, @fd, @mark
 	mov @ret, @TOKEN_IDENTIFIER
 	%ret
@@ -214,6 +224,8 @@
 	%arg buffer
 	%arg buffer_length
 	%local c
+
+	st.b [@buffer], 0
 
 .whitespace_loop
 	# Read from the file handle
@@ -264,6 +276,9 @@
 	jump? .not_single_byte
 
 	mov @ret, @c
+	st.b [@buffer], @c
+	add @buffer, 1
+	st.b [@buffer], 0
 	%ret
 
 .not_single_byte
