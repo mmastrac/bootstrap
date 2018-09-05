@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euox pipefail
-cc -g vm.c -o vm
+cc vm.c -std=c99 -D_ATFILE_SOURCE=1 -o vm
 
 ROOT=bootstrap
 TEST=$ROOT/tests

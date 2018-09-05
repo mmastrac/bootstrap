@@ -73,12 +73,36 @@ uint32_t readpc32() {
 	return value;
 }
 
+int map_open_flags(uint32_t flags) {
+	int out_flags = 0;
+	switch (flags & 3) {
+		case 0:
+			out_flags |= O_RDONLY;
+			break;
+		case 1:
+			out_flags |= O_WRONLY;
+			break;
+		case 2:
+			out_flags |= O_RDWR;
+			break;
+	}
+
+	if (flags & 0x200) {
+		out_flags |= O_CREAT;
+	}
+	if (flags & 0x400) {
+		out_flags |= O_TRUNC;
+	}
+
+	return out_flags;
+}
+
 int sc(uint32_t syscall,
 	uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
 	if (syscall == 0) {
 		debug("open");
-		dprintf("%s %08x\n", (const char*)&program[arg1], arg2);
-		int r = open((const char*)&program[arg1], arg2, 0777);
+		dprintf("%s %08x (%08x)\n", (const char*)&program[arg1], arg2, map_open_flags(arg2));
+		int r = open((const char*)&program[arg1], map_open_flags(arg2), 0777);
 		if (r < 0) {
 			perror("open");
 		}
@@ -141,7 +165,7 @@ int sc(uint32_t syscall,
 	} else if (syscall == 8) {
 		debug("openat");
 		dprintf("%x %s %08x\n", arg1, (const char*)&program[arg2], arg3);
-		int r = openat(arg1 == 0xffffff38 ? AT_FDCWD : (int)arg1, (const char*)&program[arg2], arg3, 0777);
+		int r = openat(arg1 == 0xffffff38 ? AT_FDCWD : (int)arg1, (const char*)&program[arg2], map_open_flags(arg3), 0777);
 		if (r < 0) {
 			perror("openat");
 		}
