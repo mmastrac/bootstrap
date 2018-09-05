@@ -53,5 +53,5 @@
 	jump .loop
 
 .done
-
+	mov @ret, 0
 	%ret
