@@ -1,4 +1,6 @@
-# bootstrap
+# bootstrap 
+
+[![Build Status](https://travis-ci.org/mmastrac/bootstrap.svg?branch=master)](https://travis-ci.org/mmastrac/bootstrap)
 
 Bootstrap is a small VM (< 20 ops) with an ASCII encoding. The goal of this project is to create a readable and auditable
 bootstrapping process to generate C binaries for this virtual platform or any other.
