@@ -35,30 +35,24 @@
 
 
 :_lex_test_tokens
-	%local ll
-	%local node
+	# TODO: Not sure why but if I get rid of these locals the test hangs...
+	%local unused1
+	%local unused2
+
 	%local lex
 	%local file
 	%local buf
 	%local next_token
 
-# Allocate a 256-byte buffer
+	# Allocate a 256-byte buffer
 	%call :_malloc, @BUFFER_SIZE
 	mov @buf, @ret
 
-# Create the include list
-	%call :_ll_init
-	mov @ll, @ret
-	%call :_ll_create_node, 4
-	mov @node, @ret
-	st.w [@node], &"bootstrap/bootstrap4/lex/tests/lex_io_test"
-	%call :_ll_insert_head, @ll, @node
-
-# Create the lex environment
-	%call :__lex_create, @ll
+	# Create the lexer
+	%call :__lex_test_create_lex
 	mov @lex, @ret
 
-# Open a file
+	# Open a file
 	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex/tests/lex_io_test/test.c"
 	mov @file, @ret
 

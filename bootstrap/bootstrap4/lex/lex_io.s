@@ -8,8 +8,19 @@
 #===========================================================================
 :__lex_create
 	%arg include_dirs
-	%call :_malloc, 4
-	st.w [@ret], @include_dirs
+	%local lex
+
+	%call :_malloc, 8
+	mov @lex, @ret
+	st.w [@lex], @include_dirs
+
+	# Allocate a hash table for the macros
+	%call :_ht_init, :_strhash, :_streq
+	mov @tmp0, @lex
+	add @tmp0, 4
+	st.w [@tmp0], @ret
+
+	mov @ret, @lex
 	%ret
 #===========================================================================
 
@@ -121,3 +132,23 @@
 
 	%ret
 #===========================================================================
+
+
+#===========================================================================
+# void _lex_define_macro(lex* lex, char* name, char* value)
+#
+# Defines a lazily-parsed macro for the given name
+#===========================================================================
+:__lex_define_macro
+	%ret
+
+
+#===========================================================================
+# void _lex_activate_macro(lex* lex, char* name)
+#
+# Activates a macro, which means we'll parse that through full before
+# returning to reading the file.
+#===========================================================================
+:__lex_activate_macro
+	%ret
+

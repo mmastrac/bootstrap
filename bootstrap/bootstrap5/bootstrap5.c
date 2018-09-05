@@ -4,13 +4,19 @@
 
 Simple subset of C.
 
- - Two fundamental types: char, int
- - Single-level pointer supported
- - malloc (but no free)
- - alloca (freed on function return)
+ - All types are 32-bit unsigned integer, C types may be specified but are ignored
+ - No varargs
+ - Any variable may be dereferenced, indexed, or called like a function
+ - All #defines must have a single numerical value
  - Simple assignment only (does not support -= += ++ -- etc)
  - No forward declarations, but symbol resolution is two-pass
- - No cast expression, but assignment always succeeds
+ - Simplistic cast expression support:
+    - (char)... is equivalent to (... & 0xff)
+    - (struct ...*|unsigned|unsigned *|int|int *|void *) are elided as used only for compatibility w/full compilers
+
+Stdlib limits:
+ - malloc (but no free)
+ - alloca (freed on function return)
 */
 
 #define OPEN_READ 0

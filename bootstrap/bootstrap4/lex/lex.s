@@ -20,10 +20,19 @@
 #define FALSE 0
 #define NULL 0
 
+#define PP_DEFINE 1
+#define PP_INCLUDE 2
+
 # Tokens that are a single character and whose token value is equal to their
 # ASCII values
 :literal_tokens
 	ds ";{},:=()[].&!~-+*/%<>^|?"
+
+# Preprocessor tokens, special handling
+:preprocessor_tokens
+	dd &"#define",	@PP_DEFINE
+	dd &"#include",	@PP_INCLUDE
+	dd 0
 
 # String-like tokens
 :string_tokens
@@ -214,6 +223,30 @@
 
 
 #===========================================================================
+# void _lex_handle_preprocessor(lex_file* file, int preprocessor_token)
+#===========================================================================
+:__lex_handle_preprocessor
+	%arg fd
+	%arg token
+
+	eq @token, @PP_INCLUDE
+	jump? .include
+
+	eq @token, @PP_DEFINE
+	jump? .define
+
+	%call :_fatal, &"Unexpected token"
+
+.include
+	# TODO
+	%ret
+
+.define
+	%ret
+#===========================================================================
+
+
+#===========================================================================
 # int lex(lex_file* file, char* buffer, int buffer_length)
 #
 # Returns:
@@ -241,6 +274,18 @@
 	eq @ret, @TRUE
 	jump? .whitespace_loop
 
+	eq @c, '#'
+	%call :__lex_attempt_match_table, @fd, @buffer, @buffer_length, :preprocessor_tokens, @c
+	eq @ret, @NULL
+	jump? .not_preprocessor
+
+	mov @tmp0, @ret
+	%call :__lex_handle_preprocessor, @fd, @tmp0
+
+	# We never return preprocessor commands - they are silently handled
+	jump? .whitespace_loop
+
+.not_preprocessor
 	# Attempt to match multi-byte string tokens
 	%call :__lex_attempt_match_table, @fd, @buffer, @buffer_length, :string_tokens, @c
 	eq @ret, @NULL

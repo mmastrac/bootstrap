@@ -5,6 +5,7 @@
 	dd :_strings_test_isdigit, &"test_isdigit"
 	dd :_strings_test_strchr, &"test_strchr"
 	dd :_strings_test_strcmp, &"test_strcmp"
+	dd :_strings_test_streq, &"test_streq"
 	dd 0, 0
 
 :_strings_test_isdigit
@@ -40,4 +41,15 @@
 	%call :_test_assert_equal, r0, 1, &"Expected +1"
 	%call :_strcmp, &"ABC", &"DEF"
 	%call :_test_assert_equal, r0, -1, &"Expected -1"
+	%ret
+
+:_strings_test_streq
+	%call :_streq, &"ABC", &"ABC"
+	%call :_test_assert_equal, r0, 1, &"Expected equal"
+	%call :_streq, &"ABC", &"ABCD"
+	%call :_test_assert_zero, r0, &"Expected not equal"
+	%call :_streq, &"ABCD", &"ABC"
+	%call :_test_assert_zero, r0, &"Expected not equal"
+	%call :_streq, &"ABC", &"DEF"
+	%call :_test_assert_zero, r0, &"Expected not equal"
 	%ret

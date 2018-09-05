@@ -7,24 +7,14 @@
 	dd 0, 0
 
 :_lex_io_test_create
-	%local ll
-	%local node
 	%local lex
 	%local file
 
-# Create the include list
-	%call :_ll_init
-	mov @ll, @ret
-	%call :_ll_create_node, 4
-	mov @node, @ret
-	st.w [@node], &"bootstrap/bootstrap4/lex/tests/lex_io_test"
-	%call :_ll_insert_head, @ll, @node
-
-# Create the lex environment
-	%call :__lex_create, @ll
+	# Create the lexer
+	%call :__lex_test_create_lex
 	mov @lex, @ret
 
-# Open a file
+	# Open a file
 	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex/tests/lex_io_test/test.c"
 	mov @file, @ret
 
@@ -42,7 +32,7 @@
 	%local mark1
 	%local mark2
 
-# Create the include list
+	# Create the include list
 	%call :_ll_init
 	mov @ll, @ret
 	%call :_ll_create_node, 4
@@ -50,11 +40,11 @@
 	st.w [@node], &"bootstrap/bootstrap4/lex/tests/lex_io_test"
 	%call :_ll_insert_head, @ll, @node
 
-# Create the lex environment
+	# Create the lex environment
 	%call :__lex_create, @ll
 	mov @lex, @ret
 
-# Open a file
+	# Open a file
 	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex/tests/lex_io_test/test.c"
 	mov @file, @ret
 
