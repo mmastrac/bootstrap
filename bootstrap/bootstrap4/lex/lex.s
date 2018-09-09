@@ -230,6 +230,7 @@
 	%arg token
 	%local identifier
 	%local index
+	%local value
 
 	eq @token, @PP_INCLUDE
 	jump? .include
@@ -244,7 +245,6 @@
 	%ret
 
 .define
-
 	%call :_lex, @fd, .buffer, 32
 	eq @ret, @TOKEN_IDENTIFIER
 	jump? .is_identifier
@@ -252,14 +252,9 @@
 	%call :_fatal, &"Unexpected token"
 
 .is_identifier
-	%call :_strlen, .buffer
-	add @ret, 1
-	%call :_malloc, @ret
-	%call :_strcpy, @ret, .buffer
-
+	%call :_stralloc, .buffer
 	mov @identifier, @ret
 	mov @index, 0
-
 
 .loop
 	%call :__lex_read, @fd
@@ -281,13 +276,10 @@
 	add @tmp0, .buffer
 	st.b [@tmp0], 0
 
-	%call :_strlen, .buffer
-	add @ret, 1
-	%call :_malloc, @ret
-	%call :_strcpy, @ret, .buffer
-	mov @tmp0, @ret
+	%call :_stralloc, .buffer
+	mov @value, @ret
 
-	%call :__lex_define_macro, @fd, @identifier, @tmp0
+	%call :__lex_define_macro, @fd, @identifier, @value
 
 	%ret
 
@@ -341,7 +333,7 @@
 	%call :__lex_handle_preprocessor, @fd, @tmp0
 
 	# We never return preprocessor commands - they are silently handled
-	jump? .whitespace_loop
+	jump .whitespace_loop
 
 .not_preprocessor
 	# Attempt to match multi-byte string tokens
@@ -385,7 +377,7 @@
 	%ret
 
 .not_single_byte
-	%call :_fatal, &"Unexpected character 0x%x"
+	%call :_fatal, &"Unexpected character"
 
 .done
 	%ret

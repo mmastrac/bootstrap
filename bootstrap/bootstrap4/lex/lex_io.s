@@ -1,6 +1,17 @@
 #include "regs.h"
 #include "syscall.h"
 
+:__lex_hash_table_test_key_compare
+	%arg a
+	%arg b
+	%call :_streq, @a, @b
+	%ret
+
+:__lex_hash_table_test_key_hash
+	%arg key
+	%call :_strhash, @key
+	%ret
+
 #===========================================================================
 # lex* _lex_create(ll_head* include_dirs)
 #
@@ -46,10 +57,13 @@
 	st.d [@tmp0], 0
 
 	# Allocate a hash table for the macros
-	%call :_ht_init, :_strhash, :_streq
+	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
 	mov @tmp0, @file
 	add @tmp0, 12
 	st.d [@tmp0], @ret
+
+	# %call :_ht_insert, @ret, &"a", &"b" #@name, @value
+	%call :__lex_define_macro, @file, &"A", &"B"
 
 	mov @ret, @file
 	%ret
@@ -145,13 +159,15 @@
 	%arg fd
 	%arg name
 	%arg value
+	%local ht
 
 	add @fd, 12
-	ld.d @tmp0, [@fd]
+	ld.d @ht, [@fd]
 
-	# %call :_ht_insert, @tmp0, @name, @value
+	%call :_ht_insert, @ht, @name, @value
 
 	%ret
+#===========================================================================
 
 
 #===========================================================================

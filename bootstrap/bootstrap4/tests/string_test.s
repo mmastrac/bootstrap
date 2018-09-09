@@ -6,6 +6,7 @@
 	dd :_strings_test_strchr, &"test_strchr"
 	dd :_strings_test_strcmp, &"test_strcmp"
 	dd :_strings_test_streq, &"test_streq"
+	dd :_strings_test_stralloc, &"test_stralloc"
 	dd 0, 0
 
 :_strings_test_isdigit
@@ -52,4 +53,26 @@
 	%call :_test_assert_zero, r0, &"Expected not equal"
 	%call :_streq, &"ABC", &"DEF"
 	%call :_test_assert_zero, r0, &"Expected not equal"
+	%ret
+
+:_strings_test_stralloc
+	%local a
+	%local b
+
+	%call :_stralloc, &"ABCDE"
+	mov @a, @ret
+	%call :_stralloc, &"FGHIJK"
+	mov @b, @ret
+
+	%call :_streq, @a, &"ABCDE"
+	%call :_test_assert_nonzero, r0, &"Expected equal"
+	%call :_streq, @b, &"FGHIJK"
+	%call :_test_assert_nonzero, r0, &"Expected equal"
+
+	# Expected that these strings are one after another in memory
+	# This test might fail if malloc gets smarter!
+	mov @tmp0, @a
+	add @tmp0, 6
+	%call :_test_assert_equal, @tmp0, @b, &"Expected equal"
+
 	%ret

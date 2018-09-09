@@ -49,7 +49,8 @@
 :_fatal
 	mov r8, r0
 	call :_strlen
-	sys @SC_WRITE, r8, r0
+	mov r1, 2
+	sys @SC_WRITE, r1, r8, r0
 	mov r0, 1
 	sys @SC_EXIT, r0
 

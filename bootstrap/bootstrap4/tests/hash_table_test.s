@@ -6,10 +6,9 @@
 	dd 0, 0
 
 :__hash_table_test_key_compare
-	%call :_strcmp
-	eq @ret, 0
-	mov? @ret, 1
-	mov^ @ret, 0
+	%arg a
+	%arg b
+	%call :_streq, @a, @b
 	%ret
 
 :__hash_table_test_key_hash
