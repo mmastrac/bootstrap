@@ -39,7 +39,7 @@
 	%arg lex
 	%arg name
 	%local file
-	%call :_malloc, 16
+	%call :_malloc, 24
 	mov @file, @ret
 
 	# Include linked list (doesn't include current fd)
@@ -94,6 +94,34 @@
 	%arg file
 	%local fd
 
+	mov @tmp0, @file
+	add @tmp0, 16
+	ld.d @tmp0, [@tmp0]
+
+	# Is this a macro?
+	eq @tmp0, 0
+	jump? .file
+
+	# Index
+	mov @tmp1, @file
+	add @tmp1, 20
+	ld.d @tmp2, [@tmp1]
+	add @tmp0, @tmp2
+	ld.b @tmp0, [@tmp0]
+	add @tmp2, 1
+	st.d [@tmp1], @tmp2
+
+	# End of macro?
+	eq @tmp0, 0
+	mov? @tmp0, @file
+	add? @tmp0, 16
+	st.d? [@tmp0], 0
+	jump? .file
+
+	mov @ret, @tmp0
+	%ret
+
+.file
 	mov @tmp0, @file
 	add @tmp0, 4
 	ld.d @fd, [@tmp0]
@@ -171,11 +199,37 @@
 
 
 #===========================================================================
-# void _lex_activate_macro(lex_file* file, char* name)
+# int _lex_activate_macro(lex_file* file, char* name)
 #
 # Activates a macro, which means we'll parse that through full before
-# returning to reading the file.
+# returning to reading the file. Will return non-zero if successful.
 #===========================================================================
 :__lex_activate_macro
-	%ret
+	%arg fd
+	%arg name
+	%local ht
+	%local value
 
+	mov @tmp0, @fd
+	add @tmp0, 12
+	ld.d @ht, [@tmp0]
+
+	%call :_ht_lookup, @ht, @name
+	mov @value, @ret
+
+	eq @value, 0
+	mov? @ret, 0
+	%ret?
+
+	# Activate macro
+	mov @tmp0, @fd
+	add @tmp0, 16
+	st.d [@tmp0], @value
+
+	# Macro index
+	mov @tmp0, @fd
+	add @tmp0, 20
+	st.d [@tmp0], 0
+
+	mov @ret, 1
+	%ret

@@ -347,7 +347,13 @@
 	jump? .not_identifier
 
 	%call :__lex_consume_identifier, @fd, @buffer, @buffer_length, @c
-	%ret
+	%call :__lex_activate_macro, @fd, @buffer
+	eq @ret, 0
+	mov? @ret, @TOKEN_IDENTIFIER
+	%ret?
+
+	# We activated a macro, restart lex loop
+	jump .whitespace_loop
 
 .not_identifier
 	# Attempt to match constants
