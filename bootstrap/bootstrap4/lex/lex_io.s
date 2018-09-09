@@ -10,15 +10,9 @@
 	%arg include_dirs
 	%local lex
 
-	%call :_malloc, 8
+	%call :_malloc, 4
 	mov @lex, @ret
 	st.w [@lex], @include_dirs
-
-	# Allocate a hash table for the macros
-	%call :_ht_init, :_strhash, :_streq
-	mov @tmp0, @lex
-	add @tmp0, 4
-	st.w [@tmp0], @ret
 
 	mov @ret, @lex
 	%ret
@@ -34,23 +28,30 @@
 	%arg lex
 	%arg name
 	%local file
-	%call :_malloc, 12
+	%call :_malloc, 16
+	mov @file, @ret
 
 	# Include linked list (doesn't include current fd)
 	%call :_ll_init
-	st.w [@file], @ret
+	st.d [@file], @ret
 
 	# current fd is cached in the struct
 	%call :_open, @name, 0
 	mov @tmp0, @file
 	add @tmp0, 4
-	st.w [@tmp0], @ret
+	st.d [@tmp0], @ret
 
 	# mark
 	add @tmp0, 4
-	st.w [@tmp0], 0
-	mov @ret, @file
+	st.d [@tmp0], 0
 
+	# Allocate a hash table for the macros
+	%call :_ht_init, :_strhash, :_streq
+	mov @tmp0, @file
+	add @tmp0, 12
+	st.d [@tmp0], @ret
+
+	mov @ret, @file
 	%ret
 #===========================================================================
 
@@ -83,6 +84,7 @@
 	add @tmp0, 4
 	ld.d @fd, [@tmp0]
 	%call :syscall4, @SC_READ, @fd, .buffer, 1
+
 	eq @ret, 0
 	mov? @ret, -1
 	%ret?
@@ -135,16 +137,25 @@
 
 
 #===========================================================================
-# void _lex_define_macro(lex* lex, char* name, char* value)
+# void _lex_define_macro(lex_file* file, char* name, char* value)
 #
 # Defines a lazily-parsed macro for the given name
 #===========================================================================
 :__lex_define_macro
+	%arg fd
+	%arg name
+	%arg value
+
+	add @fd, 12
+	ld.d @tmp0, [@fd]
+
+	# %call :_ht_insert, @tmp0, @name, @value
+
 	%ret
 
 
 #===========================================================================
-# void _lex_activate_macro(lex* lex, char* name)
+# void _lex_activate_macro(lex_file* file, char* name)
 #
 # Activates a macro, which means we'll parse that through full before
 # returning to reading the file.

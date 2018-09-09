@@ -111,6 +111,12 @@
 	%call :_dprintf, 2, &"Passed %d of %d test(s)\n"
 	pop @passed
 	pop @total
+	eq @passed, @total
+	jump? .success
+	mov @ret, 1
+	%ret
+
+.success
 	mov @ret, 0
 	%ret
 #===========================================================================

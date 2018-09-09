@@ -66,12 +66,12 @@
 
 	%call :__lex_read, @file
 	mov @tmp0, @ret
-	%call :_test_assert_equal, 'n', @tmp0, &"Expected second char to be 'n'"
+	%call :_test_assert_equal, 'n', @tmp0, &"Expected second char to be 'n' (second read)"
 
 	%call :__lex_rewind, @file, @mark1
 
 	%call :__lex_read, @file
 	mov @tmp0, @ret
-	%call :_test_assert_equal, 'i', @tmp0, &"Expected first char to be 'i'"
+	%call :_test_assert_equal, 'i', @tmp0, &"Expected first char to be 'i' (second read)"
 
 	%ret

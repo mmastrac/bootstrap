@@ -228,6 +228,8 @@
 :__lex_handle_preprocessor
 	%arg fd
 	%arg token
+	%local identifier
+	%local index
 
 	eq @token, @PP_INCLUDE
 	jump? .include
@@ -242,7 +244,63 @@
 	%ret
 
 .define
+
+	%call :_lex, @fd, .buffer, 32
+	eq @ret, @TOKEN_IDENTIFIER
+	jump? .is_identifier
+
+	%call :_fatal, &"Unexpected token"
+
+.is_identifier
+	%call :_strlen, .buffer
+	add @ret, 1
+	%call :_malloc, @ret
+	%call :_strcpy, @ret, .buffer
+
+	mov @identifier, @ret
+	mov @index, 0
+
+
+.loop
+	%call :__lex_read, @fd
+	eq @ret, 10
+	jump? .eol
+
+	mov @tmp0, @index
+	add @tmp0, .buffer
+	st.b [@tmp0], @ret
+	add @index, 1
+
+	eq @ret, -1
+	%call? :_fatal, &"Unexpected EOF in #define"
+
+	jump .loop
+
+.eol
+	mov @tmp0, @index
+	add @tmp0, .buffer
+	st.b [@tmp0], 0
+
+	%call :_strlen, .buffer
+	add @ret, 1
+	%call :_malloc, @ret
+	%call :_strcpy, @ret, .buffer
+	mov @tmp0, @ret
+
+	%call :__lex_define_macro, @fd, @identifier, @tmp0
+
 	%ret
+
+.buffer
+
+	db 0,0,0,0,0,0,0,0
+	db 0,0,0,0,0,0,0,0
+	db 0,0,0,0,0,0,0,0
+	db 0,0,0,0,0,0,0,0
+	db 0,0,0,0,0,0,0,0
+	db 0,0,0,0,0,0,0,0
+	db 0,0,0,0,0,0,0,0
+	db 0,0,0,0,0,0,0,0
 #===========================================================================
 
 
@@ -292,7 +350,7 @@
 	jump^ .done
 
 	# Attempt to match label/identifier
-	%call :_islabel, @c
+	%call :_islabelstart, @c
 	eq r0, @FALSE
 	jump? .not_identifier
 
@@ -306,7 +364,7 @@
 	jump? .not_digit
 
 	#%tcall? :__lex_digit, @handle, @buffer, @buffer_length # tail call
-	%call :__lex_digit, @fd, @buffer, @buffer_length # tail call
+	%call :__lex_digit, @fd, @buffer, @buffer_length, @c # tail call
 	%ret
 
 .not_digit
@@ -335,13 +393,59 @@
 
 
 #===========================================================================
-# int _lex_digit(lex_file* file, char* buffer, int buffer_length)
+# int _lex_digit(lex_file* file, char* buffer, int buffer_length,
+# 				 char first_char)
 #===========================================================================
 :__lex_digit
 	%arg fd
 	%arg buffer
 	%arg buffer_length
+	%arg c
+	%local mark
+
+	st.b [@buffer], @c
+	add @buffer, 1
+
+.loop
+	%call :__lex_mark, @fd
+	mov @mark, @ret
+
+	%call :__lex_read, @fd
+	st.b [@buffer], @ret
+
+	# If done, return
+	%call :_isdigit, @ret
+	eq @ret, @NULL
+	jump? .done
+
+	add @buffer, 1
+	jump .loop
+
+.done
+	st.b [@buffer], 0
+	%call :__lex_rewind, @fd, @mark
+	mov @ret, @TOKEN_CONSTANT
 	%ret
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: char
+# Returns:
+#   R0: 1 if true
+#===========================================================================
+:_islabelstart
+	eq r0, '_'
+	jump? .rettrue
+	call :_isalpha
+	eq r0, $1
+	jump? .rettrue
+	mov r0, $0
+	ret
+.rettrue
+	mov r0, $1
+	ret
 #===========================================================================
 
 
