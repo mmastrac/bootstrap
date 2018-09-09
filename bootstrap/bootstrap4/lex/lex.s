@@ -127,18 +127,21 @@
 	%call :__lex_read, @fd
 
 	eq @char, @ret
-
-	%call^ :__lex_rewind, @fd, @mark
-	mov^ @ret, @FALSE
-	%ret^
+	jump^ .nomatch
 
 	# Check the next byte
 	add @string, 1
 	jump .loop
 
+.nomatch
+	%call :__lex_rewind, @fd, @mark
+	mov @ret, @FALSE
+	%ret
+
 .match
 	sub @orig_string, 1
 	%call :_strcpy, @buffer, @orig_string
+
 	mov @ret, @TRUE
 	%ret
 #===========================================================================

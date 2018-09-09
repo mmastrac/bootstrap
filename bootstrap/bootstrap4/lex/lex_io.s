@@ -39,31 +39,48 @@
 	%arg lex
 	%arg name
 	%local file
-	%call :_malloc, 24
+	%local ll
+	%local node
+
+	%call :_malloc, 8
 	mov @file, @ret
 
-	# Include linked list (doesn't include current fd)
+	# Include/macro linked list
 	%call :_ll_init
-	st.d [@file], @ret
+	mov @ll, @ret
+	st.d [@file], @ll
 
-	# current fd is cached in the struct
+	# This file becomes the first node
+	%call :_ll_create_node, 16
+	mov @node, @ret
+
+	# Offset (@0)
+	mov @tmp0, @node
+	st.d [@tmp0], 0
+
+	# fd (@4)
 	%call :_open, @name, 0
-	mov @tmp0, @file
+	mov @tmp0, @node
 	add @tmp0, 4
 	st.d [@tmp0], @ret
 
-	# mark
-	add @tmp0, 4
-	st.d [@tmp0], 0
+	# Read function (@8)
+	mov @tmp0, @node
+	add @tmp0, 8
+	st.d [@tmp0], :__lex_read_fd
+
+	# Seek function (@12)
+	mov @tmp0, @node
+	add @tmp0, 12
+	st.d [@tmp0], :__lex_seek_fd
+
+	%call :_ll_insert_head, @ll, @node
 
 	# Allocate a hash table for the macros
 	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
 	mov @tmp0, @file
-	add @tmp0, 12
+	add @tmp0, 4
 	st.d [@tmp0], @ret
-
-	# %call :_ht_insert, @ret, &"a", &"b" #@name, @value
-	%call :__lex_define_macro, @file, &"A", &"B"
 
 	mov @ret, @file
 	%ret
@@ -86,45 +103,12 @@
 
 
 #===========================================================================
-# int _lex_read(lex_file* file)
-#
-# Reads a char or -1 for EOF.
+# Read function for fd-based source
 #===========================================================================
-:__lex_read
-	%arg file
-	%local fd
+:__lex_read_fd
+	%arg fd
+	%arg offset
 
-	mov @tmp0, @file
-	add @tmp0, 16
-	ld.d @tmp0, [@tmp0]
-
-	# Is this a macro?
-	eq @tmp0, 0
-	jump? .file
-
-	# Index
-	mov @tmp1, @file
-	add @tmp1, 20
-	ld.d @tmp2, [@tmp1]
-	add @tmp0, @tmp2
-	ld.b @tmp0, [@tmp0]
-	add @tmp2, 1
-	st.d [@tmp1], @tmp2
-
-	# End of macro?
-	eq @tmp0, 0
-	mov? @tmp0, @file
-	add? @tmp0, 16
-	st.d? [@tmp0], 0
-	jump? .file
-
-	mov @ret, @tmp0
-	%ret
-
-.file
-	mov @tmp0, @file
-	add @tmp0, 4
-	ld.d @fd, [@tmp0]
 	%call :syscall4, @SC_READ, @fd, .buffer, 1
 
 	eq @ret, 0
@@ -140,19 +124,122 @@
 
 
 #===========================================================================
+# Seek function for fd-based source
+#===========================================================================
+:__lex_seek_fd
+	%arg fd
+	%arg offset
+
+	%call :syscall4, @SC_SEEK, @fd, @offset, @SEEK_SET
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# Read function for macro-based source
+#===========================================================================
+:__lex_read_macro
+	%arg fd
+	%arg offset
+
+	add @fd, @offset
+	ld.b @tmp0, [@fd]
+
+	# End of macro?
+	eq @tmp0, 0
+	mov? @ret, -1
+	%ret?
+
+	mov @ret, @tmp0
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# Seek function for macro-based source
+#===========================================================================
+:__lex_seek_macro
+	%arg data
+	%arg offset
+
+	# No-op
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# int _lex_read(lex_file* file)
+#
+# Reads a char or -1 for EOF.
+#===========================================================================
+:__lex_read
+	%arg file
+	%local ll
+	%local fd
+	%local offset
+	%local read_fn
+	%local node
+
+	ld.d @ll, [@file]
+
+.reread
+	%call :_ll_get_head, @ll
+	mov @node, @ret
+
+	# If nothing left on the read stack, return EOF (-1)
+	eq @ret, 0
+	mov? @ret, -1
+	%ret?
+
+	ld.d @offset, [@ret]
+	add @ret, 4
+	ld.d @fd, [@ret]
+	add @ret, 4
+	ld.d @read_fn, [@ret]
+
+	%call @read_fn, @fd, @offset
+
+	push @ret
+	mov @tmp0, @ret
+	%call :_quicklog, &"Read: %x %c\n", @tmp0, @tmp0
+	pop @ret
+
+	ne @ret, -1
+	add? @offset, 1
+	st.d? [@node], @offset
+	%ret?
+
+	# We hit EOF on that particular file/macro, so jump back to re-read
+	%call :_ll_remove_head, @ll
+	%call :_quicklog, &"Read: EOL"
+	mov @ret, 10
+	%ret
+#	jump .reread
+
+.buffer
+	db 0
+#===========================================================================
+
+
+#===========================================================================
 # int _lex_mark(lex_file* file)
 #
 # Marks the current position in the stream
 #===========================================================================
 :__lex_mark
 	%arg file
-	%local fd
+	%local ll
 
-	mov @tmp0, @file
-	add @tmp0, 4
-	ld.d @fd, [@tmp0]
+	# Return the offset from the current file/macro
+	ld.d @ll, [@file]
+	%call :_ll_get_head, @ll
 
-	%call :syscall4, @SC_SEEK, @fd, 0, @SEEK_CUR
+	ld.d @ret, [@ret]
+
+	push @ret
+	mov @tmp0, @ret
+	%call :_quicklog, &"Mark: %x\n", @tmp0
+	pop @ret
 
 	%ret
 #===========================================================================
@@ -166,14 +253,22 @@
 :__lex_rewind
 	%arg file
 	%arg pos
+	%local ll
 	%local fd
+	%local seek_fn
 
-	mov @tmp0, @file
-	add @tmp0, 4
-	ld.d @fd, [@tmp0]
+	%call :_quicklog, &"Rewind: %x\n", @pos
 
-	%call :syscall4, @SC_SEEK, @fd, @pos, @SEEK_SET
+	ld.d @ll, [@file]
+	%call :_ll_get_head, @ll
 
+	st.d [@ret], @pos
+	add @ret, 4
+	ld.d @fd, [@ret]
+	add @ret, 8
+	ld.d @seek_fn, [@ret]
+
+	%call @seek_fn, @fd, @pos
 	%ret
 #===========================================================================
 
@@ -189,7 +284,7 @@
 	%arg value
 	%local ht
 
-	add @fd, 12
+	add @fd, 4
 	ld.d @ht, [@fd]
 
 	%call :_ht_insert, @ht, @name, @value
@@ -209,9 +304,11 @@
 	%arg name
 	%local ht
 	%local value
+	%local ll
+	%local node
 
 	mov @tmp0, @fd
-	add @tmp0, 12
+	add @tmp0, 4
 	ld.d @ht, [@tmp0]
 
 	%call :_ht_lookup, @ht, @name
@@ -221,15 +318,34 @@
 	mov? @ret, 0
 	%ret?
 
+	%call :_quicklog, &"macro = <<%s>>\n", @value
+
 	# Activate macro
-	mov @tmp0, @fd
-	add @tmp0, 16
+	ld.d @ll, [@fd]
+
+	%call :_ll_create_node, 16
+	mov @node, @ret
+
+	# Offset (@0)
+	mov @tmp0, @node
+	st.d [@tmp0], 0
+
+	# Macro value (@4)
+	mov @tmp0, @node
+	add @tmp0, 4
 	st.d [@tmp0], @value
 
-	# Macro index
-	mov @tmp0, @fd
-	add @tmp0, 20
-	st.d [@tmp0], 0
+	# Read function (@8)
+	mov @tmp0, @node
+	add @tmp0, 8
+	st.d [@tmp0], :__lex_read_macro
+
+	# Seek function (@12)
+	mov @tmp0, @node
+	add @tmp0, 12
+	st.d [@tmp0], :__lex_seek_macro
+
+	%call :_ll_insert_head, @ll, @node
 
 	mov @ret, 1
 	%ret
