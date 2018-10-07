@@ -5,9 +5,44 @@
 
 :_lex_test
 	dd &"lex"
+	dd :_lex_test_operators, &"test_operators"
 	dd :_lex_test_tokens, &"test_tokens"
 	dd :_lex_test_tokens_define, &"test_tokens_define"
 	dd 0, 0
+
+:_lex_test_operators
+	# Need the lex tables initialized
+	%call :__lex_init
+
+	%call :__lex_is_valid_operator, &""
+	mov @tmp0, @ret
+	%call :_test_assert_equal, @tmp0, 0, &"Incorrect token"
+
+	%call :__lex_is_valid_operator, &"+"
+	mov @tmp0, @ret
+	%call :_test_assert_equal, @tmp0, '+', &"Incorrect token"
+
+	%call :__lex_is_valid_operator, &"-"
+	mov @tmp0, @ret
+	%call :_test_assert_equal, @tmp0, '-', &"Incorrect token"
+
+	%call :__lex_is_valid_operator, &"a"
+	mov @tmp0, @ret
+	%call :_test_assert_equal, @tmp0, 0, &"Incorrect token"
+
+	%call :__lex_is_valid_operator, &"++"
+	mov @tmp0, @ret
+	%call :_test_assert_equal, @tmp0, @TOKEN_INC_OP, &"Incorrect token"
+
+	%call :__lex_is_valid_operator, &"--"
+	mov @tmp0, @ret
+	%call :_test_assert_equal, @tmp0, @TOKEN_DEC_OP, &"Incorrect token"
+
+	%call :__lex_is_valid_operator, &"+-"
+	mov @tmp0, @ret
+	%call :_test_assert_equal, @tmp0, 0, &"Incorrect token"
+
+	%ret
 
 # Checks a stream of tokens against what comes out of a file
 :__lex_confirm_tokens

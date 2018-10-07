@@ -28,6 +28,10 @@
 	%call :_ht_insert, @ht, &"Aa", 3
 	%call :_ht_insert, @ht, &"BB", 4
 
+	# Test null key
+	%call :_ht_lookup, @ht, &""
+	%call :_test_assert_zero, @ret, &"Expected NULL"
+
 	# Doesn't exist - bucket missing
 	%call :_ht_lookup, @ht, &"C"
 	%call :_test_assert_zero, @ret, &"Expected NULL"

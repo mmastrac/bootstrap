@@ -161,22 +161,10 @@
 
 	# End of macro?
 	eq @tmp0, 0
-	mov? @ret, -1
+	mov? @ret, @TOKEN_EOF
 	%ret?
 
 	mov @ret, @tmp0
-	%ret
-#===========================================================================
-
-
-#===========================================================================
-# Seek function for macro-based source
-#===========================================================================
-:__lex_peek_macro
-	%arg data
-	%arg offset
-
-	# No-op
 	%ret
 #===========================================================================
 
@@ -213,10 +201,10 @@
 
 	%call @read_fn, @fd, @offset
 
-	push @ret
-	mov @tmp0, @ret
-	%call :_quicklog, &"Read: %x %c\n", @tmp0, @tmp0
-	pop @ret
+	# push @ret
+	# mov @tmp0, @ret
+	# %call :_quicklog, &"Read: %x %c\n", @tmp0, @tmp0
+	# pop @ret
 
 	ne @ret, @TOKEN_EOF
 	add? @offset, 1
@@ -225,7 +213,7 @@
 
 	# We hit EOF on that particular file/macro, so return EOT and pop a step
 	%call :_ll_remove_head, @ll
-	%call :_quicklog, &"Read: EOL"
+	# %call :_quicklog, &"Read: EOT\n"
 	mov @ret, @TOKEN_EOT
 	%ret
 
@@ -266,18 +254,16 @@
 
 	%call @peek_fn, @fd, @offset
 
-	push @ret
-	mov @tmp0, @ret
-	%call :_quicklog, &"Peek: %x %c\n", @tmp0, @tmp0
-	pop @ret
+	# push @ret
+	# mov @tmp0, @ret
+	# %call :_quicklog, &"Peek: %x %c\n", @tmp0, @tmp0
+	# pop @ret
 
 	ne @ret, @TOKEN_EOF
-	add? @offset, 1
-	st.d? [@node], @offset
 	%ret?
 
 	# We hit EOF on that particular file/macro, so return EOT
-	%call :_quicklog, &"Peek: EOL"
+	# %call :_quicklog, &"Peek: EOT\n"
 	mov @ret, @TOKEN_EOT
 	%ret
 
@@ -360,8 +346,6 @@
 	mov? @ret, 0
 	%ret?
 
-	%call :_quicklog, &"macro = <<%s>>\n", @value
-
 	# Activate macro
 	ld.d @ll, [@fd]
 
@@ -385,7 +369,7 @@
 	# Peek function (@12)
 	mov @tmp0, @node
 	add @tmp0, 12
-	st.d [@tmp0], :__lex_peek_macro
+	st.d [@tmp0], :__lex_read_macro
 
 	%call :_ll_insert_head, @ll, @node
 

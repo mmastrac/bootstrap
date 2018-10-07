@@ -134,6 +134,7 @@
 	add @ptr, 4
 	ld.d @tmp1, [@ptr]
 	add @ptr, 4
+
 	%call :_ht_insert, @ht, @tmp0, @tmp1
 	jump .loop1
 .done1
@@ -221,6 +222,7 @@
 
 .done
 	st.b [@buffer], 0
+	mov @ret, @TOKEN_CONSTANT
 	%ret
 #===========================================================================
 
@@ -248,13 +250,29 @@
 	%ret
 
 .define
-	%call :_lex, @fd, .buffer, 32
+	%call :__lex_peek, @fd
+	%call :_iswhitespace
+	eq @ret, @FALSE
+	jump? .ws_def_id
+	%call :__lex_read, @fd
+	jump .define
+
+.ws_def_id
+	%call :__lex_consume_identifier, @fd, .buffer, 32
 	eq @ret, @TOKEN_IDENTIFIER
 	jump? .is_identifier
 
 	%call :_fatal, &"Unexpected token"
 
 .is_identifier
+	%call :__lex_peek, @fd
+	%call :_iswhitespace
+	eq @ret, @FALSE
+	jump? .ws_def_value
+	%call :__lex_read, @fd
+	jump .is_identifier
+
+.ws_def_value
 	%call :_stralloc, .buffer
 	mov @identifier, @ret
 	mov @index, 0
@@ -300,6 +318,74 @@
 
 
 #===========================================================================
+# int _lex_multibyte_operator(char* buffer)
+#===========================================================================
+:__lex_is_valid_operator
+	%arg buffer
+	%local c
+
+	# Check to see if we have a multi-byte op
+	mov @tmp0, @buffer
+	add @tmp0, 1
+	ld.b @tmp0, [@tmp0]
+	eq @tmp0, 0
+	jump? .single
+
+	ld.d @tmp0, [:__lex_multibyte_tokens_hash]
+	%call :_ht_lookup, @tmp0, @buffer
+	%ret
+
+.single
+	ld.b @c, [@buffer]
+	%call :_strchr, :literal_tokens, @c
+	eq @ret, 0
+	mov^ @ret, @c
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# int _lex_multibyte_operator(lex_file* file, char* buffer, int buffer_length)
+#===========================================================================
+:__lex_operator
+	%arg fd
+	%arg buffer
+	%arg buffer_length
+	%local current
+	%local last
+	%local c
+
+	mov @last, 0
+	mov @current, @buffer
+
+	# Zero out the buffer
+	st.d [@buffer], 0
+	mov @tmp0, @buffer
+	add @tmp0, 4
+	st.d [@tmp0], 0
+
+.loop
+	%call :__lex_peek, @fd
+	mov @c, @ret
+	st.b [@current], @c
+
+	%call :__lex_is_valid_operator, @buffer
+	eq @ret, @NULL
+	jump? .done
+
+	mov @last, @ret
+	add @current, 1
+	%call :__lex_read, @fd
+	jump .loop
+
+.done
+	st.b [@current], 0
+	mov @ret, @last
+	%ret
+#===========================================================================
+
+
+#===========================================================================
 # int lex(lex_file* file, char* buffer, int buffer_length)
 #
 # Returns:
@@ -325,20 +411,45 @@
 	eq @c, @TOKEN_EOF
 	%ret?
 
+	# EOT?
+	eq @c, @TOKEN_EOT
+	jump? .whitespace
+
 	# Eat whitespace
 	%call :_iswhitespace, @c
 	eq @ret, @TRUE
-	jump? .whitespace_loop
+	jump? .whitespace
 
-	# eq @c, '#'
-	# %call :__lex_attempt_match_table, @fd, @buffer, @buffer_length, :preprocessor_tokens
-	# eq @ret, @NULL
-	# jump? .not_preprocessor
+	jump .not_whitespace
 
-	mov @tmp0, @ret
+.whitespace
+	%call :__lex_read, @fd
+	jump .whitespace_loop
+
+.not_whitespace
+	ne @c, '#'
+	jump? .not_preprocessor
+
+	%call :__lex_read, @fd
+
+	%call :__lex_consume_identifier, @fd, @buffer, @buffer_length
+
+	%call :_streq, @buffer, &"include"
+	eq @ret, @TRUE
+	mov? @tmp0, @PP_INCLUDE
+	jump? .pre
+
+	%call :_streq, @buffer, &"define"
+	eq @ret, @TRUE
+	mov? @tmp0, @PP_DEFINE
+	jump? .pre
+
+	%call :_fatal, &"Unexpected preprocessor token"
+
+.pre
 	%call :__lex_handle_preprocessor, @fd, @tmp0
 
-	# We never return preprocessor commands - they are silently handled
+	# We never return preprocessor commands - they are silently handled and modify our combined lexer state
 	jump .whitespace_loop
 
 .not_preprocessor
@@ -347,14 +458,24 @@
 	eq r0, @FALSE
 	jump? .not_identifier
 
+	# This could be a keyword, a macro, or an identifier
 	%call :__lex_consume_identifier, @fd, @buffer, @buffer_length
+
+	# Is it a macro?
 	%call :__lex_activate_macro, @fd, @buffer
 	eq @ret, 0
-	mov? @ret, @TOKEN_IDENTIFIER
-	%ret?
+	jump^ .whitespace_loop
 
-	# We activated a macro, restart lex loop
-	jump .whitespace_loop
+	# Not a macro, check keywords first
+	ld.d @tmp0, [:__lex_string_tokens_hash]
+	%call :_ht_lookup, @tmp0, @buffer
+	# If it's a keyword, return that keyword
+	eq @ret, 0
+	%ret^
+
+	# If not a keyword, then it's an identifier
+	mov @ret, @TOKEN_IDENTIFIER
+	%ret
 
 .not_identifier
 	# Attempt to match constants
@@ -367,24 +488,14 @@
 	%ret
 
 .not_digit
-	# Attempt to match multi-byte operators
-	# %call :__lex_attempt_match_table, @fd, @buffer, @buffer_length, :multibyte_op_tokens
-	# eq @ret, @NULL
-	# jump^ .done
-
-	# Attempt to match single-byte operators
-	%call :__lex_read, @fd
-	%call :_strchr, :literal_tokens, @c
+	# Attempt to operators
+	%call :__lex_operator, @fd, @buffer, @buffer_length
 	eq @ret, @NULL
-	jump? .not_single_byte
+	%ret^
 
-	mov @ret, @c
-	st.b [@buffer], @c
-	add @buffer, 1
-	st.b [@buffer], 0
-	%ret
+	jump .not_operator
 
-.not_single_byte
+.not_operator
 	%call :_fatal, &"Unexpected character"
 
 .done
