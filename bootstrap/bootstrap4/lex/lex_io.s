@@ -1,5 +1,6 @@
 #include "regs.h"
 #include "syscall.h"
+#include "../bootstrap4/lex/lex.h"
 
 :__lex_hash_table_test_key_compare
 	%arg a
@@ -42,7 +43,7 @@
 	%local ll
 	%local node
 
-	%call :_malloc, 8
+	%call :_malloc, 44 # 12 + 32 bytes of push-back buffer
 	mov @file, @ret
 
 	# Include/macro linked list
@@ -69,10 +70,10 @@
 	add @tmp0, 8
 	st.d [@tmp0], :__lex_read_fd
 
-	# Seek function (@12)
+	# Peek function (@12)
 	mov @tmp0, @node
 	add @tmp0, 12
-	st.d [@tmp0], :__lex_seek_fd
+	st.d [@tmp0], :__lex_peek_fd
 
 	%call :_ll_insert_head, @ll, @node
 
@@ -112,7 +113,7 @@
 	%call :syscall4, @SC_READ, @fd, .buffer, 1
 
 	eq @ret, 0
-	mov? @ret, -1
+	mov? @ret, @TOKEN_EOF
 	%ret?
 
 	ld.b @ret, [.buffer]
@@ -124,14 +125,27 @@
 
 
 #===========================================================================
-# Seek function for fd-based source
+# Read function for fd-based source
 #===========================================================================
-:__lex_seek_fd
+:__lex_peek_fd
 	%arg fd
 	%arg offset
 
-	%call :syscall4, @SC_SEEK, @fd, @offset, @SEEK_SET
+	%call :syscall4, @SC_READ, @fd, .buffer, 1
+
+	eq @ret, 0
+	mov? @ret, @TOKEN_EOF
+	%ret?
+
+	# Seek back over that read
+	%call :syscall4, @SC_SEEK, @fd, -1, @SEEK_CUR
+
+	ld.b @ret, [.buffer]
+
 	%ret
+
+.buffer
+	db 0
 #===========================================================================
 
 
@@ -158,7 +172,7 @@
 #===========================================================================
 # Seek function for macro-based source
 #===========================================================================
-:__lex_seek_macro
+:__lex_peek_macro
 	%arg data
 	%arg offset
 
@@ -188,7 +202,7 @@
 
 	# If nothing left on the read stack, return EOF (-1)
 	eq @ret, 0
-	mov? @ret, -1
+	mov? @ret, @TOKEN_EOF
 	%ret?
 
 	ld.d @offset, [@ret]
@@ -204,17 +218,16 @@
 	%call :_quicklog, &"Read: %x %c\n", @tmp0, @tmp0
 	pop @ret
 
-	ne @ret, -1
+	ne @ret, @TOKEN_EOF
 	add? @offset, 1
 	st.d? [@node], @offset
 	%ret?
 
-	# We hit EOF on that particular file/macro, so jump back to re-read
+	# We hit EOF on that particular file/macro, so return EOT and pop a step
 	%call :_ll_remove_head, @ll
 	%call :_quicklog, &"Read: EOL"
-	mov @ret, 10
+	mov @ret, @TOKEN_EOT
 	%ret
-#	jump .reread
 
 .buffer
 	db 0
@@ -222,53 +235,82 @@
 
 
 #===========================================================================
-# int _lex_mark(lex_file* file)
+# int _lex_peek(lex_file* file)
 #
-# Marks the current position in the stream
+# Reads a char or -1 for EOF.
 #===========================================================================
-:__lex_mark
+:__lex_peek
 	%arg file
-	%local ll
-
-	# Return the offset from the current file/macro
-	ld.d @ll, [@file]
-	%call :_ll_get_head, @ll
-
-	ld.d @ret, [@ret]
-
-	push @ret
-	mov @tmp0, @ret
-	%call :_quicklog, &"Mark: %x\n", @tmp0
-	pop @ret
-
-	%ret
-#===========================================================================
-
-
-#===========================================================================
-# void _lex_rewind(lex_file* file, int pos)
-#
-# Rewinds to the marked position
-#===========================================================================
-:__lex_rewind
-	%arg file
-	%arg pos
 	%local ll
 	%local fd
-	%local seek_fn
-
-	%call :_quicklog, &"Rewind: %x\n", @pos
+	%local offset
+	%local peek_fn
+	%local node
 
 	ld.d @ll, [@file]
-	%call :_ll_get_head, @ll
 
-	st.d [@ret], @pos
+.reread
+	%call :_ll_get_head, @ll
+	mov @node, @ret
+
+	# If nothing left on the read stack, return EOF (-1)
+	eq @ret, 0
+	mov? @ret, @TOKEN_EOF
+	%ret?
+
+	ld.d @offset, [@ret]
 	add @ret, 4
 	ld.d @fd, [@ret]
 	add @ret, 8
-	ld.d @seek_fn, [@ret]
+	ld.d @peek_fn, [@ret]
 
-	%call @seek_fn, @fd, @pos
+	%call @peek_fn, @fd, @offset
+
+	push @ret
+	mov @tmp0, @ret
+	%call :_quicklog, &"Peek: %x %c\n", @tmp0, @tmp0
+	pop @ret
+
+	ne @ret, @TOKEN_EOF
+	add? @offset, 1
+	st.d? [@node], @offset
+	%ret?
+
+	# We hit EOF on that particular file/macro, so return EOT
+	%call :_quicklog, &"Peek: EOL"
+	mov @ret, @TOKEN_EOT
+	%ret
+
+.buffer
+	db 0
+#===========================================================================
+
+
+#===========================================================================
+# void _lex_push_back(lex_file* file, char c)
+#
+# Pushes a char back into the stream.
+#===========================================================================
+:__lex_push_back
+	%arg file
+	%arg c
+
+	# Current index
+	mov @tmp0, @file
+	add @tmp0, 8
+	ld.d @tmp0, [@tmp0]
+
+	add @tmp0, @file
+	add @tmp0, 12
+	st.b [@tmp0], @c
+
+	# Increment the index
+	mov @tmp0, @file
+	add @tmp0, 8
+	ld.d @tmp1, [@tmp0]
+	add @tmp1, 1
+	st.d [@tmp0], @tmp1
+
 	%ret
 #===========================================================================
 
@@ -340,10 +382,10 @@
 	add @tmp0, 8
 	st.d [@tmp0], :__lex_read_macro
 
-	# Seek function (@12)
+	# Peek function (@12)
 	mov @tmp0, @node
 	add @tmp0, 12
-	st.d [@tmp0], :__lex_seek_macro
+	st.d [@tmp0], :__lex_peek_macro
 
 	%call :_ll_insert_head, @ll, @node
 

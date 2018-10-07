@@ -96,131 +96,131 @@
 	dd &"!=",	@TOKEN_NE_OP
 	dd 0
 
-#===========================================================================
-# int _lex_attempt_match_table(lex_file* file, char* buffer, int buffer_length,
-#                              char* string)
-#
-# Returns:
-#   1 if a match
-#===========================================================================
-:__lex_attempt_match
-	%arg fd
-	%arg buffer
-	%arg buffer_length
-	%arg string
-	%local mark
-	%local char
-	%local orig_string
 
-	mov @orig_string, @string
-
-	%call :__lex_mark, @fd
-	mov @mark, @ret
-
-.loop
-	ld.b @char, [@string]
-
-	# If it's a match, we leave the stream as-is but don't read any more chars
-	eq @char, @NULL
-	jump? .match
-
-	%call :__lex_read, @fd
-
-	eq @char, @ret
-	jump^ .nomatch
-
-	# Check the next byte
-	add @string, 1
-	jump .loop
-
-.nomatch
-	%call :__lex_rewind, @fd, @mark
-	mov @ret, @FALSE
-	%ret
-
-.match
-	sub @orig_string, 1
-	%call :_strcpy, @buffer, @orig_string
-
-	mov @ret, @TRUE
-	%ret
-#===========================================================================
-
+:__lex_inited
+	dd 0
+:__lex_multibyte_tokens_hash
+	dd 0
+:__lex_string_tokens_hash
+	dd 0
 
 #===========================================================================
-# int _lex_attempt_match_table(lex_file* file, char* buffer, int buffer_length,
-#                              void* table, char first_char)
-# Returns:
-#   Token from the table, or zero if no match
+# Internal method to initialize the lex system.
 #===========================================================================
-:__lex_attempt_match_table
-	%arg fd
-	%arg buffer
-	%arg buffer_length
-	%arg table
-	%arg c
-.str_loop
-	ld.d @tmp0, [@table]
+:__lex_init
+	%local ptr
+	%local ht
 
-	# Table searched, string not found
-	eq @tmp0, @NULL
-	mov? @ret, @NULL
+	# Initialize (if not already initialized)
+	mov @tmp0, :__lex_inited
+	ld.d @tmp0, [@tmp0]
+	eq @tmp0, 1
 	%ret?
 
-	# See if this string is a potential match
-	ld.b @tmp0, [@tmp0]
-	eq @tmp0, @c
-	add^ @table, 8
-	jump^ .str_loop
+	mov @tmp0, :__lex_inited
+	st.d [@tmp0], 1
 
-	# Possible match, call __lex_attempt_match
-	ld.d @tmp0, [@table]
-	add @tmp0, 1
-	%call :__lex_attempt_match, @fd, @buffer, @buffer_length, @tmp0
-	eq @ret, @TRUE
-	add? @table, 4
-	ld.d? @table, [@table]
-	mov? @ret, @table
-	%ret?
+	# Toss the string tokens into a hash table
+	mov @ptr, :string_tokens
+	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
+	mov @ht, @ret
+	mov @tmp0, :__lex_string_tokens_hash
+	st.d [@tmp0], @ht
 
-	add @table, 8
-	jump^ .str_loop
+.loop1
+	ld.d @tmp0, [@ptr]
+	eq @tmp0, 0
+	jump? .done1
+	add @ptr, 4
+	ld.d @tmp1, [@ptr]
+	add @ptr, 4
+	%call :_ht_insert, @ht, @tmp0, @tmp1
+	jump .loop1
+.done1
+
+	# Toss the multi-byte tokens into a hash table
+	mov @ptr, :multibyte_op_tokens
+	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
+	mov @ht, @ret
+	mov @tmp0, :__lex_multibyte_tokens_hash
+	st.d [@tmp0], @ht
+
+.loop2
+	ld.d @tmp0, [@ptr]
+	eq @tmp0, 0
+	jump? .done2
+	add @ptr, 4
+	ld.d @tmp1, [@ptr]
+	add @ptr, 4
+	%call :_ht_insert, @ht, @tmp0, @tmp1
+	jump .loop2
+.done2
+
+	%ret
 #===========================================================================
-
 
 
 #===========================================================================
 # void _lex_consume_identifier(lex_file* file, char* buffer,
-#                              int buffer_length, char first_char)
+#                              int buffer_length)
 #===========================================================================
 :__lex_consume_identifier
 	%arg fd
 	%arg buffer
 	%arg buffer_length
-	%arg c
 	%local mark
-
-	st.b [@buffer], @c
-	add @buffer, 1
-.loop
-	%call :__lex_mark, @fd
-	mov @mark, @ret
 
 	%call :__lex_read, @fd
 	st.b [@buffer], @ret
+	add @buffer, 1
+.loop
+	%call :__lex_peek, @fd
 
 	# If done, return
 	%call :_islabel, @ret
 	eq @ret, @NULL
 	jump? .done
 
+	%call :__lex_read, @fd
+	st.b [@buffer], @ret
+
 	add @buffer, 1
 	jump .loop
 
 .done
 	st.b [@buffer], 0
-	%call :__lex_rewind, @fd, @mark
 	mov @ret, @TOKEN_IDENTIFIER
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# int _lex_digit(lex_file* file, char* buffer, int buffer_length)
+#===========================================================================
+:__lex_digit
+	%arg fd
+	%arg buffer
+	%arg buffer_length
+	%local mark
+
+	%call :__lex_read, @fd
+	st.b [@buffer], @ret
+	add @buffer, 1
+
+.loop
+	%call :__lex_peek, @fd
+	%call :_isdigit, @ret
+	eq @ret, @FALSE
+	jump? .done
+
+	%call :__lex_read, @fd
+	st.b [@buffer], @ret
+
+	add @buffer, 1
+	jump .loop
+
+.done
+	st.b [@buffer], 0
 	%ret
 #===========================================================================
 
@@ -311,11 +311,14 @@
 	%arg buffer_length
 	%local c
 
+	# Initialize our lex subsystem if it hasn't been already
+	%call :__lex_init
+
 	st.b [@buffer], 0
 
 .whitespace_loop
 	# Read from the file handle
-	%call :__lex_read, @fd
+	%call :__lex_peek, @fd
 	mov @c, @ret
 
 	# EOF?
@@ -327,10 +330,10 @@
 	eq @ret, @TRUE
 	jump? .whitespace_loop
 
-	eq @c, '#'
-	%call :__lex_attempt_match_table, @fd, @buffer, @buffer_length, :preprocessor_tokens, @c
-	eq @ret, @NULL
-	jump? .not_preprocessor
+	# eq @c, '#'
+	# %call :__lex_attempt_match_table, @fd, @buffer, @buffer_length, :preprocessor_tokens
+	# eq @ret, @NULL
+	# jump? .not_preprocessor
 
 	mov @tmp0, @ret
 	%call :__lex_handle_preprocessor, @fd, @tmp0
@@ -339,17 +342,12 @@
 	jump .whitespace_loop
 
 .not_preprocessor
-	# Attempt to match multi-byte string tokens
-	%call :__lex_attempt_match_table, @fd, @buffer, @buffer_length, :string_tokens, @c
-	eq @ret, @NULL
-	jump^ .done
-
 	# Attempt to match label/identifier
 	%call :_islabelstart, @c
 	eq r0, @FALSE
 	jump? .not_identifier
 
-	%call :__lex_consume_identifier, @fd, @buffer, @buffer_length, @c
+	%call :__lex_consume_identifier, @fd, @buffer, @buffer_length
 	%call :__lex_activate_macro, @fd, @buffer
 	eq @ret, 0
 	mov? @ret, @TOKEN_IDENTIFIER
@@ -365,16 +363,17 @@
 	jump? .not_digit
 
 	#%tcall? :__lex_digit, @handle, @buffer, @buffer_length # tail call
-	%call :__lex_digit, @fd, @buffer, @buffer_length, @c # tail call
+	%call :__lex_digit, @fd, @buffer, @buffer_length # tail call
 	%ret
 
 .not_digit
 	# Attempt to match multi-byte operators
-	%call :__lex_attempt_match_table, @fd, @buffer, @buffer_length, :multibyte_op_tokens, @c
-	eq @ret, @NULL
-	jump^ .done
+	# %call :__lex_attempt_match_table, @fd, @buffer, @buffer_length, :multibyte_op_tokens
+	# eq @ret, @NULL
+	# jump^ .done
 
 	# Attempt to match single-byte operators
+	%call :__lex_read, @fd
 	%call :_strchr, :literal_tokens, @c
 	eq @ret, @NULL
 	jump? .not_single_byte
@@ -389,43 +388,6 @@
 	%call :_fatal, &"Unexpected character"
 
 .done
-	%ret
-#===========================================================================
-
-
-#===========================================================================
-# int _lex_digit(lex_file* file, char* buffer, int buffer_length,
-# 				 char first_char)
-#===========================================================================
-:__lex_digit
-	%arg fd
-	%arg buffer
-	%arg buffer_length
-	%arg c
-	%local mark
-
-	st.b [@buffer], @c
-	add @buffer, 1
-
-.loop
-	%call :__lex_mark, @fd
-	mov @mark, @ret
-
-	%call :__lex_read, @fd
-	st.b [@buffer], @ret
-
-	# If done, return
-	%call :_isdigit, @ret
-	eq @ret, @NULL
-	jump? .done
-
-	add @buffer, 1
-	jump .loop
-
-.done
-	st.b [@buffer], 0
-	%call :__lex_rewind, @fd, @mark
-	mov @ret, @TOKEN_CONSTANT
 	%ret
 #===========================================================================
 
