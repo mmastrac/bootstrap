@@ -17,7 +17,7 @@ bootstrapping process to generate C binaries for this virtual platform or any ot
 
 Status: *complete* ✅
 
-[`bootstrap0.bin`](bootstrap/bootstrap0.bin): a basic assembler written in pure VM ASCII. The goal of this stage is
+[`bootstrap0.bin`](bootstrap/bootstrap0.bin): A basic assembler written in pure VM ASCII. The goal of this stage is
 to get a slightly more readable `bootstrap1.bin` compiled by ignoring any control character bytes (< 0x20).
 
 ### Stage 1
@@ -39,7 +39,7 @@ be eight characters long - no more, no less. Includes a few hard-coded stack man
 
 Status: *complete* ✅
 
-[`bootstrap3`](bootstrap/bootstrap3/):A "complete" assembler that allows input from multiple files, linked together to create an output
+[`bootstrap3`](bootstrap/bootstrap3/): A "complete" assembler that allows input from multiple files, linked together to create an output
 executable. This assembler has a more natural, intel-like syntax.
 
 The output for a given opcode from this assembler may or may not correspond to a single VM opcode. The compiler takes over one of the VM

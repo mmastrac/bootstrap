@@ -1,4 +1,20 @@
-# Assembly
+# Stage-3 bootstrap
+
+A "complete" assembler that allows input from multiple files, linked together to create an output
+executable. This assembler has a more natural, intel-like syntax.
+
+## Functionality of this stage
+
+The output for a given opcode from this assembler may or may not correspond to a single VM opcode. The compiler takes over one of the VM
+registers as a "compiler temporary", allowing us to create some CISC-style ops that drastically reduce instruction counts for various 
+types of operations.
+
+This assembler also allows for more complex macros that make procedure calls, arguments and locals much simpler. As part of this 
+functionality, the compiler defines a calling convention that determines which registers are caller- or callee-saved.
+
+## Assembly opcodes
+
+TODO
 
 ## Calling convention
 
@@ -22,8 +38,9 @@ Macros are prefixed with `%` to indicate that they are "local-variable" aware. `
 | `%local` `[name...]` | Allocates local register(s), saving the previous value to the stack | `%local x, y` |
 | `%arg` `[name...]` | Allocates argument register(s), saving the previous value to the stack and copying the argument value to it | `%arg x, y` |
 
-
 ## Linker symbols/macros
 
-:__END__ Points to the end of the binary in memory
-@__LOCALS_SIZE__ Equal to size of locals on stack
+The linker defines multiple special symbols that can be used for determining the size of stack frames and code.
+
+`:__END__` Points to the end of the binary in memory
+`@__LOCALS_SIZE__` Equal to size of locals on stack
