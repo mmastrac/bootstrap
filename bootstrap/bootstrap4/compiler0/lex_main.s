@@ -1,7 +1,7 @@
 # Stage 0 lexer: we get enough C that we can move out of assembly land
 
 #include "regs.h"
-#include "../bootstrap4/lex0/lex.h"
+#include "../bootstrap4/lex/lex.h"
 
 #define BUFFER_SIZE 256
 
@@ -33,7 +33,7 @@
 	mov @ll, @ret
 	%call :_ll_create_node, 4
 	mov @node, @ret
-	st.w [@node], &"bootstrap/bootstrap4/lex0/tests/lex_io_test"
+	st.w [@node], &"bootstrap/bootstrap4/compiler0/tests/lex_io_test"
 	%call :_ll_insert_head, @ll, @node
 
 # Create the lex environment
@@ -41,7 +41,7 @@
 	mov @lex, @ret
 
 # Open a file
-	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex0/tests/lex_io_test/test_fib.c"
+	%call :__lex_open, @lex, &"bootstrap/bootstrap4/compiler0/tests/lex_io_test/test_fib.c"
 	mov @file, @ret
 
 .loop

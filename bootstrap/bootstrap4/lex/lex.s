@@ -14,7 +14,7 @@
 #	ret
 
 #include "regs.h"
-#include "../bootstrap4/lex0/lex.h"
+#include "../bootstrap4/lex/lex.h"
 
 #define TRUE 1
 #define FALSE 0
