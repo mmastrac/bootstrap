@@ -49,13 +49,11 @@ types of operations.
 This assembler also allows for more complex macros that make procedure calls, arguments and locals much simpler. As part of this 
 functionality, the compiler defines a calling convention that determines which registers are caller- or callee-saved.
 
-See `README.md` under `bootstrap3` for more details.
-
 ### Stage 4
 
-Status: *work in progress*
+Status: *work in progress* 🚧
 
-This is the first stage C compiler that compilers a (very reduced) subset of C. Currently a work-in-progress.
+[`bootstrap4`](bootstrap/bootstrap4/):This is the first stage C compiler that compilers a (very reduced) subset of C. Currently a work-in-progress.
 
 There are multiple stages inside bootstrap4 to build a basic compiler.
 
