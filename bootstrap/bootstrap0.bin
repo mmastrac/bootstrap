@@ -2,3 +2,4 @@
 =#0 0001S+0865  ?=04=#0 0007- 11S?01= 16=[11=#0 0020?<10J?7 =#0 0002S+0965  J 7 
 
 # Reads from argv[1] and writes to argv[2], skipping all control characters to allow for more readable code
+# Comments in the this and the next stage are not skipped, and must be placed in non-executable portions of memory
