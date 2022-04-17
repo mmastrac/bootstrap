@@ -26,8 +26,8 @@ void debug(const char* msg) {
 	dprintf("DEBUG %s\n", msg);
 }
 
-void invalid() {
-	printf("Invalid opcode\n");
+void invalid(const char* what) {
+	printf("Invalid %s\n", what);
 	if (dump) {
 		printf("Dumped memory to /tmp/memory.bin\n");
 		int fd = open("/tmp/memory.bin", O_CREAT | O_TRUNC | O_WRONLY, 0777);
@@ -123,7 +123,7 @@ int sc(uint32_t syscall,
 		} else if (arg3 == 2) {
 			whence = SEEK_END;
 		} else {
-			invalid();
+			invalid("seek");
 		}
 		return (uint32_t)(int32_t)lseek(arg1, (off_t)(int32_t)arg2, whence);
 	} else if (syscall == 4) {
@@ -172,7 +172,7 @@ int sc(uint32_t syscall,
 		return r;
 	} else {
 		printf("%x\n", syscall);
-		invalid();
+		invalid("syscall");
 	}
 	return 0;
 }
@@ -190,7 +190,7 @@ int char_to_register(uint8_t reg) {
 	if (reg == ' ') {
 		return 0;
 	}
-	invalid();
+	invalid("register");
 }
 
 uint8_t hexchar(const char hex) {
@@ -200,7 +200,7 @@ uint8_t hexchar(const char hex) {
 	if (hex >= 'a' && hex <= 'f') {
 		return hex - 'a' + 10;
 	}
-	invalid();
+	invalid("hex");
 	return 0;
 }
 
@@ -219,7 +219,7 @@ uint32_t rhs(uint8_t op2, uint8_t op4) {
 	}
 
 	debug("invalid load");
-	invalid();
+	invalid("load");
 }
 
 int main(int argc, const char** argv) {
@@ -357,7 +357,7 @@ int main(int argc, const char** argv) {
 				debug("ne?");
 				flag = registers[char_to_register(op3)] != registers[char_to_register(op4)];
 			} else {
-				invalid();
+				invalid("compare");
 			}
 		} else if (op1 == 'S') {
 			// Syscall
@@ -373,17 +373,17 @@ int main(int argc, const char** argv) {
 					registers[char_to_register(a)], registers[char_to_register(b)],
 					registers[char_to_register(c)], registers[char_to_register(d)]);
 			} else {
-				invalid();
+				invalid("syscall");
 			}
 		} else if (op1 == 'J') {
 			debug("jump");
 			if (op2 == ' ') {
 				registers[PC] = registers[char_to_register(op3)];
 			} else {
-				invalid();
+				invalid("jump");
 			}
 		} else {
-			invalid();
+			invalid("opcode");
 		}
 	}
 	return 0;
