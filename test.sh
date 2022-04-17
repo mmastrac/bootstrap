@@ -5,14 +5,14 @@ cc vm.c -std=c99 -D_ATFILE_SOURCE=1 -o vm
 ROOT=bootstrap
 TEST=$ROOT/tests
 echo Compile 1
-./vm $ROOT/bootstrap0.bin $ROOT/bootstrap1.s /tmp/b1.bin
+./vm $ROOT/bootstrap0.bin $ROOT/bootstrap1/bootstrap1.s /tmp/b1.bin
 
 echo Test 1
 ./vm /tmp/b1.bin $TEST/bootstrap1/test1.s /tmp/t1.bin
 diff $TEST/bootstrap1/test1.bin /tmp/t1.bin
 
 echo Compile 2
-./vm /tmp/b1.bin $ROOT/bootstrap2.s /tmp/b2.bin
+./vm /tmp/b1.bin $ROOT/bootstrap2/bootstrap2.s /tmp/b2.bin
 echo Test 2
 ./vm /tmp/b2.bin $TEST/bootstrap2/test1.s /tmp/t1.bin
 diff $TEST/bootstrap2/test1.bin /tmp/t1.bin
