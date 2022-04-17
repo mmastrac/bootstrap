@@ -80,14 +80,6 @@ J?4
 J 5 
 *
 ####################################
-# Second stage bootstrap
-####################################
-# Loads from bootstrap2.s, ignoring comment lines and supporting a special :abcd syntax
-# that sets the current write address to that address. This allows for code layout at
-# absolute addresses to avoid having to manually calculate jump targets.
-####################################
-
-####################################
 # Register usage in this file
 ####################################
 # R0: Scratch #1
