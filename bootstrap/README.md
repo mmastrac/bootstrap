@@ -46,6 +46,8 @@ See `README.md` under `bootstrap4` for more details (TODO: move this to bootstra
 
 This is the first stage C compiler that compilers a (very reduced) subset of C. Currently a work-in-progress.
 
+There are multiple stages inside bootstrap4 to build a basic compiler.
+
 ## bootstrap5/
 
 A full C89 compiler written in a simpler subset of C than can compile a full CXX compiler (as long as it conforms to C89). Currently a work-in-progress.

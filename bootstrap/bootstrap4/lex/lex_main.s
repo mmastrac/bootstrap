@@ -1,3 +1,5 @@
+# Stage 0 lexer: we get enough C that we can move out of assembly land
+
 #include "regs.h"
 #include "../bootstrap4/lex/lex.h"
 
@@ -201,20 +203,32 @@
 	%call :_dprintf, 1, &"    jump^ .end\n"
 
 	%call :stmts, @file, @buf1, @pending
+	%call :_dprintf, 1, &".end:\n"
 
 	jump .loop
 
 .stmt_return
 	%call :expr, @file, @buf1
-	%call :_dprintf, 1, &"    mov @ret, %%tmp0\n"
+	%call :_dprintf, 1, &"    mov @ret, @tmp0\n"
 	%call :_dprintf, 1, &"    %%ret\n"
 	jump .loop
 
 .stmt_assign
 	%call :_strcpy, @pending, @buf1
+	push @pending
+	%call :_dprintf, 1, &"# %s = (expr)\n"
+	pop @pending
+
+	%call :_lex, @file, @buf1, @BUFFER_SIZE
+	mov @token, @ret
+
+	eq @token, '='
+	mov @expected, &"="
+	jump^ .error
+
 	%call :expr, @file, @buf1
 	push @pending
-	%call :_dprintf, 1, &"    mov @%s, %%tmp0\n"
+	%call :_dprintf, 1, &"    mov @%s, @tmp0\n"
 	pop @pending
 	jump .loop
 
@@ -274,7 +288,13 @@
 	eq @token, '-'
 	jump? .minus
 
+	eq @token, '('
+	jump? .call
+
 	eq @token, ';'
+	%ret?
+
+	eq @token, ','
 	%ret?
 
 	eq @token, ')'
@@ -297,6 +317,14 @@
 	%call :_dprintf, 1, &"    sub @tmp0, %s\n"
 	pop @buf1
 	jump .done
+
+.call
+# Push the args to the stack first
+	%call :expr, @file, @buf1
+	%call :_dprintf, 1, &"    push @tmp0\n"
+	eq @ret, ')'
+	jump? .done
+	jump .call
 
 .paren
 	%call :expr, @file, @buf1
