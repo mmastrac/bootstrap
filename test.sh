@@ -36,7 +36,7 @@ echo Test 2
 diff $TEST/bootstrap2/test7.bin /tmp/t7.bin
 
 echo Compile 3
-./vm /tmp/b2.bin $ROOT/bootstrap3.s /tmp/b3.bin
+./vm /tmp/b2.bin $ROOT/bootstrap3/bootstrap3.s /tmp/b3.bin
 echo Test 3
 ./vm /tmp/b3.bin $TEST/bootstrap3/test1.s /tmp/t1.bin
 diff $TEST/bootstrap3/test1.bin /tmp/t1.bin
