@@ -9,6 +9,7 @@
 :_main
 	%local buf1
 	%local buf2
+	%local pending
 	%local token
 	%local len
 	%local ll
@@ -21,6 +22,9 @@
 	mov @buf1, @ret
 	%call :_malloc, @BUFFER_SIZE
 	mov @buf2, @ret
+# Pending variable assignment
+	%call :_malloc, @BUFFER_SIZE
+	mov @pending, @ret
 
 # Create the include list
 	%call :_ll_init
@@ -106,7 +110,7 @@
 	jump .error
 
 .function_body
-	%call :stmts, @file, @buf1
+	%call :stmts, @file, @buf1, @pending
 	jump .loop
 
 .error
@@ -123,10 +127,14 @@
 :stmts
 	%arg file
 	%arg buf1
+	%arg pending
 	%local token
+	%local expected
+	mov @expected, &"(unknown)"
 
 	%call :_lex, @file, @buf1, @BUFFER_SIZE
 	mov @token, @ret
+	mov @expected, &"{"
 	eq @token, '{'
 	jump^ .error
 	%call :_dprintf, 1, &"# {\n"
@@ -144,6 +152,9 @@
 	eq @token, @TOKEN_RETURN
 	jump? .stmt_return
 
+	eq @token, @TOKEN_IDENTIFIER
+	jump? .stmt_assign
+
 	eq @token, '}'
 	jump? .stmt_end
 
@@ -158,12 +169,20 @@
 .stmt_local
 	%call :_lex, @file, @buf1, @BUFFER_SIZE
 	mov @token, @ret
+	mov @expected, &"identifier"
 	eq @token, @TOKEN_IDENTIFIER
 	jump^ .error
 
 	push @buf1
-	%call :_dprintf, 1, &"    %local %s\n"
+	%call :_dprintf, 1, &"    %%local %s\n"
 	pop @buf1
+
+	%call :_lex, @file, @buf1, @BUFFER_SIZE
+	mov @token, @ret
+	mov @expected, &";"
+	eq @token, ';'
+	jump^ .error
+
 	jump .loop
 
 .stmt_if
@@ -171,6 +190,7 @@
 	mov @token, @ret
 
 	eq @token, '('
+	mov @expected, &"("
 	jump^ .error
 
 	%call :_dprintf, 1, &"# if\n"
@@ -180,7 +200,7 @@
 	%call :_dprintf, 1, &"    eq @tmp0, 1\n"
 	%call :_dprintf, 1, &"    jump^ .end\n"
 
-	%call :stmts, @file, @buf1
+	%call :stmts, @file, @buf1, @pending
 
 	jump .loop
 
@@ -190,8 +210,16 @@
 	%call :_dprintf, 1, &"    %%ret\n"
 	jump .loop
 
+.stmt_assign
+	%call :_strcpy, @pending, @buf1
+	%call :expr, @file, @buf1
+	push @pending
+	%call :_dprintf, 1, &"    mov @%s, %%tmp0\n"
+	pop @pending
+	jump .loop
+
 .error
-	%call :_quicklog, &"buf1 = '%s'", @buf1
+	%call :_quicklog, &"buf1 = '%s', expected = '%s'", @buf1, @expected
 	%call :_fatal, &"Unexpected token in stmt"
 	mov @ret, 1
 	%ret
@@ -205,6 +233,8 @@
 	%arg file
 	%arg buf1
 	%local token
+	%local expected
+	mov @expected, &"(unknown)"
 
 	%call :_lex, @file, @buf1, @BUFFER_SIZE
 	mov @token, @ret
@@ -213,17 +243,27 @@
 	jump? .paren
 
 	eq @token, @TOKEN_CONSTANT
-	jump .go
+	jump? .const
 
 	# If it isn't a parenthesis or number, we expect an identifier
+	mov @expected, &"identifier"
 	eq @token, @TOKEN_IDENTIFIER
 	jump^ .error
+	jump .ident
 
-.go
+.const
 	push @buf1
 	%call :_dprintf, 1, &"    mov @tmp1, %s\n"
 	pop @buf1
+	jump .cont
 
+.ident
+	push @buf1
+	%call :_dprintf, 1, &"    mov @tmp1, @%s\n"
+	pop @buf1
+	jump .cont
+
+.cont
 	# Now which type of expression?
 	%call :_lex, @file, @buf1, @BUFFER_SIZE
 	mov @token, @ret
@@ -263,18 +303,20 @@
 
 	%call :_lex, @file, @buf1, @BUFFER_SIZE
 	mov @token, @ret
+	mov @expected, &")"
 	eq @token, ')'
 	jump^ .error
 
 	%ret
 
 .error
-	%call :_quicklog, &"buf1 = '%s'", @buf1
+	%call :_quicklog, &"buf1 = '%s', expected = '%s'", @buf1, @expected
 	%call :_fatal, &"Unexpected token in expr"
 
 .done
 	%call :_lex, @file, @buf1, @BUFFER_SIZE
 	mov @token, @ret
+	mov @expected, &")"
 	eq @token, ')'
 	jump^ .error
 	%ret
