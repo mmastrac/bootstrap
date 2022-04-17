@@ -1,5 +1,5 @@
 #include "regs.h"
-#include "../bootstrap4/lex/lex.h"
+#include "../bootstrap4/lex0/lex.h"
 
 #define BUFFER_SIZE 256
 
@@ -129,7 +129,7 @@
 	dd 0
 
 :_lex_test_tokens
-	%call :__lex_confirm_file, &"bootstrap/bootstrap4/lex/tests/lex_io_test/test.c", :__lex_test_tokens_expected
+	%call :__lex_confirm_file, &"bootstrap/bootstrap4/lex0/tests/lex_io_test/test.c", :__lex_test_tokens_expected
 	%ret
 
 :__lex_test_tokens_define_expected
@@ -142,5 +142,5 @@
 	dd 0
 
 :_lex_test_tokens_define
-	%call :__lex_confirm_file, &"bootstrap/bootstrap4/lex/tests/lex_io_test/test_define.c", :__lex_test_tokens_define_expected
+	%call :__lex_confirm_file, &"bootstrap/bootstrap4/lex0/tests/lex_io_test/test_define.c", :__lex_test_tokens_define_expected
 	%ret

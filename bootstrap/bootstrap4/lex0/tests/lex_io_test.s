@@ -1,5 +1,5 @@
 #include "regs.h"
-#include "../bootstrap4/lex/lex.h"
+#include "../bootstrap4/lex0/lex.h"
 
 :_lex_io_test
 	dd &"lex_io"
@@ -17,7 +17,7 @@
 	mov @lex, @ret
 
 	# Open a file
-	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex/tests/lex_io_test/test.c"
+	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex0/tests/lex_io_test/test.c"
 	mov @file, @ret
 
 	%call :__lex_read, @file
@@ -39,7 +39,7 @@
 	mov @ll, @ret
 	%call :_ll_create_node, 4
 	mov @node, @ret
-	st.w [@node], &"bootstrap/bootstrap4/lex/tests/lex_io_test"
+	st.w [@node], &"bootstrap/bootstrap4/lex0/tests/lex_io_test"
 	%call :_ll_insert_head, @ll, @node
 
 	# Create the lex environment
@@ -47,7 +47,7 @@
 	mov @lex, @ret
 
 	# Open a file
-	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex/tests/lex_io_test/test.c"
+	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex0/tests/lex_io_test/test.c"
 	mov @file, @ret
 
 	%call :__lex_peek, @file
@@ -78,7 +78,7 @@
 	mov @ll, @ret
 
 	# Open a file (required to define a macro - this probably needs to be fixed)
-	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex/tests/lex_io_test/test.c"
+	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex0/tests/lex_io_test/test.c"
 	mov @file, @ret
 
 	# Create the lex environment

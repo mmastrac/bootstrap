@@ -1,6 +1,6 @@
 #include "regs.h"
 #include "syscall.h"
-#include "../bootstrap4/lex/lex.h"
+#include "../bootstrap4/lex0/lex.h"
 
 :__lex_hash_table_test_key_compare
 	%arg a

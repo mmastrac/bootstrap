@@ -14,7 +14,7 @@
 	mov @ll, @ret
 	%call :_ll_create_node, 4
 	mov @node, @ret
-	st.w [@node], &"bootstrap/bootstrap4/lex/tests/lex_io_test"
+	st.w [@node], &"bootstrap/bootstrap4/lex0/tests/lex_io_test"
 	%call :_ll_insert_head, @ll, @node
 
 	# Create the lex environment
