@@ -1,4 +1,4 @@
-# Stage 0 lexer: we get enough C that we can move out of assembly land
+# Stage 0 compiler: we want to get enough C that we can move out of assembly land
 
 #include "regs.h"
 #include "../bootstrap4/lex/lex.h"
@@ -77,39 +77,9 @@
 	jump .loop
 
 .function
-	push @buf1
-	push @buf1
-	%call :_dprintf, 1, &"# function %s\n:_%s\n"
-	pop @buf1
-	pop @buf1
+	%call :_compiler_out, &"# function %s\n:_%s\n", @buf1, @buf1
 
-.function_args
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	mov @token, @ret
-	eq @token, ')'
-	jump? .function_body
-
-	eq @token, @TOKEN_INT
-	jump^ .error
-
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	mov @token, @ret
-	eq @token, @TOKEN_IDENTIFIER
-	jump^ .error
-
-	push @buf1
-	%call :_dprintf, 1, &"    %%arg %s\n"
-	pop @buf1
-
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	mov @token, @ret
-	eq @token, ')'
-	jump? .function_body
-
-	eq @token, ','
-	jump .function_args
-
-	jump .error
+	%call :_compile_function_args, @file, @buf1, @BUFFER_SIZE
 
 .function_body
 	%call :stmts, @file, @buf1, @pending
