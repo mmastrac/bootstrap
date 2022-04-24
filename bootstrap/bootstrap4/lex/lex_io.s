@@ -43,7 +43,7 @@
 	%local ll
 	%local node
 
-	%call :_malloc, 44 # 12 + 32 bytes of push-back buffer
+	%call :_malloc, 16
 	mov @file, @ret
 
 	# Include/macro linked list
@@ -269,35 +269,6 @@
 
 .buffer
 	db 0
-#===========================================================================
-
-
-#===========================================================================
-# void _lex_push_back(lex_file* file, char c)
-#
-# Pushes a char back into the stream.
-#===========================================================================
-:__lex_push_back
-	%arg file
-	%arg c
-
-	# Current index
-	mov @tmp0, @file
-	add @tmp0, 8
-	ld.d @tmp0, [@tmp0]
-
-	add @tmp0, @file
-	add @tmp0, 12
-	st.b [@tmp0], @c
-
-	# Increment the index
-	mov @tmp0, @file
-	add @tmp0, 8
-	ld.d @tmp1, [@tmp0]
-	add @tmp1, 1
-	st.d [@tmp0], @tmp1
-
-	%ret
 #===========================================================================
 
 
