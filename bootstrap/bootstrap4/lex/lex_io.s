@@ -42,11 +42,12 @@
 	%local file
 	%local ll
 	%local node
+	%local token_buf
 
-	%call :_malloc, 16
+	%call :_malloc, 140 # ll, ht, peek, peek_buf (128)
 	mov @file, @ret
 
-	# Include/macro linked list
+	# Include/macro linked list (file@0)
 	%call :_ll_init
 	mov @ll, @ret
 	st.d [@file], @ll
@@ -77,11 +78,16 @@
 
 	%call :_ll_insert_head, @ll, @node
 
-	# Allocate a hash table for the macros
+	# Allocate a hash table for the macros (file@4)
 	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
 	mov @tmp0, @file
 	add @tmp0, 4
 	st.d [@tmp0], @ret
+
+	# Store zero in the peek token (file@8)
+	mov @tmp0, @file
+	add @tmp0, 8
+	st.d [@tmp0], @TOKEN_NONE
 
 	mov @ret, @file
 	%ret
@@ -219,6 +225,42 @@
 
 .buffer
 	db 0
+#===========================================================================
+
+
+#===========================================================================
+# void* _lex_get_token_buf(lex_file* file)
+#
+# Returns the associated token buffer from the file.
+#===========================================================================
+:__lex_get_token_buf
+	%arg file
+	add @file, 12
+	mov @ret, @file
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# int _lex_get_peek_token(lex_file* file)
+#===========================================================================
+:__lex_get_peek_token
+	%arg file
+	add @file, 8
+	ld.d @ret, [@file]
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# void _lex_set_peek_token(lex_file* file, int token)
+#===========================================================================
+:__lex_set_peek_token
+	%arg file
+	%arg token
+	add @file, 8
+	st.d [@file], @token
+	%ret
 #===========================================================================
 
 

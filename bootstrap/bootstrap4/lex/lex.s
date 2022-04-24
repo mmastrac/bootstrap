@@ -396,11 +396,27 @@
 	%arg buffer
 	%arg buffer_length
 	%local c
+	%local tmp
+	%local tmp2
 
 	# Initialize our lex subsystem if it hasn't been already
 	%call :__lex_init
 
 	st.b [@buffer], 0
+
+	# If there's a token already peeked, just return it
+	%call :__lex_get_peek_token, @fd
+	eq @ret, @TOKEN_NONE
+	jump? .whitespace_loop
+	mov @tmp, @ret
+
+	# Remove the peeked token from the peek buffer
+	%call :__lex_set_peek_token, @fd, @TOKEN_NONE
+	%call :__lex_get_token_buf, @fd
+	mov @tmp2, @ret
+	%call :_strcpy, @buffer, @tmp2
+	mov @ret, @tmp
+	%ret
 
 .whitespace_loop
 	# Read from the file handle
@@ -499,6 +515,46 @@
 	%call :_fatal, &"Unexpected character"
 
 .done
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# int lex_peek(lex_file* file, char* buffer, int buffer_length)
+#
+# Returns:
+#   Lexical token type (or NULL if no token found)
+#===========================================================================
+:_lex_peek
+	%arg fd
+	%arg buffer
+	%arg buffer_length
+	%local tmp
+	%local tmp2
+
+	# If there's a token already peeked, just return it
+	%call :__lex_get_peek_token, @fd
+	eq @ret, @TOKEN_NONE
+	jump? .read
+	mov @tmp, @ret
+
+	# We want to leave the token in the peek buffer
+	%call :__lex_get_token_buf, @fd
+	%call :_strcpy, @buffer, @ret
+	mov @ret, @tmp
+	%ret
+
+.read
+	# Read the next token and save it in the peek token
+	%call :_lex, @fd, @buffer, @buffer_length
+	mov @tmp, @ret
+	%call :__lex_set_peek_token, @fd, @tmp
+	# Copy the token into our peek buffer
+	%call :__lex_get_token_buf, @fd
+	mov @tmp2, @ret
+	%call :_strcpy, @tmp2, @buffer
+	# Return the actual token
+	mov @ret, @tmp
 	%ret
 #===========================================================================
 

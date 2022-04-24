@@ -1,3 +1,4 @@
+#define TOKEN_NONE		0
 #define TOKEN_EOF		-1
 // End-of-token
 #define TOKEN_EOT		-2
