@@ -108,7 +108,6 @@
 # Internal method to initialize the lex system.
 #===========================================================================
 :__lex_init
-	%local ptr
 	%local ht
 
 	# Initialize (if not already initialized)
@@ -121,7 +120,6 @@
 	st.d [@tmp0], 1
 
 	# Toss the string tokens into a hash table
-	mov @ptr, :string_tokens
 	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
 	mov @ht, @ret
 	mov @tmp0, :__lex_string_tokens_hash

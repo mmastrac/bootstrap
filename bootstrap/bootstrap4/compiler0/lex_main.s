@@ -43,6 +43,7 @@
 # Open a file
 	%call :__lex_open, @lex, &"bootstrap/bootstrap4/compiler0/tests/lex_io_test/test_fib.c"
 	mov @file, @ret
+	%call :_compiler_out, &"# bootstrap/bootstrap4/compiler0/tests/lex_io_test/test_fib.c\n"
 
 .loop
 	%call :_lex, @file, @buf1, @BUFFER_SIZE
@@ -51,12 +52,14 @@
 	eq @token, @TOKEN_EOF
 	jump? .done
 
-# We only support int functions/globals for this basic parser
+# We only support int functions for this basic parser
 	eq @token, @TOKEN_INT
 	jump^ .error
 
 	%call :_lex, @file, @buf1, @BUFFER_SIZE
 	mov @token, @ret
+
+	%call :_compiler_out, &"# function %s\n:%s\n", @buf1, @buf1
 
 	eq @token, @TOKEN_IDENTIFIER
 	jump^ .error
@@ -64,257 +67,21 @@
 	%call :_lex, @file, @buf2, @BUFFER_SIZE
 	mov @token, @ret
 
-	eq @token, ';'
-	jump? .global
-
-	eq @token, '('
-	jump? .function
-
-	jump .error
-
-.global
-	%call :_dprintf, 1, &":%s\ndd 0\n", @buf1
-	jump .loop
-
-.function
-	%call :_compiler_out, &"# function %s\n:_%s\n", @buf1, @buf1
-
 	%call :_compile_function_args, @file, @buf1, @BUFFER_SIZE
-
-.function_body
-	%call :stmts, @file, @buf1, @pending
-	jump .loop
+	%call :_compiler_out, &"    %%arg arg0\n"
+	%call :_compiler_out, &"    %%arg arg1\n"
+	%call :_compiler_out, &"    %%arg arg2\n"
+	%call :_compiler_out, &"    %%arg arg3\n"
+	%call :_compiler_out, &"    %%arg arg4\n"
+	%call :_compiler_out, &"    %%arg arg5\n"
+	%call :_compiler_out, &"    %%arg arg6\n"
+	%call :_compiler_out, &"    %%arg arg7\n"
+	%call :_compile_block, @file, @buf1, @BUFFER_SIZE
+	%call :_compiler_out, &"    %%ret\n"
 
 .error
-	%call :_quicklog, &"buf1 = '%s' buf2 = '%s'", @buf1, @buf2
-	%call :_fatal, &"Unexpected token"
-	mov @ret, 1
 	%ret
 
 .done
-	mov @ret, 0
-	%ret
-
-# Parses a statement, which might be recursive
-:stmts
-	%arg file
-	%arg buf1
-	%arg pending
-	%local token
-	%local expected
-	mov @expected, &"(unknown)"
-
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	mov @token, @ret
-	mov @expected, &"{"
-	eq @token, '{'
-	jump^ .error
-	%call :_dprintf, 1, &"# {\n"
-
-.loop
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	mov @token, @ret
-
-	eq @token, @TOKEN_INT
-	jump? .stmt_local
-
-	eq @token, @TOKEN_IF
-	jump? .stmt_if
-
-	eq @token, @TOKEN_RETURN
-	jump? .stmt_return
-
-	eq @token, @TOKEN_IDENTIFIER
-	jump? .stmt_assign
-
-	eq @token, '}'
-	jump? .stmt_end
-
-	jump .error
-
-	%ret
-
-.stmt_end
-	%call :_dprintf, 1, &"# }\n"
-	%ret
-
-.stmt_local
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	mov @token, @ret
-	mov @expected, &"identifier"
-	eq @token, @TOKEN_IDENTIFIER
-	jump^ .error
-
-	push @buf1
-	%call :_dprintf, 1, &"    %%local %s\n"
-	pop @buf1
-
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	mov @token, @ret
-	mov @expected, &";"
-	eq @token, ';'
-	jump^ .error
-
-	jump .loop
-
-.stmt_if
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	mov @token, @ret
-
-	eq @token, '('
-	mov @expected, &"("
-	jump^ .error
-
-	%call :_dprintf, 1, &"# if\n"
-
-	%call :expr, @file, @buf1
-
-	%call :_dprintf, 1, &"    eq @tmp0, 1\n"
-	%call :_dprintf, 1, &"    jump^ .end\n"
-
-	%call :stmts, @file, @buf1, @pending
-	%call :_dprintf, 1, &".end:\n"
-
-	jump .loop
-
-.stmt_return
-	%call :expr, @file, @buf1
-	%call :_dprintf, 1, &"    mov @ret, @tmp0\n"
-	%call :_dprintf, 1, &"    %%ret\n"
-	jump .loop
-
-.stmt_assign
-	%call :_strcpy, @pending, @buf1
-	push @pending
-	%call :_dprintf, 1, &"# %s = (expr)\n"
-	pop @pending
-
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	mov @token, @ret
-
-	eq @token, '='
-	mov @expected, &"="
-	jump^ .error
-
-	%call :expr, @file, @buf1
-	push @pending
-	%call :_dprintf, 1, &"    mov @%s, @tmp0\n"
-	pop @pending
-	jump .loop
-
-.error
-	%call :_quicklog, &"buf1 = '%s', expected = '%s'", @buf1, @expected
-	%call :_fatal, &"Unexpected token in stmt"
-	mov @ret, 1
-	%ret
-
-.done
-	mov @ret, 0
-	%ret
-
-# Parses a simple expression and puts it into @tmp0
-:expr
-	%arg file
-	%arg buf1
-	%local token
-	%local expected
-	mov @expected, &"(unknown)"
-
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	mov @token, @ret
-
-	eq @token, '('
-	jump? .paren
-
-	eq @token, @TOKEN_CONSTANT
-	jump? .const
-
-	# If it isn't a parenthesis or number, we expect an identifier
-	mov @expected, &"identifier"
-	eq @token, @TOKEN_IDENTIFIER
-	jump^ .error
-	jump .ident
-
-.const
-	push @buf1
-	%call :_dprintf, 1, &"    mov @tmp1, %s\n"
-	pop @buf1
-	jump .cont
-
-.ident
-	push @buf1
-	%call :_dprintf, 1, &"    mov @tmp1, @%s\n"
-	pop @buf1
-	jump .cont
-
-.cont
-	# Now which type of expression?
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	mov @token, @ret
-
-	eq @token, @TOKEN_EQ_OP
-	jump? .eq
-
-	eq @token, '-'
-	jump? .minus
-
-	eq @token, '('
-	jump? .call
-
-	eq @token, ';'
-	%ret?
-
-	eq @token, ','
-	%ret?
-
-	eq @token, ')'
-	%ret?
-
-.eq
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	mov @token, @ret
-	push @buf1
-	%call :_dprintf, 1, &"    eq @tmp1, %s\n"
-	pop @buf1
-	%call :_dprintf, 1, &"    mov? @tmp0, 0\n"
-	%call :_dprintf, 1, &"    mov^ @tmp0, 1\n"
-	jump .done
-
-.minus
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	mov @token, @ret
-	push @buf1
-	%call :_dprintf, 1, &"    sub @tmp0, %s\n"
-	pop @buf1
-	jump .done
-
-.call
-# Push the args to the stack first
-	%call :expr, @file, @buf1
-	%call :_dprintf, 1, &"    push @tmp0\n"
-	eq @ret, ')'
-	jump? .done
-	jump .call
-
-.paren
-	%call :expr, @file, @buf1
-
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	mov @token, @ret
-	mov @expected, &")"
-	eq @token, ')'
-	jump^ .error
-
-	%ret
-
-.error
-	%call :_quicklog, &"buf1 = '%s', expected = '%s'", @buf1, @expected
-	%call :_fatal, &"Unexpected token in expr"
-
-.done
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	mov @token, @ret
-	mov @expected, &")"
-	eq @token, ')'
-	jump^ .error
+	%call :_compiler_out, &"# EOF\n"
 	%ret

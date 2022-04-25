@@ -6,7 +6,6 @@ int fib(int n) {
 	if (n == 1) {
 		return 1;
 	}
-	sum = 0;
 	sum = fib(n - 1);
 	sum = sum + fib(n - 2);
 }
