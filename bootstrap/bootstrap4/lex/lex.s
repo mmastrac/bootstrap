@@ -126,36 +126,14 @@
 	mov @ht, @ret
 	mov @tmp0, :__lex_string_tokens_hash
 	st.d [@tmp0], @ht
-
-.loop1
-	ld.d @tmp0, [@ptr]
-	eq @tmp0, 0
-	jump? .done1
-	add @ptr, 4
-	ld.d @tmp1, [@ptr]
-	add @ptr, 4
-
-	%call :_ht_insert, @ht, @tmp0, @tmp1
-	jump .loop1
-.done1
+	%call :_ht_insert_table, @ht, :string_tokens
 
 	# Toss the multi-byte tokens into a hash table
-	mov @ptr, :multibyte_op_tokens
 	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
 	mov @ht, @ret
 	mov @tmp0, :__lex_multibyte_tokens_hash
 	st.d [@tmp0], @ht
-
-.loop2
-	ld.d @tmp0, [@ptr]
-	eq @tmp0, 0
-	jump? .done2
-	add @ptr, 4
-	ld.d @tmp1, [@ptr]
-	add @ptr, 4
-	%call :_ht_insert, @ht, @tmp0, @tmp1
-	jump .loop2
-.done2
+	%call :_ht_insert_table, @ht, :multibyte_op_tokens
 
 	%ret
 #===========================================================================
@@ -540,7 +518,10 @@
 
 	# We want to leave the token in the peek buffer
 	%call :__lex_get_token_buf, @fd
+	eq @buffer, 0
+	jump? .no_strcpy1
 	%call :_strcpy, @buffer, @ret
+.no_strcpy1
 	mov @ret, @tmp
 	%ret
 
@@ -552,7 +533,10 @@
 	# Copy the token into our peek buffer
 	%call :__lex_get_token_buf, @fd
 	mov @tmp2, @ret
+	eq @buffer, 0
+	jump? .no_strcpy2
 	%call :_strcpy, @tmp2, @buffer
+.no_strcpy2
 	# Return the actual token
 	mov @ret, @tmp
 	%ret
