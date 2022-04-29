@@ -1129,6 +1129,11 @@
 	=$x :newline_
 	=?1x
 
+	=$x :quote___
+	?=0x
+	=$x :quote___
+	=?1x
+
 	=$x :zero____
 	?=0x
 	=$x :__null__
