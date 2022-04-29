@@ -505,38 +505,31 @@
 	%arg fd
 	%arg buffer
 	%arg buffer_length
-	%local tmp
-	%local tmp2
+	%local token
+	%local token_buf
 
-	# If there's a token already peeked, just return it
-	%call :__lex_get_peek_token, @fd
-	eq @ret, @TOKEN_NONE
-	jump? .read
-	mov @tmp, @ret
-
-	# We want to leave the token in the peek buffer
 	%call :__lex_get_token_buf, @fd
-	eq @buffer, 0
-	jump? .no_strcpy1
-	%call :_strcpy, @buffer, @ret
-.no_strcpy1
-	mov @ret, @tmp
-	%ret
+	mov @token_buf, @ret
+
+	# If there's a token already peeked, we don't need to re-read
+	%call :__lex_get_peek_token, @fd
+	mov @token, @ret
+	eq @token, @TOKEN_NONE
+	jump^ .read
+
+	# Read the token into the peek buffer
+	%call :_lex, @fd, @token_buf, @buffer_length
+	mov @token, @ret
+	%call :__lex_set_peek_token, @fd, @token
 
 .read
-	# Read the next token and save it in the peek token
-	%call :_lex, @fd, @buffer, @buffer_length
-	mov @tmp, @ret
-	%call :__lex_set_peek_token, @fd, @tmp
-	# Copy the token into our peek buffer
-	%call :__lex_get_token_buf, @fd
-	mov @tmp2, @ret
 	eq @buffer, 0
-	jump? .no_strcpy2
-	%call :_strcpy, @tmp2, @buffer
-.no_strcpy2
+	jump? .no_strcpy
+	%call :_strcpy, @buffer, @token_buf
+
+.no_strcpy
 	# Return the actual token
-	mov @ret, @tmp
+	mov @ret, @token
 	%ret
 #===========================================================================
 
