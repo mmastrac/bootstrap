@@ -24,13 +24,29 @@
     mov @ret, @tmp
     %ret
 
-:_compile_expr
+#===========================================================================
+# Compile an expression, returning it in @ret.
+#===========================================================================
+:_compile_expr_ret
+    %arg file
+    %arg buf
+    %arg buflen
+
+    %call :_compile_expr_stack, @file, @buf, @buflen
+    %call :_compiler_out, &"    pop @ret\n", @buf
+    %ret
+
+#===========================================================================
+# Compile an expression, returning it in on the stack.
+#===========================================================================
+:_compile_expr_stack
     %arg file
     %arg buf
     %arg buflen
     %local saved_op
     %local ht
     %local label
+    %local arg_count
 
     ld.d @ht, [:_binary_expressions]
     eq @ht, 0
@@ -54,8 +70,8 @@
     dd @TOKEN_NONE, @TOKEN_NONE
 
 .paren
-    %call :_compile_expr_paren, @file, @buf, @buflen
-    %ret
+    %call :_compile_expr_paren_stack, @file, @buf, @buflen
+    jump .done
 
 .constant
     %call :_lex, @file, @buf, @buflen
@@ -73,7 +89,16 @@
     jump .done
 
 .call
+    %call :_compile_get_next_label
+    mov @label, @ret
+    mov @arg_count, 0
     %call :_compiler_out, &"# call %s\n", @buf
+    %call :_compiler_out, &"    jump .setup_args_1_%d\n", @label
+    %call :_compiler_out, &".setup_args_2_%d\n", @label
+    %call :_compiler_out, &"    %%call :%s, @arg0, @arg1, @arg2, @arg3, @arg4, @arg5, @arg6, @arg7\n", @buf
+    %call :_compiler_out, &"    push @ret\n"
+    %call :_compiler_out, &"    jump .setup_args_3_%d\n", @label
+    %call :_compiler_out, &".setup_args_1_%d\n", @label
     %call :_compiler_read_expect, @file, @buf, @buflen, '('
 .call_loop
     %call :_lex_peek, @file, 0, 0
@@ -82,8 +107,10 @@
     eq @ret, ','
     jump? .call_comma
     %call :_compiler_out, &"# arg\n"
-    %call :_compile_expr, @file, @buf, @buflen
+    %call :_compile_expr_stack, @file, @buf, @buflen
+    %call :_compiler_out, &"    pop @arg%d\n", @arg_count
     %call :_compiler_out, &"# arg\n"
+    add @arg_count, 1
     jump .call_loop
 .call_comma
     %call :_compiler_out, &"# ,\n"
@@ -91,6 +118,8 @@
     jump .call_loop
 .call_done
     %call :_compiler_read_expect, @file, @buf, @buflen, ')'
+    %call :_compiler_out, &"    jump .setup_args_2_%d\n", @label
+    %call :_compiler_out, &".setup_args_3_%d\n", @label
     jump .done
 
 .assign
@@ -102,8 +131,9 @@
     %call :_compiler_out, &"    mov @%s, @ret\n", @buf
     %call :_compiler_out, &"    jump .assign_value_3_%d\n", @label
     %call :_compiler_read_expect, @file, 0, 0, '='
-    %call :_compile_expr, @file, @buf, @buflen
-    %call :_compiler_out, &"    jump .assign_value_1_%d\n", @label
+    %call :_compiler_out, &".assign_value_1_%d\n", @label
+    %call :_compile_expr_ret, @file, @buf, @buflen
+    %call :_compiler_out, &"    jump .assign_value_2_%d\n", @label
     %call :_compiler_out, &".assign_value_3_%d\n", @label
     jump .done
 
@@ -123,7 +153,7 @@
     %call :_lex, @file, @buf, @buflen
     %call :_compiler_out, &"# operator '%s'\n", @buf
     # Do the RHS
-    %call :_compile_expr, @file, @buf, @buflen
+    %call :_compile_expr_stack, @file, @buf, @buflen
     # Pop both sides
     %call :_compiler_out, &"    pop @tmp0\n"
     %call :_compiler_out, &"    pop @tmp1\n"
@@ -136,13 +166,24 @@
     %call :_compiler_out, &"# expr end\n"
     %ret
 
-:_compile_expr_paren
+:_compile_expr_paren_stack
     %arg file
     %arg buf
     %arg buflen
 
     %call :_compiler_read_expect, @file, @buf, @buflen, '('
-    %call :_compile_expr, @file, @buf, @buflen
+    %call :_compile_expr_stack, @file, @buf, @buflen
+    %call :_compiler_read_expect, @file, @buf, @buflen, ')'
+
+    %ret
+
+:_compile_expr_paren_ret
+    %arg file
+    %arg buf
+    %arg buflen
+
+    %call :_compiler_read_expect, @file, @buf, @buflen, '('
+    %call :_compile_expr_ret, @file, @buf, @buflen
     %call :_compiler_read_expect, @file, @buf, @buflen, ')'
 
     %ret

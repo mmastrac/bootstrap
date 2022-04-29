@@ -99,9 +99,13 @@ echo Compile 4
 echo Compile 4
 ./vm /tmp/t4.bin $ROOT/bootstrap4/compiler0/tests/test_basic.c /tmp/test_basic.s
 echo Compile 4
+./vm /tmp/t4.bin $ROOT/bootstrap4/compiler0/tests/test_binary.c /tmp/test_binary.s
+echo Compile 4
 ./vm /tmp/t4.bin $ROOT/bootstrap4/compiler0/tests/test_fib.c /tmp/test_fib.s
 echo Compile 4
-./vm /tmp/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/*.s $ROOT/bootstrap4/compiler0/tests/*.s /tmp/test_basic.s /tmp/test_fib.s /tmp/t4_0.bin
+./vm /tmp/t4.bin $ROOT/bootstrap4/compiler0/tests/test_function.c /tmp/test_function.s
+echo Compile 4
+./vm /tmp/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/*.s $ROOT/bootstrap4/compiler0/tests/*.s /tmp/test_basic.s /tmp/test_binary.s /tmp/test_fib.s /tmp/test_function.s /tmp/t4_0.bin
 ./vm /tmp/t4_0.bin
 
 echo Done

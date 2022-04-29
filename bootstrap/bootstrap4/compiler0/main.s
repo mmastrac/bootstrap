@@ -13,9 +13,7 @@
 	%arg argv
 	%local buf1
 	%local buf2
-	%local pending
 	%local token
-	%local len
 	%local ll
 	%local node
 	%local lex
@@ -28,9 +26,6 @@
 	mov @buf1, @ret
 	%call :_malloc, @BUFFER_SIZE
 	mov @buf2, @ret
-# Pending variable assignment
-	%call :_malloc, @BUFFER_SIZE
-	mov @pending, @ret
 
 # Create the include list
 	%call :_ll_init
@@ -95,6 +90,7 @@
 	%call :_compiler_out, &"    %%arg arg7\n"
 	%call :_compile_block, @file, @buf1, @BUFFER_SIZE
 	%call :_compiler_out, &"    %%ret\n"
+	jump .loop
 
 .done
 	%call :_compiler_out, &"# EOF\n"

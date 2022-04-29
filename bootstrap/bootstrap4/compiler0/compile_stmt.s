@@ -49,7 +49,7 @@
     jump .done
 
 .identifier
-    %call :_compile_expr, @file, @buf, @buflen
+    %call :_compile_expr_ret, @file, @buf, @buflen
     %call :_compiler_read_expect, @file, @buf, @buflen, ';'
     jump .done
 
@@ -70,10 +70,9 @@
 
     %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_IF
     %call :_compiler_out, &"# if\n"
-    %call :_compile_expr_paren, @file, @buf, @buflen
+    %call :_compile_expr_paren_ret, @file, @buf, @buflen
     %call :_compiler_out, &"# if test\n"
-    %call :_compiler_out, &"    pop @tmp0\n"
-    %call :_compiler_out, &"    eq @tmp0, 0\n"
+    %call :_compiler_out, &"    eq @ret, 0\n"
     %call :_compiler_out, &"    jump .end\n"
     %call :_compile_block, @file, @buf, @buflen
     %call :_compiler_out, &".end\n"
@@ -94,7 +93,7 @@
     %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_RETURN
     %call :_compiler_out, &"# return\n"
     # This will leave the return value in @ret
-    %call :_compile_expr, @file, @buf, @buflen
+    %call :_compile_expr_ret, @file, @buf, @buflen
     %call :_compiler_out, &"    %%ret\n"
     %call :_compiler_read_expect, @file, @buf, @buflen, ';'
     %ret
