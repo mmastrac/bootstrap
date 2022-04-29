@@ -1,18 +1,31 @@
 #include "regs.h"
 #include "../bootstrap4/lex/lex.h"
 
+:_compiler_out_fd
+    # stdout by default
+    dd 1
+
+:_compiler_out_open
+    %arg file
+	%call :_open, @file, 1
+    st.d [:_compiler_out_fd], @ret
+    %ret
+
 :_compiler_out
     %arg msg
     %arg out0
     %arg out1
     %arg out2
     %arg out3
+    %local fd
+
+    ld.d @fd, [:_compiler_out_fd]
 
     push @out3
     push @out2
     push @out1
     push @out0
-	%call :_dprintf, 1, @msg
+	%call :_dprintf, @fd, @msg
     pop @out0
     pop @out1
     pop @out2

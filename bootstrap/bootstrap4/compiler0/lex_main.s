@@ -9,6 +9,8 @@
 	dd 0
 
 :_main
+	%arg argc
+	%arg argv
 	%local buf1
 	%local buf2
 	%local pending
@@ -18,6 +20,8 @@
 	%local node
 	%local lex
 	%local file
+	%local args
+	%local output
 
 # Allocate a 256-byte buffer
 	%call :_malloc, @BUFFER_SIZE
@@ -41,9 +45,21 @@
 	mov @lex, @ret
 
 # Open a file
-	%call :__lex_open, @lex, &"bootstrap/bootstrap4/compiler0/tests/lex_io_test/test_fib.c"
+	mov @args, :__argv
+	ld.d @args, [@args]
+
+	# Get argv[1] - the file the open
+	add @args, 4
+	ld.d @file, [@args]
+
+	# Get argv[2] - the output file
+	add @args, 4
+	ld.d @output, [@args]
+	%call :_compiler_out_open, @output
+
+	%call :_compiler_out, &"# %s\n", @file
+	%call :__lex_open, @lex, @file
 	mov @file, @ret
-	%call :_compiler_out, &"# bootstrap/bootstrap4/compiler0/tests/lex_io_test/test_fib.c\n"
 
 .loop
 	%call :_lex, @file, @buf1, @BUFFER_SIZE
