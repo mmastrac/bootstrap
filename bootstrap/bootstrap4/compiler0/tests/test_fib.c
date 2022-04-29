@@ -10,6 +10,6 @@ int fib(int n) {
 	sum = sum + fib(n - 2);
 }
 
-int result() {
+int result_fib() {
 	return fib(42);
 }

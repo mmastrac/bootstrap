@@ -58,6 +58,7 @@
 	%call :_compiler_out_open, @output
 
 	%call :_compiler_out, &"# %s\n", @file
+	%call :_compiler_out, &"#include \"regs.h\"\n"
 	%call :__lex_open, @lex, @file
 	mov @file, @ret
 
@@ -95,9 +96,12 @@
 	%call :_compile_block, @file, @buf1, @BUFFER_SIZE
 	%call :_compiler_out, &"    %%ret\n"
 
-.error
-	%ret
-
 .done
 	%call :_compiler_out, &"# EOF\n"
+	mov @ret, 0
+	%ret
+
+.error
+	%call :_compiler_out, &"# Error\n"
+	mov @ret, 1
 	%ret
