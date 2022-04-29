@@ -1134,6 +1134,11 @@
 	=$x :quote___
 	=?1x
 
+	=$x :bslash__
+	?=0x
+	=$x :bslash__
+	=?1x
+
 	=$x :zero____
 	?=0x
 	=$x :__null__

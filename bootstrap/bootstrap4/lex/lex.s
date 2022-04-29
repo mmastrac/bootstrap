@@ -94,6 +94,8 @@
 	dd &">=",	@TOKEN_GE_OP
 	dd &"==",	@TOKEN_EQ_OP
 	dd &"!=",	@TOKEN_NE_OP
+	dd &"/*",	@TOKEN_COMMENT_C
+	dd &"//",	@TOKEN_COMMENT_CPP
 	dd 0
 
 
@@ -199,6 +201,56 @@
 .done
 	st.b [@buffer], 0
 	mov @ret, @TOKEN_CONSTANT
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# int _lex_comment_c(lex_file* file)
+#===========================================================================
+:__lex_comment_c
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# int _lex_comment_cpp(lex_file* file)
+#===========================================================================
+:__lex_comment_cpp
+	%arg fd
+.loop
+	%call :__lex_read, @fd
+	eq @ret, 10
+	jump? .done
+	jump .loop
+.done
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# int _lex_string(lex_file* file, char* buffer, int buffer_length)
+#===========================================================================
+:__lex_string
+	%arg fd
+	%arg buffer
+	%arg buffer_length
+	%local mark
+
+	%call :__lex_read, @fd
+
+.loop
+	%call :__lex_read, @fd
+	eq @ret, '"'
+	jump? .done
+
+	st.b [@buffer], @ret
+	add @buffer, 1
+	jump .loop
+
+.done
+	st.b [@buffer], 0
+	mov @ret, @TOKEN_STRING_LITERAL
 	%ret
 #===========================================================================
 
@@ -480,12 +532,26 @@
 	%ret
 
 .not_digit
-	# Attempt to operators
+	eq @c, '"'
+	jump^ .not_quote
+	%call :__lex_string, @fd, @buffer, @buffer_length # tail call
+	%ret
+
+.not_quote
+	# Attempt to match operators
 	%call :__lex_operator, @fd, @buffer, @buffer_length
+	eq @ret, @TOKEN_COMMENT_CPP
+	jump^ .not_comment_cpp
+	%call :__lex_comment_cpp, @fd
+	jump .whitespace_loop
+.not_comment_cpp
+	eq @ret, @TOKEN_COMMENT_C
+	jump^ .not_comment_c
+	%call :__lex_comment_c, @fd
+	jump .whitespace_loop
+.not_comment_c
 	eq @ret, @NULL
 	%ret^
-
-	jump .not_operator
 
 .not_operator
 	%call :_fatal, &"Unexpected character"

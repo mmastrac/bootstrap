@@ -63,3 +63,5 @@
 #define TOKEN_GE_OP 		155
 #define TOKEN_EQ_OP 		156
 #define TOKEN_NE_OP 		157
+#define TOKEN_COMMENT_C     158
+#define TOKEN_COMMENT_CPP   159
