@@ -13,12 +13,24 @@
 :_binary_expressions
     dd 0
 
+:_compile_next_label
+    dd 0
+
+:_compile_get_next_label
+    %local tmp
+    ld.d @tmp, [:_compile_next_label]
+    add @tmp, 1
+    st.d [:_compile_next_label], @tmp
+    mov @ret, @tmp
+    %ret
+
 :_compile_expr
     %arg file
     %arg buf
     %arg buflen
     %local saved_op
     %local ht
+    %local label
 
     ld.d @ht, [:_binary_expressions]
     eq @ht, 0
@@ -31,7 +43,7 @@
 	%call :_ht_insert_table, @ht, :_binary_expression_table
 
 .inited
-    %call :_lex_peek, @file, @buf, @buflen
+    %call :_lex_peek, @file, 0, 0
     mov @tmp0, .jump_table
     jump :_compiler_jump_table
 
@@ -52,7 +64,47 @@
 
 .identifier
     %call :_lex, @file, @buf, @buflen
+    %call :_lex_peek, @file, 0, 0
+    eq @ret, '('
+    jump? .call
+    eq @ret, '='
+    jump? .assign
     %call :_compiler_out, &"    push @%s\n", @buf
+    jump .done
+
+.call
+    %call :_compiler_out, &"# call %s\n", @buf
+    %call :_compiler_read_expect, @file, @buf, @buflen, '('
+.call_loop
+    %call :_lex_peek, @file, 0, 0
+    eq @ret, ')'
+    jump? .call_done
+    eq @ret, ','
+    jump? .call_comma
+    %call :_compiler_out, &"# arg\n"
+    %call :_compile_expr, @file, @buf, @buflen
+    %call :_compiler_out, &"# arg\n"
+    jump .call_loop
+.call_comma
+    %call :_compiler_out, &"# ,\n"
+    %call :_compiler_read_expect, @file, @buf, @buflen, ','
+    jump .call_loop
+.call_done
+    %call :_compiler_read_expect, @file, @buf, @buflen, ')'
+    jump .done
+
+.assign
+    %call :_compile_get_next_label
+    mov @label, @ret
+    %call :_compiler_out, &"# assign %s (#%d)\n", @buf, @label
+    %call :_compiler_out, &"    jump .assign_value_1_%d\n", @label
+    %call :_compiler_out, &".assign_value_2_%d\n", @label
+    %call :_compiler_out, &"    mov @%s, @ret\n", @buf
+    %call :_compiler_out, &"    jump .assign_value_3_%d\n", @label
+    %call :_compiler_read_expect, @file, 0, 0, '='
+    %call :_compile_expr, @file, @buf, @buflen
+    %call :_compiler_out, &"    jump .assign_value_1_%d\n", @label
+    %call :_compiler_out, &".assign_value_3_%d\n", @label
     jump .done
 
 .done
@@ -69,6 +121,7 @@
 
 .binary
     %call :_lex, @file, @buf, @buflen
+    %call :_compiler_out, &"# operator '%s'\n", @buf
     # Do the RHS
     %call :_compile_expr, @file, @buf, @buflen
     # Pop both sides
@@ -80,6 +133,7 @@
     %call :_compiler_out, &"    push @tmp0\n"
 
 .return
+    %call :_compiler_out, &"# expr end\n"
     %ret
 
 :_compile_expr_paren

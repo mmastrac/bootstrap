@@ -23,7 +23,7 @@
     %arg buf
     %arg buflen
 
-    %call :_lex, @file, @buf, @buflen
+    %call :_lex_peek, @file, @buf, @buflen
     mov @tmp0, .jump_table
     jump :_compiler_jump_table
 
@@ -41,26 +41,16 @@
     jump .done
 
 .while
+    %call :_compile_stmt_while, @file, @buf, @buflen
     jump .done
 
 .int
-    %call :_compiler_out, &"# local\n"
     %call :_compile_stmt_local, @file, @buf, @buflen
     jump .done
 
 .identifier
-    %call :_compiler_peek_is, @file, '('
-    jump? .invoke
-    %call :_compiler_peek_is, @file, '='
-    jump? .assign
-    %call :_compiler_fatal, &"Expected ( or ="
-
-.invoke
-    %call :_compile_stmt_invoke, @file, @buf, @buflen
-    jump .done
-
-.assign
-    %call :_compile_stmt_assign, @file, @buf, @buflen
+    %call :_compile_expr, @file, @buf, @buflen
+    %call :_compiler_read_expect, @file, @buf, @buflen, ';'
     jump .done
 
 .return
@@ -78,6 +68,7 @@
     %arg buf
     %arg buflen
 
+    %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_IF
     %call :_compiler_out, &"# if\n"
     %call :_compile_expr_paren, @file, @buf, @buflen
     %call :_compiler_out, &"# if test\n"
@@ -92,6 +83,7 @@
     %arg file
     %arg buf
     %arg buflen
+    %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_WHILE
     %ret
 
 :_compile_stmt_return
@@ -99,9 +91,10 @@
     %arg buf
     %arg buflen
 
+    %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_RETURN
     %call :_compiler_out, &"# return\n"
+    # This will leave the return value in @ret
     %call :_compile_expr, @file, @buf, @buflen
-    %call :_compiler_out, &"    pop @ret\n"
     %call :_compiler_out, &"    %%ret\n"
     %call :_compiler_read_expect, @file, @buf, @buflen, ';'
     %ret
@@ -111,21 +104,10 @@
     %arg buf
     %arg buflen
 
+    %call :_compiler_out, &"# local\n"
+    %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_INT
     %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_IDENTIFIER
     %call :_compiler_out, &"    %%local %s\n", @buf
+    %call :_compiler_read_expect, @file, @buf, @buflen, ';'
 
-    %ret
-
-:_compile_stmt_assign
-    %arg file
-    %arg buf
-    %arg buflen
-    %call :_compiler_out, &"# assign\n"
-    %ret
-
-:_compile_stmt_invoke
-    %arg file
-    %arg buf
-    %arg buflen
-    %call :_compiler_out, &"# invoke\n"
     %ret
