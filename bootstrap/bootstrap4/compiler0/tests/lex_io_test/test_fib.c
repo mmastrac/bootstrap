@@ -9,3 +9,7 @@ int fib(int n) {
 	sum = fib(n - 1);
 	sum = sum + fib(n - 2);
 }
+
+int result() {
+	return fib(42);
+}
