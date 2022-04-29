@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define PROGRAM_LENGTH 65536
+#define PROGRAM_LENGTH 65536*2
 #define PC 61
 #define dprintf if (verbose > VERBOSE_NONE) printf
 
@@ -27,7 +27,8 @@ void debug(const char* msg) {
 }
 
 void invalid(const char* what) {
-	printf("Invalid %s\n", what);
+	printf("ERROR Invalid %s\n", what);
+	printf("PC = %08x\n", registers[PC]);
 	if (dump) {
 		printf("Dumped memory to /tmp/memory.bin\n");
 		int fd = open("/tmp/memory.bin", O_CREAT | O_TRUNC | O_WRONLY, 0777);
