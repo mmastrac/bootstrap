@@ -6,10 +6,11 @@ int fib(int n) {
 	if (n == 1) {
 		return 1;
 	}
-	sum = fib(n - 1);
-	sum = sum + fib(n - 2);
+	sum = fib(n - 2);
+	sum = sum + fib(n - 1);
+	return sum;
 }
 
 int result_fib() {
-	return fib(42);
+	return fib(9) + 8;
 }

@@ -2,8 +2,8 @@
 #include "../bootstrap4/lex/lex.h"
 
 :_binary_expression_table
-    dd @TOKEN_EQ_OP, &"    eq @tmp0, @tmp1\n    mov? @tmp0, 1\n    mov^ @tmp0, 0"
-    dd @TOKEN_NE_OP, &"    eq @tmp0, @tmp1\n    mov? @tmp0, 0\n    mov^ @tmp0, 1"
+    dd @TOKEN_EQ_OP, &"    eq @tmp0, @tmp1\n    mov @tmp0, 1\n    mov^ @tmp0, 0"
+    dd @TOKEN_NE_OP, &"    eq @tmp0, @tmp1\n    mov @tmp0, 0\n    mov^ @tmp0, 1"
     dd '+', &"    add @tmp0, @tmp1"
     dd '-', &"    sub @tmp0, @tmp1"
     dd '/', &"    div @tmp0, @tmp1"
@@ -65,6 +65,7 @@
 
 .jump_table
     dd @TOKEN_CONSTANT, .constant
+    dd @TOKEN_STRING_LITERAL, .string_literal
     dd @TOKEN_IDENTIFIER, .identifier
     dd '(', .paren
     dd @TOKEN_NONE, @TOKEN_NONE
@@ -76,6 +77,11 @@
 .constant
     %call :_lex, @file, @buf, @buflen
     %call :_compiler_out, &"    push %s\n", @buf
+    jump .done
+
+.string_literal
+    %call :_lex, @file, @buf, @buflen
+    %call :_compiler_out, &"    push &\"%s\"\n", @buf
     jump .done
 
 .identifier
@@ -129,6 +135,7 @@
     %call :_compiler_out, &"    jump .assign_value_1_%d\n", @label
     %call :_compiler_out, &".assign_value_2_%d\n", @label
     %call :_compiler_out, &"    mov @%s, @ret\n", @buf
+    %call :_compiler_out, &"    push @%s\n", @buf
     %call :_compiler_out, &"    jump .assign_value_3_%d\n", @label
     %call :_compiler_read_expect, @file, 0, 0, '='
     %call :_compiler_out, &".assign_value_1_%d\n", @label
@@ -155,8 +162,8 @@
     # Do the RHS
     %call :_compile_expr_stack, @file, @buf, @buflen
     # Pop both sides
-    %call :_compiler_out, &"    pop @tmp0\n"
     %call :_compiler_out, &"    pop @tmp1\n"
+    %call :_compiler_out, &"    pop @tmp0\n"
     %call :_ht_lookup, @ht, @saved_op
     mov @buf, @ret
     %call :_compiler_out, &"%s\n", @buf

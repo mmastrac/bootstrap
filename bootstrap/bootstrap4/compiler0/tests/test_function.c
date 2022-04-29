@@ -3,5 +3,6 @@ int add_function(int a, int b, int c) {
 }
 
 int result_function() {
-    return add_function(1, 2, 39);
+    // 42
+    return add_function(1, 2, 37 + 1) + 1;
 }
