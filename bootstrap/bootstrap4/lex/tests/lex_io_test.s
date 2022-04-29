@@ -17,7 +17,7 @@
 	mov @lex, @ret
 
 	# Open a file
-	%call :__lex_open, @lex, &"bootstrap/bootstrap4/compiler0/tests/lex_io_test/test.c"
+	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex/tests/c/test.c"
 	mov @file, @ret
 
 	%call :__lex_read, @file
@@ -47,7 +47,7 @@
 	mov @lex, @ret
 
 	# Open a file
-	%call :__lex_open, @lex, &"bootstrap/bootstrap4/compiler0/tests/lex_io_test/test.c"
+	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex/tests/c/test.c"
 	mov @file, @ret
 
 	%call :__lex_peek, @file
@@ -78,7 +78,7 @@
 	mov @ll, @ret
 
 	# Open a file (required to define a macro - this probably needs to be fixed)
-	%call :__lex_open, @lex, &"bootstrap/bootstrap4/compiler0/tests/lex_io_test/test.c"
+	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex/tests/c/test.c"
 	mov @file, @ret
 
 	# Create the lex environment
