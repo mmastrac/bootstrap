@@ -256,6 +256,35 @@
 
 
 #===========================================================================
+# int __lex_char_literal(lex_file* file, char* buffer, int buffer_length)
+#===========================================================================
+:__lex_char_literal
+	%arg fd
+	%arg buffer
+	%arg buffer_length
+	%local mark
+
+	%call :__lex_read, @fd
+	st.b [@buffer], @ret
+	add @buffer, 1
+
+.loop
+	%call :__lex_read, @fd
+	st.b [@buffer], @ret
+	add @buffer, 1
+	eq @ret, 39
+	jump? .done
+
+	jump .loop
+
+.done
+	st.b [@buffer], 0
+	mov @ret, @TOKEN_CONSTANT
+	%ret
+#===========================================================================
+
+
+#===========================================================================
 # void _lex_handle_preprocessor(lex_file* file, int preprocessor_token)
 #===========================================================================
 :__lex_handle_preprocessor
@@ -538,6 +567,12 @@
 	%ret
 
 .not_quote
+	eq @c, 39
+	jump^ .not_squote
+	%call :__lex_char_literal, @fd, @buffer, @buffer_length # tail call
+	%ret
+
+.not_squote
 	# Attempt to match operators
 	%call :__lex_operator, @fd, @buffer, @buffer_length
 	eq @ret, @TOKEN_COMMENT_CPP
