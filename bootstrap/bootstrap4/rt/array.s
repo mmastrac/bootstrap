@@ -46,6 +46,13 @@
 # void* array_pop(array* array)
 #===========================================================================
 :_array_pop
+    %arg array
+    %local size
+    %call :_array_size, @array
+    mov @size, @ret
+    sub @size, 1
+    st.d [@array], @size
+    %call :_array_get, @array, @size
     %ret
 
 #===========================================================================
@@ -66,7 +73,7 @@
     # size = max(size, index + 1)
     mov @size, @ret
     add @index, 1
-    gt @size, @index
+    gt @index, @size
     mov? @size, @index
     st.d [@array], @size
     # Now store the item
