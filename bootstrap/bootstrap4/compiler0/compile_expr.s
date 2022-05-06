@@ -4,6 +4,10 @@
 :_binary_expression_table
     dd @TOKEN_EQ_OP, &"    eq @tmp0, @tmp1\n    mov @tmp0, 1\n    mov^ @tmp0, 0"
     dd @TOKEN_NE_OP, &"    eq @tmp0, @tmp1\n    mov @tmp0, 0\n    mov^ @tmp0, 1"
+    dd @TOKEN_GE_OP, &"    lt @tmp0, @tmp1\n    mov @tmp0, 0\n    mov^ @tmp0, 1"
+    dd @TOKEN_LE_OP, &"    gt @tmp0, @tmp1\n    mov @tmp0, 0\n    mov^ @tmp0, 1"
+    dd '<', &"    lt @tmp0, @tmp1\n    mov @tmp0, 1\n    mov^ @tmp0, 0"
+    dd '>', &"    gt @tmp0, @tmp1\n    mov @tmp0, 1\n    mov^ @tmp0, 0"
     dd '+', &"    add @tmp0, @tmp1"
     dd '-', &"    sub @tmp0, @tmp1"
     dd '/', &"    div @tmp0, @tmp1"

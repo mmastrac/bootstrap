@@ -103,6 +103,10 @@ echo Compile 4
 echo Compile 4
 ./vm /tmp/t4.bin $ROOT/bootstrap4/compiler0/tests/test_char_literal.c /tmp/test_char_literal.s
 echo Compile 4
+./vm /tmp/t4.bin $ROOT/bootstrap4/compiler0/tests/test_compare.c /tmp/test_compare.s
+echo Compile 4
+./vm /tmp/t4.bin $ROOT/bootstrap4/compiler0/tests/test_for.c /tmp/test_for.s
+echo Compile 4
 ./vm /tmp/t4.bin $ROOT/bootstrap4/compiler0/tests/test_fib.c /tmp/test_fib.s
 echo Compile 4
 ./vm /tmp/t4.bin $ROOT/bootstrap4/compiler0/tests/test_function.c /tmp/test_function.s
@@ -111,7 +115,7 @@ echo Compile 4
 echo Compile 4
 ./vm /tmp/t4.bin $ROOT/bootstrap4/compiler0/tests/test_string_literal.c /tmp/test_string_literal.s
 echo Compile 4
-./vm /tmp/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/compiler0/tests/*.s /tmp/test_basic.s /tmp/test_binary.s /tmp/test_char_literal.s /tmp/test_fib.s /tmp/test_function.s /tmp/test_local.s /tmp/test_string_literal.s /tmp/t4_0.bin
+./vm /tmp/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/compiler0/tests/*.s /tmp/test_basic.s /tmp/test_binary.s /tmp/test_char_literal.s /tmp/test_compare.s /tmp/test_fib.s /tmp/test_for.s /tmp/test_function.s /tmp/test_local.s /tmp/test_string_literal.s /tmp/t4_0.bin
 ./vm /tmp/t4_0.bin
 
 echo Done
