@@ -350,7 +350,7 @@ int main(int argc, const char** argv) {
 				flag = registers[char_to_register(op3)] == registers[char_to_register(op4)];
 			} else if (op2 == '>') {
 				debug("gt?");
-				flag = registers[char_to_register(op3)] >registers[char_to_register(op4)];
+				flag = registers[char_to_register(op3)] > registers[char_to_register(op4)];
 			} else if (op2 == '<') {
 				debug("lt?");
 				flag = registers[char_to_register(op3)] < registers[char_to_register(op4)];
