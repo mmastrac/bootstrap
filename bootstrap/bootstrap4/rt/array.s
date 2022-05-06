@@ -59,6 +59,12 @@
 # void* array_peek(array* array)
 #===========================================================================
 :_array_peek
+    %arg array
+    %local size
+    %call :_array_size, @array
+    mov @size, @ret
+    sub @size, 1
+    %call :_array_get, @array, @size
     %ret
 
 #===========================================================================

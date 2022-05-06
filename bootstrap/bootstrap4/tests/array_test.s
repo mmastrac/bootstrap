@@ -28,6 +28,9 @@
     %call :_array_push, @array, 789
     %call :_array_size, @array
     %call :_test_assert_equal, @ret, 3, &"Expected size = 3"
+    # Test a peek
+    %call :_array_peek, @array
+    %call :_test_assert_equal, @ret, 789, &"Expected item = 789"
     %call :_array_pop, @array
     %call :_test_assert_equal, @ret, 789, &"Expected item = 789"
     %call :_array_size, @array
