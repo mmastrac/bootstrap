@@ -7,5 +7,6 @@ int result_for() {
         j = j + i;
     }
 
+    // sum(0..9) - 3 = 42
     return j - 3;
 }
