@@ -7,5 +7,5 @@ int result_for() {
         j = j + i;
     }
 
-    return j;
+    return j - 3;
 }

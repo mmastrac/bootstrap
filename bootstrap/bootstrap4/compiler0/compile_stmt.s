@@ -98,26 +98,32 @@
 
     %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_FOR
     %call :_compiler_read_expect, @file, @buf, @buflen, '('
+
     # The initial expression
     %call :_compile_expr_ret, @file, @buf, @buflen
     %call :_compiler_read_expect, @file, @buf, @buflen, ';'
+
     # The test expression
     %call :_compiler_out, &".test_%d\n", @label
     %call :_compile_expr_ret, @file, @buf, @buflen
     %call :_compiler_out, &"    eq @ret, 0\n"
-    %call :_compiler_out, &"    jump? .end_%d\n", @label
-
+    %call :_compiler_out, &"    jump^ .begin_%d\n", @label
+    %call :_compiler_out, &"    jump .end_%d\n", @label
     %call :_compiler_read_expect, @file, @buf, @buflen, ';'
+
     # The increment expression
     %call :_compiler_out, &".inc_%d\n", @label
     %call :_compile_expr_ret, @file, @buf, @buflen
-    %call :_compiler_read_expect, @file, @buf, @buflen, ')'
     %call :_compiler_out, &"    jump .test_%d\n", @label
+
+    %call :_compiler_read_expect, @file, @buf, @buflen, ')'
+
     # The loop
     %call :_compiler_out, &".begin_%d\n", @label
     %call :_compile_block, @file, @buf, @buflen
     %call :_compiler_out, &"    jump .inc_%d\n", @label
     %call :_compiler_out, &".end_%d\n", @label
+
     %ret
 
 :_compile_stmt_while

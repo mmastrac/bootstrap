@@ -58,6 +58,25 @@
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
+:_test_out
+    %arg msg
+    %arg out0
+    %arg out1
+    %arg out2
+    %arg out3
+    %local fd
+
+    push @out3
+    push @out2
+    push @out1
+    push @out0
+	%call :_dprintf, 1, @msg
+    pop @out0
+    pop @out1
+    pop @out2
+    pop @out3
+    %ret
+
 :_main
 	%call :_test_main, :_compile_test
     %ret
