@@ -32,6 +32,20 @@
 
 
 #===========================================================================
+# ll_node* ll_create_node_int(int data)
+#
+# Creates an initialized node with the data in r0 (automatically including
+# space for the link field at the beginning)
+#===========================================================================
+:_ll_create_node_int
+	%arg data
+	%call :_ll_create_node, 4
+	st.d [@ret], @data
+	%ret
+#===========================================================================
+
+
+#===========================================================================
 # ll_node* ll_remove_head(ll_head* ll)
 #
 # Removes the head node, returning the old node.
