@@ -123,6 +123,10 @@ echo Compile 4
 ./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/compiler0/tests/*.s $BUILD/b4/test_*.s $BUILD/t4_0.bin
 ./vm $BUILD/t4_0.bin
 echo Compile 4-1
-./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/main.c $BUILD/compiler1_main.s
+./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/main.c $BUILD/b4/compiler1_main.s
+./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/lex/*.s $BUILD/b4/compiler1_main.s $BUILD/b4-1.bin
 
+echo Compile 4-1
+mkdir $BUILD/b4-1
+./vm $BUILD/b4-1.bin $ROOT/bootstrap4/compiler1/tests/test_struct.c $BUILD/b4-1/test_struct.s
 echo Done
