@@ -7,6 +7,7 @@
     dd :_compile_test_char_literal, &"compile_test_char_literal"
 	dd :_compile_test_compare, &"compile_test_compare"
 	dd :_compile_test_fib, &"compile_test_fib"
+	dd :_compile_test_fn_in_fn, &"compile_test_fn_in_fn"
 	dd :_compile_test_for, &"compile_test_for"
 	dd :_compile_test_function, &"compile_test_function"
 	dd :_compile_test_local, &"compile_test_local"
@@ -36,6 +37,11 @@
 :_compile_test_fib
     %call :result_fib
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
+    %ret
+
+:_compile_test_fn_in_fn
+    %call :result_fn_in_fn
+    %call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_for

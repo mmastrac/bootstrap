@@ -110,6 +110,8 @@ echo Compile 4
 echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_compare.c $BUILD/b4/test_compare.s
 echo Compile 4
+./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_fn_in_fn.c $BUILD/b4/test_fn_in_fn.s
+echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_for.c $BUILD/b4/test_for.s
 echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_fib.c $BUILD/b4/test_fib.s
