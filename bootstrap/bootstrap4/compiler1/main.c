@@ -12,6 +12,6 @@ int _main(int argc, char** argv) {
     void* array = _array_init(argc);
     _memcpy(_array_get_buffer(array), argv, argc * 4);
     _array_size_set(array, argc);
-    void* item = _memread32(_memread32(argv));
+    void* item = _array_get(array, 0);
     _quicklog("Hello, world! %d %s\n", argc, item);
 }

@@ -39,8 +39,7 @@
 	mov @lex, @ret
 
 # Open a file
-	mov @args, :__argv
-	ld.d @args, [@args]
+	mov @args, @argv
 
 	# Get argv[1] - the file the open
 	add @args, 4

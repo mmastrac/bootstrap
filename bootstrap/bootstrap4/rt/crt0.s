@@ -17,7 +17,7 @@
 
 	call .init_args
 	ld.d r0, [:__argc]
-	mov r1, :__argv
+	ld.d r1, [:__argv]
 	call :_main
 
 	sys @SC_EXIT r0
