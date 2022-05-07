@@ -118,7 +118,6 @@
     jump? .call_comma
     %call :_compiler_out, &"# arg\n"
     %call :_compile_expr_stack, @file, @buf, @buflen
-    %call :_compiler_out, &"    pop @arg%d\n", @arg_count
     %call :_compiler_out, &"# arg\n"
     add @arg_count, 1
     jump .call_loop
@@ -127,6 +126,12 @@
     %call :_compiler_read_expect, @file, @buf, @buflen, ','
     jump .call_loop
 .call_done
+    eq @arg_count, 0
+    jump? .call_args_done
+    sub @arg_count, 1
+    %call :_compiler_out, &"    pop @arg%d\n", @arg_count
+    jump .call_done
+.call_args_done
     %call :_compiler_read_expect, @file, @buf, @buflen, ')'
     %call :_compiler_out, &"    jump .setup_args_2_%d\n", @label
     %call :_compiler_out, &".setup_args_3_%d\n", @label
