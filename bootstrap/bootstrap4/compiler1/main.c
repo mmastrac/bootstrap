@@ -7,11 +7,20 @@ void* create_lex() {
     return lex;
 }
 
-int _main(int argc, char** argv) {
-    void* lex = create_lex();
+void* create_argument_array(int argc, char** argv) {
     void* array = _array_init(argc);
     _memcpy(_array_get_buffer(array), argv, argc * 4);
     _array_size_set(array, argc);
-    void* item = _array_get(array, 0);
-    _quicklog("Hello, world! %d %s\n", argc, item);
+    return array;
+}
+
+int _main(int argc, char** argv) {
+    void* lex = create_lex();
+    void* args = create_argument_array(argc, argv);
+    void* item;
+    int i;
+    for (i = 0; i < argc; i = i + 1) {
+        item = _array_get(args, i);
+        _quicklog("%s\n", item);
+    }
 }
