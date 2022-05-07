@@ -147,11 +147,30 @@
     %arg file
     %arg buf
     %arg buflen
+    %local label
 
     %call :_compile_function_type, @file, @buf, @buflen
     %call :_compiler_out, &"# local\n"
     %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_IDENTIFIER
     %call :_compiler_out, &"    %%local %s\n", @buf
+    %call :_lex_peek, @file, 0, 0
+    eq @ret, '='
+    jump^ .done
+
+    %call :_compile_get_next_label
+    mov @label, @ret
+    %call :_compiler_out, &"# assign %s (#%d)\n", @buf, @label
+    %call :_compiler_out, &"    jump .assign_value_1_%d\n", @label
+    %call :_compiler_out, &".assign_value_2_%d\n", @label
+    %call :_compiler_out, &"    mov @%s, @ret\n", @buf
+    %call :_compiler_out, &"    jump .assign_value_3_%d\n", @label
+    %call :_compiler_read_expect, @file, 0, 0, '='
+    %call :_compiler_out, &".assign_value_1_%d\n", @label
+    %call :_compile_expr_ret, @file, @buf, @buflen
+    %call :_compiler_out, &"    jump .assign_value_2_%d\n", @label
+    %call :_compiler_out, &".assign_value_3_%d\n", @label
+
+.done
     %call :_compiler_read_expect, @file, @buf, @buflen, ';'
 
     %ret
