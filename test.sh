@@ -117,5 +117,7 @@ echo Compile 4
 echo Compile 4
 ./vm /tmp/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/compiler0/tests/*.s /tmp/test_basic.s /tmp/test_binary.s /tmp/test_char_literal.s /tmp/test_compare.s /tmp/test_fib.s /tmp/test_for.s /tmp/test_function.s /tmp/test_local.s /tmp/test_string_literal.s /tmp/t4_0.bin
 ./vm /tmp/t4_0.bin
+echo Compile 4-1
+./vm /tmp/t4.bin $ROOT/bootstrap4/compiler1/main.c /tmp/compiler1_main.s
 
 echo Done

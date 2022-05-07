@@ -15,6 +15,7 @@ This `compiler0` stage supports:
 
  * Simple, binary expressions, nesting must use parentheses
  * Function calls
- * Local variables (definted top-of-function) and function args
+ * Local variables (defined top-of-function, initialization allowed) and function args
  * `if` statements (no `else`)
- * `while` loops, plus break and continue (limited to one per function)
+ * `while`/`for` loops, plus `break` and `continue` (`break`/`continue` don't work w/nesting)
+ 

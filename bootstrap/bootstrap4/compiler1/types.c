@@ -8,11 +8,8 @@
 // Returns a parsed type integer with bitfields indicating the type
 int parse_type() {
     int token;
-    int type;
-    int pointer_count;
-
-    type = 0;
-    pointer_count = 0;
+    int type = 0;
+    int pointer_count = 0;
 
     while (1) {
         token = token_peek();
