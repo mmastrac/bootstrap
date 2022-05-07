@@ -10,6 +10,7 @@
 .jump_table
     dd @TOKEN_INT, .ok
     dd @TOKEN_CHAR, .ok
+    dd @TOKEN_SHORT, .ok
     dd @TOKEN_CONST, .ok
     dd @TOKEN_UNSIGNED, .ok
     dd @TOKEN_VOID, .ok

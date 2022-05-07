@@ -32,10 +32,10 @@
     dd @TOKEN_IF, .if
     dd @TOKEN_FOR, .for
     dd @TOKEN_WHILE, .while
-    dd @TOKEN_INT, .int
     dd @TOKEN_IDENTIFIER, .identifier
     dd @TOKEN_RETURN, .return
-    dd @TOKEN_NONE, .error
+    # Assume anything else is a local declaration
+    dd @TOKEN_NONE, .local
 
 .if
     %call :_compile_stmt_if, @file, @buf, @buflen
@@ -49,10 +49,6 @@
     %call :_compile_stmt_while, @file, @buf, @buflen
     jump .done
 
-.int
-    %call :_compile_stmt_local, @file, @buf, @buflen
-    jump .done
-
 .identifier
     %call :_compile_expr_ret, @file, @buf, @buflen
     %call :_compiler_read_expect, @file, @buf, @buflen, ';'
@@ -62,8 +58,9 @@
     %call :_compile_stmt_return, @file, @buf, @buflen
     jump .done
 
-.error
-    %call :_compiler_fatal, @buf
+.local
+    %call :_compile_stmt_local, @file, @buf, @buflen
+    jump .done
 
 .done
     %ret
@@ -151,8 +148,8 @@
     %arg buf
     %arg buflen
 
+    %call :_compile_function_type, @file, @buf, @buflen
     %call :_compiler_out, &"# local\n"
-    %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_INT
     %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_IDENTIFIER
     %call :_compiler_out, &"    %%local %s\n", @buf
     %call :_compiler_read_expect, @file, @buf, @buflen, ';'
