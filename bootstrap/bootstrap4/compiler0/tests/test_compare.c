@@ -1,7 +1,6 @@
 // Mainly to test whether compare ops are correct in direction
 int result_compare() {
-    int sum;
-    sum = 0;
+    int sum = 0;
 
     if (1 < 2) {
         sum = sum + 1;
