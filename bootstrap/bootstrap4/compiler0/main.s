@@ -58,15 +58,14 @@
 	mov @file, @ret
 
 .loop
-	%call :_lex, @file, @buf1, @BUFFER_SIZE
+	%call :_lex_peek, @file, @buf1, @BUFFER_SIZE
 	mov @token, @ret
 
 	eq @token, @TOKEN_EOF
 	jump? .done
 
-# We only support int functions for this basic parser
-	eq @token, @TOKEN_INT
-	jump^ .error
+	# We only support int functions for this basic parser
+	%call :_compile_function_type, @file, @buf1, @BUFFER_SIZE
 
 	%call :_lex, @file, @buf1, @BUFFER_SIZE
 	mov @token, @ret
