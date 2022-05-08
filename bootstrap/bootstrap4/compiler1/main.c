@@ -17,10 +17,8 @@ void* create_argument_array(int argc, char** argv) {
 int _main(int argc, char** argv) {
     void* lex = create_lex();
     void* args = create_argument_array(argc, argv);
-    void* item;
     int i;
     for (i = 0; i < argc; i = i + 1) {
-        item = _array_get(args, i);
-        _quicklog("%s\n", item);
+        _quicklog("%s\n", _array_get(args, i));
     }
 }
