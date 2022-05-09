@@ -1,12 +1,3 @@
-void* create_lex() {
-    void* ll = _ll_init();
-    void* ll_node = _ll_create_node_int("bootstrap/bootstrap4/compiler0/tests/lex_io_test");
-    void* lex;
-    _ll_insert_head(ll, ll_node);
-    lex = __lex_create(ll);
-    return lex;
-}
-
 void* create_argument_array(int argc, char** argv) {
     void* array = _array_init(argc);
     _memcpy(_array_get_buffer(array), argv, argc * 4);
@@ -15,10 +6,15 @@ void* create_argument_array(int argc, char** argv) {
 }
 
 int _main(int argc, char** argv) {
-    void* lex = create_lex();
     void* args = create_argument_array(argc, argv);
-    int i;
-    for (i = 0; i < argc; i = i + 1) {
-        _quicklog("%s\n", _array_get(args, i));
+    lex_init(_array_get(args, 1));
+    int token;
+    while (1) {
+        token = lex_read();
+        _quicklog("%d\n", token);
+        _quicklog("%s\n", lex_token_buffer());
+        if (token == 4294967295) {
+            //break;
+        }
     }
 }
