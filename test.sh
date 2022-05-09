@@ -126,7 +126,8 @@ echo Compile 4
 ./vm $BUILD/t4_0.bin
 echo Compile 4-1
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/main.c $BUILD/b4/compiler1_main.s
-./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/lex/*.s $BUILD/b4/compiler1_main.s $BUILD/b4-1.bin
+./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/lex.c $BUILD/b4/compiler1_lex.s
+./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/lex/*.s $BUILD/b4/compiler1_*.s $BUILD/b4-1.bin
 
 echo Compile 4-1
 mkdir $BUILD/b4-1

@@ -1,54 +1,24 @@
-// Stage 2 lexer, uses the basic C from the previous stage and adds more functionality on top
-
-int lex_main() {
-    int valid;
-    while (valid) {
-        valid = top();
-    }
+int lex_read() {
 }
 
-// Parse globals: functions/variables
-int top() {
-    int token;
-
-    token = lex(file, buffer, BUFFER_SIZE);
-    if (token == TOKEN_INT) {
-        token = lex(file, buffer, BUFFER_SIZE);
-        if (token == TOKEN_IDENTIFIER) {
-            global_var();
-        }
-        if (token == '(') {
-            function();            
-        }
-    }
-
-    fail("Expected a global variable or function");
+int lex_peek() {
 }
 
-int global_var() {
-    register_global();
+const char* lex_token_buffer() {
 }
 
-int function_args() {
-
+// Returns the last lex token
+int lex_token() {
 }
 
-int function() {
-    int args;
-    int token;
-    lex_print(":%s", name);
-    args = 1;
-    while (args) {
-        token = lex(file, buffer, BUFFER_SIZE);
-        if (token == ')') {
-            break;
-        }
-        if (token == ',') {
-            continue;
-        }
-        if (token == TOKEN_INT) {
-            token = lex(file, buffer, BUFFER_SIZE);
-            lex_print("    %%local %s", buffer);
-        }
-    }
+// Compares the lex token to the given string
+int lex_token_equals(const char* token) {
+}
+
+// Pushes the lex token context, storing the old token for later use
+void lex_push() {
+}
+
+// Pops the lex token context
+void lex_pop() {
 }
