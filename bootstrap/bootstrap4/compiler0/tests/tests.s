@@ -10,6 +10,7 @@
 	dd :_compile_test_fn_in_fn, &"compile_test_fn_in_fn"
 	dd :_compile_test_for, &"compile_test_for"
 	dd :_compile_test_function, &"compile_test_function"
+	dd :_compile_test_global, &"compile_test_global"
 	dd :_compile_test_local, &"compile_test_local"
     dd :_compile_test_string_literal, &"compile_test_string_literal"
 	dd 0, 0
@@ -51,6 +52,11 @@
 
 :_compile_test_function
     %call :result_function
+	%call :_test_assert_equal, @ret, 42, &"Expected 42"
+    %ret
+
+:_compile_test_global
+    %call :result_global
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 

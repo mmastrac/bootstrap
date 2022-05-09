@@ -152,6 +152,11 @@
     %call :_compile_function_type, @file, @buf, @buflen
     %call :_compiler_out, &"# local\n"
     %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_IDENTIFIER
+    %call :_is_global, @buf
+    eq @ret, 0
+    jump? .no_shadow
+    %call :_fatal, &"Local cannot shadow a global"
+.no_shadow
     %call :_compiler_out, &"    %%local %s\n", @buf
     %call :_lex_peek, @file, 0, 0
     eq @ret, '='

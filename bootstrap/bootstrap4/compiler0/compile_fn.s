@@ -47,12 +47,13 @@
 .done
     %ret
 
-# Assumes that we are positioned after the function's opening bracket
+# Assumes that we are positioned at the function args' opening bracket
 :_compile_function_args
     %arg file
     %arg buf
     %arg buflen
 
+    %call :_compiler_read_expect, @file, @buf, @buflen, '('
     %call :_compiler_out, &"# arguments\n"
 # We're pretty loose about parsing function args here
 .loop
@@ -64,6 +65,11 @@
 
     %call :_compile_function_type, @file, @buf, @buflen
     %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_IDENTIFIER
+    %call :_is_global, @buf
+    eq @ret, 0
+    jump? .no_shadow
+    %call :_fatal, &"Parameter cannot shadow a global"
+.no_shadow
     %call :_compiler_out, &"    %%arg %s\n", @buf
     jump .loop
 

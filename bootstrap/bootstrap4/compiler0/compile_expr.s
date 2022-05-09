@@ -101,7 +101,7 @@
     %call :_compiler_out, &"    push @%s\n", @buf
     jump .done
 .identifier_global
-    %call :_compiler_out, &"    push :%s\n", @buf
+    %call :_compiler_out, &"    push [:%s]\n", @buf
     jump .done
 
 .call
@@ -149,8 +149,15 @@
     %call :_compiler_out, &"# assign %s (#%d)\n", @buf, @label
     %call :_compiler_out, &"    jump .assign_value_1_%d\n", @label
     %call :_compiler_out, &".assign_value_2_%d\n", @label
+    %call :_is_global, @buf
+    eq @ret, 1
+    jump? .assign_global
     %call :_compiler_out, &"    mov @%s, @ret\n", @buf
-    %call :_compiler_out, &"    push @%s\n", @buf
+    jump .assign_finish
+.assign_global
+    %call :_compiler_out, &"    st.d [:%s], @ret\n", @buf
+.assign_finish
+    %call :_compiler_out, &"    push @ret\n", @buf
     %call :_compiler_out, &"    jump .assign_value_3_%d\n", @label
     %call :_compiler_read_expect, @file, 0, 0, '='
     %call :_compiler_out, &".assign_value_1_%d\n", @label

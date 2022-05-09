@@ -5,8 +5,26 @@
 
 #define BUFFER_SIZE 256
 
-:_counter
+# Track global identifiers
+:_global_symbols
 	dd 0
+
+:_track_global
+	%arg global
+	%arg ht
+	ld.d @ht, [:_global_symbols]
+	# Make a copy and insert it into the globals hash table
+	%call :_stralloc, @global
+	mov @global, @ret
+	%call :_ht_insert, @ht, @global, 1
+	%ret
+
+:_is_global
+	%arg global
+	%arg ht
+	ld.d @ht, [:_global_symbols]
+	%call :_ht_lookup, @ht, @global
+	%ret
 
 :_main
 	%arg argc
@@ -26,6 +44,10 @@
 	mov @buf1, @ret
 	%call :_malloc, @BUFFER_SIZE
 	mov @buf2, @ret
+
+# Create the globals hash table
+	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
+	st.d [:_global_symbols], @ret
 
 # Create the include list
 	%call :_ll_init
@@ -67,15 +89,32 @@
 
 	%call :_lex, @file, @buf1, @BUFFER_SIZE
 	mov @token, @ret
-
-	%call :_compiler_out, &"# function %s\n:%s\n", @buf1, @buf1
-
 	eq @token, @TOKEN_IDENTIFIER
 	jump^ .error
 
-	%call :_lex, @file, @buf2, @BUFFER_SIZE
-	mov @token, @ret
+	%call :_compiler_out, &"# global %s\n:%s\n", @buf1, @buf1
 
+	%call :_lex_peek, @file, 0, 0
+	eq @ret, '('
+	jump? .fn
+
+	eq @ret, '='
+	jump? .inited
+
+	%call :_track_global, @buf1
+	%call :_compiler_out, &"    dd 0\n"
+    %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, ';'
+	jump .loop
+
+.inited
+	%call :_track_global, @buf1
+    %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, '='
+    %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, @TOKEN_CONSTANT
+	%call :_compiler_out, &"    dd %s\n", @buf1
+    %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, ';'
+	jump .loop
+
+.fn
 	%call :_compile_function_args, @file, @buf1, @BUFFER_SIZE
 	%call :_compiler_out, &"    %%arg arg0\n"
 	%call :_compiler_out, &"    %%arg arg1\n"

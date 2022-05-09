@@ -118,6 +118,8 @@ echo Compile 4
 echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_function.c $BUILD/b4/test_function.s
 echo Compile 4
+./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_global.c $BUILD/b4/test_global.s
+echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_local.c $BUILD/b4/test_local.s
 echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_string_literal.c $BUILD/b4/test_string_literal.s
