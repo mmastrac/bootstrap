@@ -3,6 +3,19 @@
 #define HT_OVERHEAD 20
 #define HT_NODE_SIZE 12
 
+:_ht_int_key_hash
+	%arg key
+	mov @ret, @key
+	%ret
+
+:_ht_int_key_compare
+	%arg key1
+	%arg key2
+	eq @key1, @key2
+	mov? @ret, 1
+	mov^ @ret, 0
+	%ret
+
 #===========================================================================
 # ht* ht_init(void* key_hash_function, void* key_compare_function)
 #

@@ -56,7 +56,7 @@
     eq @ht, 0
     jump^ .inited
 
-	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
+	%call :_ht_init, :_ht_int_key_hash, :_ht_int_key_compare
 	mov @ht, @ret
 	mov @tmp0, :_binary_expressions
 	st.d [@tmp0], @ht
@@ -95,7 +95,13 @@
     jump? .call
     eq @ret, '='
     jump? .assign
+    %call :_is_global, @buf
+    eq @ret, 1
+    jump? .identifier_global
     %call :_compiler_out, &"    push @%s\n", @buf
+    jump .done
+.identifier_global
+    %call :_compiler_out, &"    push :%s\n", @buf
     jump .done
 
 .call
