@@ -84,6 +84,9 @@
 	eq @token, @TOKEN_EOF
 	jump? .done
 
+	eq @token, @TOKEN_EXTERN
+	jump? .extern
+
 	# We only support int functions for this basic parser
 	%call :_compile_function_type, @file, @buf1, @BUFFER_SIZE
 
@@ -113,6 +116,16 @@
 	%call :_compiler_out, &"    dd %s\n", @buf1
     %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, ';'
 	jump .loop
+
+.extern
+	# extern (type) (identifier);
+    %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, @TOKEN_EXTERN
+	%call :_compile_function_type, @file, @buf1, @BUFFER_SIZE
+	%call :_lex, @file, @buf1, @BUFFER_SIZE
+	%call :_track_global, @buf1
+    %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, ';'
+	jump .loop
+
 
 .fn
 	%call :_compile_function_args, @file, @buf1, @BUFFER_SIZE
