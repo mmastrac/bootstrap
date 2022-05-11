@@ -158,8 +158,12 @@
 
     %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_RETURN
     %call :_compiler_out, &"# return\n"
+    %call :_lex_peek, @file, 0, 0
+    eq @ret, ';'
+    jump? .just_return
     # This will leave the return value in @ret
     %call :_compile_expr_ret, @file, @buf, @buflen
+.just_return
     %call :_compiler_out, &"    %%ret\n"
     %call :_compiler_read_expect, @file, @buf, @buflen, ';'
     %ret
