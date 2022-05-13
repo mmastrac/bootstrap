@@ -294,6 +294,15 @@
 	%local index
 	%local value
 
+.eat_whitespace
+	%call :__lex_peek, @fd
+	%call :_iswhitespace
+	eq @ret, @FALSE
+	jump? .done_whitespace
+	%call :__lex_read, @fd
+	jump .eat_whitespace
+.done_whitespace
+
 	eq @token, @PP_INCLUDE
 	jump? .include
 
@@ -303,18 +312,11 @@
 	%call :_fatal, &"Unexpected token"
 
 .include
-	# TODO
+	%call :__lex_string, @fd, .buffer, 32
+	
 	%ret
 
 .define
-	%call :__lex_peek, @fd
-	%call :_iswhitespace
-	eq @ret, @FALSE
-	jump? .ws_def_id
-	%call :__lex_read, @fd
-	jump .define
-
-.ws_def_id
 	%call :__lex_consume_identifier, @fd, .buffer, 32
 	eq @ret, @TOKEN_IDENTIFIER
 	jump? .is_identifier

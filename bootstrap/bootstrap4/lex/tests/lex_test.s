@@ -8,6 +8,7 @@
 	dd :_lex_test_operators, &"test_operators"
 	dd :_lex_test_tokens, &"test_tokens"
 	dd :_lex_test_tokens_define, &"test_tokens_define"
+	dd :_lex_test_tokens_include, &"test_tokens_include"
 	dd 0, 0
 
 :_lex_test_operators
@@ -146,4 +147,17 @@
 
 :_lex_test_tokens_define
 	%call :__lex_confirm_file, &"bootstrap/bootstrap4/lex/tests/c/test_define.c", :__lex_test_tokens_define_expected
+	%ret
+
+:__lex_test_tokens_include_expected
+	dd @TOKEN_CONSTANT
+	dd &"1"
+	dd @TOKEN_CONSTANT
+	dd &"2"
+	dd @TOKEN_CONSTANT
+	dd &"3"
+	dd 0
+
+:_lex_test_tokens_include
+	%call :__lex_confirm_file, &"bootstrap/bootstrap4/lex/tests/c/test_include.c", :__lex_test_tokens_include_expected
 	%ret
