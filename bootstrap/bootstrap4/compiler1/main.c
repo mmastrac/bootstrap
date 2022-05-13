@@ -8,13 +8,6 @@ void* create_argument_array(int argc, char** argv) {
 int _main(int argc, char** argv) {
     void* args = create_argument_array(argc, argv);
     lex_init(_array_get(args, 1));
-    int token;
-    while (1) {
-        token = lex_read();
-        _quicklog("%d\n", token);
-        _quicklog("%s\n", lex_token_buffer());
-        if (token == 4294967295) {
-            //break;
-        }
-    }
+
+    compile_translation_unit();
 }
