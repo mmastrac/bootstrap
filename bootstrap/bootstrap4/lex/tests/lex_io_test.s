@@ -37,7 +37,7 @@
 	# Create the include list
 	%call :_ll_init
 	mov @ll, @ret
-	%call :_ll_create_node_int, &"bootstrap/bootstrap4/compiler0/tests/lex_io_test"
+	%call :_ll_create_node_int, &"bootstrap/bootstrap4/lex/tests"
 	mov @node, @ret
 	%call :_ll_insert_head, @ll, @node
 

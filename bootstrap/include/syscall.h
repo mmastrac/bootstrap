@@ -27,3 +27,4 @@
 #define SC_GETMEMSIZE 6
 // void exit(int code)
 #define SC_EXIT 7
+#define SC_OPENAT 8

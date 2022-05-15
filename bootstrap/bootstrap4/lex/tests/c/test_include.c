@@ -1,2 +1,2 @@
-#include "bootstrap/bootstrap4/lex/tests/c/include.h"
+#include "include.h"
 1 MACRO 3

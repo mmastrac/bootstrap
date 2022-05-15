@@ -136,10 +136,8 @@
 	%call :_load_record, @lex, @LEX_INCLUDE_DIRS
 	mov @ll_include, @ret
 
-#	%call :_ll_search, @ll_include, :__lex_open_search, @name
-
-	%call :_open, @name, 0
-	mov @fd, @ret
+	%call :_ll_search, @ll_include, :__lex_open_search, @name
+	mov @fd, @ret2
 
 	%call :__lex_activate, @file, 0, @fd, :__lex_read_fd, :__lex_peek_fd
 	%ret
@@ -150,7 +148,8 @@
 	%arg node
 	%arg data
 	ld.d @node, [@node]
-#	%call :_open2, @node, @data, 0
+	%call :_open2, @node, @data, 0
+	mov @ret2, @ret
 	%ret
 
 

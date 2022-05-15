@@ -12,3 +12,4 @@
 #define tmp3 r54
 
 #define ret r0
+#define ret2 r1
