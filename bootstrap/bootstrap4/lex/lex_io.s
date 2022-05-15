@@ -2,6 +2,19 @@
 #include "syscall.h"
 #include "../bootstrap4/lex/lex.h"
 
+#define LEX_INCLUDE_DIRS 0
+#define LEX_SIZE 4
+
+#define LEX_FILE_TOKENS 0
+#define LEX_FILE_MACROS 4
+#define LEX_FILE_PEEK 8
+
+#define LEX_TOKEN_OFFSET 0
+#define LEX_TOKEN_DATA 4
+#define LEX_TOKEN_READ_FN 8
+#define LEX_TOKEN_PEEK_FN 12
+#define LEX_TOKEN_SIZE 16
+
 :__lex_hash_table_test_key_compare
 	%arg a
 	%arg b
@@ -21,10 +34,11 @@
 :__lex_create
 	%arg include_dirs
 	%local lex
+	%local token_source_stack
 
-	%call :_malloc, 4
+	%call :_malloc, @LEX_SIZE
 	mov @lex, @ret
-	st.w [@lex], @include_dirs
+	%call :_store_record, @lex, @LEX_INCLUDE_DIRS, @include_dirs
 
 	mov @ret, @lex
 	%ret
@@ -44,29 +58,15 @@
 	%local node
 
 	# Activate source
-	ld.d @ll, [@fd]
-
-	%call :_ll_create_node, 16
+	%call :_load_record, @fd, @LEX_FILE_TOKENS
+	mov @ll, @ret
+	%call :_ll_create_node, @LEX_TOKEN_SIZE
 	mov @node, @ret
 
-	# Offset (@0)
-	mov @tmp0, @node
-	st.d [@tmp0], @offset
-
-	# Data (@4)
-	mov @tmp0, @node
-	add @tmp0, 4
-	st.d [@tmp0], @data
-
-	# Read function (@8)
-	mov @tmp0, @node
-	add @tmp0, 8
-	st.d [@tmp0], @read_fn
-
-	# Peek function (@12)
-	mov @tmp0, @node
-	add @tmp0, 12
-	st.d [@tmp0], @peek_fn
+	%call :_store_record, @node, @LEX_TOKEN_OFFSET, @offset
+	%call :_store_record, @node, @LEX_TOKEN_DATA, @data
+	%call :_store_record, @node, @LEX_TOKEN_READ_FN, @read_fn
+	%call :_store_record, @node, @LEX_TOKEN_PEEK_FN, @peek_fn
 
 	%call :_ll_insert_head, @ll, @node
 
@@ -85,31 +85,28 @@
 	%arg name
 	%local file
 	%local ll
+	%local ht
 	%local token_buf
 	%local fd
 
 	%call :_malloc, 140 # ll, ht, peek, peek_buf (128)
 	mov @file, @ret
 
-	# Include/macro linked list (file@0)
+	# Include/macro linked list
 	%call :_ll_init
 	mov @ll, @ret
-	st.d [@file], @ll
+
+	# Allocate a hash table for the macros
+	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
+	mov @ht, @ret
+
+	%call :_store_record, @file, @LEX_FILE_TOKENS, @ll
+	%call :_store_record, @file, @LEX_FILE_MACROS, @ht
+	%call :_store_record, @file, @LEX_FILE_PEEK, @TOKEN_NONE
+
 	%call :_open, @name, 0
 	mov @fd, @ret
-
 	%call :__lex_activate, @file, 0, @fd, :__lex_read_fd, :__lex_peek_fd
-
-	# Allocate a hash table for the macros (file@4)
-	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
-	mov @tmp0, @file
-	add @tmp0, 4
-	st.d [@tmp0], @ret
-
-	# Store zero in the peek token (file@8)
-	mov @tmp0, @file
-	add @tmp0, 8
-	st.d [@tmp0], @TOKEN_NONE
 
 	mov @ret, @file
 	%ret
@@ -128,6 +125,9 @@
 	%arg lex
 	%arg name
 	%local fd
+
+#	ld.d @tmp0, [@fd]
+#	%call :_ll_search, 
 
 	%call :_open, @name, 0
 	mov @fd, @ret
@@ -216,7 +216,8 @@
 	%local read_fn
 	%local node
 
-	ld.d @ll, [@file]
+	%call :_load_record, @file, @LEX_FILE_TOKENS
+	mov @ll, @ret
 
 .reread
 	%call :_ll_get_head, @ll
@@ -227,11 +228,12 @@
 	mov? @ret, @TOKEN_EOF
 	%ret?
 
-	ld.d @offset, [@ret]
-	add @ret, 4
-	ld.d @fd, [@ret]
-	add @ret, 4
-	ld.d @read_fn, [@ret]
+	%call :_load_record, @node, @LEX_TOKEN_OFFSET
+	mov @offset, @ret
+	%call :_load_record, @node, @LEX_TOKEN_DATA
+	mov @fd, @ret
+	%call :_load_record, @node, @LEX_TOKEN_READ_FN
+	mov @read_fn, @ret
 
 	%call @read_fn, @fd, @offset
 
@@ -240,11 +242,15 @@
 	# %call :_quicklog, &"Read: %x %c\n", @tmp0, @tmp0
 	# pop @ret
 
-	ne @ret, @TOKEN_EOF
-	add? @offset, 1
-	st.d? [@node], @offset
-	%ret?
+	eq @ret, @TOKEN_EOF
+	jump? .eof
+	add @offset, 1
+	push @ret
+	%call :_store_record, @node, @LEX_TOKEN_OFFSET, @offset
+	pop @ret
+	%ret
 
+.eof
 	# We hit EOF on that particular file/macro, so return EOT and pop a step
 	%call :_ll_remove_head, @ll
 	# %call :_quicklog, &"Read: EOT\n"
@@ -274,8 +280,7 @@
 #===========================================================================
 :__lex_get_peek_token
 	%arg file
-	add @file, 8
-	ld.d @ret, [@file]
+	%call :_load_record, @file, @LEX_FILE_PEEK
 	%ret
 #===========================================================================
 
@@ -286,8 +291,7 @@
 :__lex_set_peek_token
 	%arg file
 	%arg token
-	add @file, 8
-	st.d [@file], @token
+	%call :_store_record, @file, @LEX_FILE_PEEK, @token
 	%ret
 #===========================================================================
 
@@ -305,7 +309,8 @@
 	%local peek_fn
 	%local node
 
-	ld.d @ll, [@file]
+	%call :_load_record, @file, @LEX_FILE_TOKENS
+	mov @ll, @ret
 
 .reread
 	%call :_ll_get_head, @ll
@@ -316,11 +321,12 @@
 	mov? @ret, @TOKEN_EOF
 	%ret?
 
-	ld.d @offset, [@ret]
-	add @ret, 4
-	ld.d @fd, [@ret]
-	add @ret, 8
-	ld.d @peek_fn, [@ret]
+	%call :_load_record, @node, @LEX_TOKEN_OFFSET
+	mov @offset, @ret
+	%call :_load_record, @node, @LEX_TOKEN_DATA
+	mov @fd, @ret
+	%call :_load_record, @node, @LEX_TOKEN_PEEK_FN
+	mov @peek_fn, @ret
 
 	%call @peek_fn, @fd, @offset
 
@@ -353,9 +359,8 @@
 	%arg value
 	%local ht
 
-	add @fd, 4
-	ld.d @ht, [@fd]
-
+	%call :_load_record, @fd, @LEX_FILE_MACROS
+	mov @ht, @ret
 	%call :_ht_insert, @ht, @name, @value
 
 	%ret
@@ -376,10 +381,8 @@
 	%local ll
 	%local node
 
-	mov @tmp0, @fd
-	add @tmp0, 4
-	ld.d @ht, [@tmp0]
-
+	%call :_load_record, @fd, @LEX_FILE_MACROS
+	mov @ht, @ret
 	%call :_ht_lookup, @ht, @name
 	mov @value, @ret
 
