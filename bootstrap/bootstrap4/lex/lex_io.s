@@ -32,6 +32,50 @@
 
 
 #===========================================================================
+# void _lex_activate(lex* lex, int offset, int data, void* read_fn, void* peek_fn)
+#===========================================================================
+:__lex_activate
+	%arg fd
+	%arg offset
+	%arg data
+	%arg read_fn
+	%arg peek_fn
+	%local ll
+	%local node
+
+	# Activate source
+	ld.d @ll, [@fd]
+
+	%call :_ll_create_node, 16
+	mov @node, @ret
+
+	# Offset (@0)
+	mov @tmp0, @node
+	st.d [@tmp0], @offset
+
+	# Data (@4)
+	mov @tmp0, @node
+	add @tmp0, 4
+	st.d [@tmp0], @data
+
+	# Read function (@8)
+	mov @tmp0, @node
+	add @tmp0, 8
+	st.d [@tmp0], @read_fn
+
+	# Peek function (@12)
+	mov @tmp0, @node
+	add @tmp0, 12
+	st.d [@tmp0], @peek_fn
+
+	%call :_ll_insert_head, @ll, @node
+
+	mov @ret, 1
+	%ret
+#===========================================================================
+
+
+#===========================================================================
 # lex_file* _lex_open(lex* lex, char* name)
 #
 # Opens a top-level lexer file.
@@ -41,8 +85,8 @@
 	%arg name
 	%local file
 	%local ll
-	%local node
 	%local token_buf
+	%local fd
 
 	%call :_malloc, 140 # ll, ht, peek, peek_buf (128)
 	mov @file, @ret
@@ -51,32 +95,10 @@
 	%call :_ll_init
 	mov @ll, @ret
 	st.d [@file], @ll
-
-	# This file becomes the first node
-	%call :_ll_create_node, 16
-	mov @node, @ret
-
-	# Offset (@0)
-	mov @tmp0, @node
-	st.d [@tmp0], 0
-
-	# fd (@4)
 	%call :_open, @name, 0
-	mov @tmp0, @node
-	add @tmp0, 4
-	st.d [@tmp0], @ret
+	mov @fd, @ret
 
-	# Read function (@8)
-	mov @tmp0, @node
-	add @tmp0, 8
-	st.d [@tmp0], :__lex_read_fd
-
-	# Peek function (@12)
-	mov @tmp0, @node
-	add @tmp0, 12
-	st.d [@tmp0], :__lex_peek_fd
-
-	%call :_ll_insert_head, @ll, @node
+	%call :__lex_activate, @file, 0, @fd, :__lex_read_fd, :__lex_peek_fd
 
 	# Allocate a hash table for the macros (file@4)
 	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
@@ -95,7 +117,7 @@
 
 
 #===========================================================================
-# lex_file* _lex_open_include(lex* lex, lex_file* parent, char* name)
+# void _lex_open_include(lex* lex, char* name)
 #
 # Opens a lexer file as an include. Returns the same file as parent if
 # successful, otherwise 0. Future reads will take place from the include
@@ -104,8 +126,14 @@
 #===========================================================================
 :__lex_open_include
 	%arg lex
-	%arg parent
 	%arg name
+	%local fd
+
+	%call :_open, @name, 0
+	mov @fd, @ret
+
+	%call :__lex_activate, @lex, 0, @fd, :__lex_read_fd, :__lex_peek_fd
+	%ret
 #===========================================================================
 
 
@@ -359,32 +387,5 @@
 	mov? @ret, 0
 	%ret?
 
-	# Activate macro
-	ld.d @ll, [@fd]
-
-	%call :_ll_create_node, 16
-	mov @node, @ret
-
-	# Offset (@0)
-	mov @tmp0, @node
-	st.d [@tmp0], 0
-
-	# Macro value (@4)
-	mov @tmp0, @node
-	add @tmp0, 4
-	st.d [@tmp0], @value
-
-	# Read function (@8)
-	mov @tmp0, @node
-	add @tmp0, 8
-	st.d [@tmp0], :__lex_read_macro
-
-	# Peek function (@12)
-	mov @tmp0, @node
-	add @tmp0, 12
-	st.d [@tmp0], :__lex_read_macro
-
-	%call :_ll_insert_head, @ll, @node
-
-	mov @ret, 1
+	%call :__lex_activate, @fd, 0, @value, :__lex_read_macro, :__lex_read_macro
 	%ret

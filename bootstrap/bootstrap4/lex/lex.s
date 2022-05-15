@@ -313,7 +313,7 @@
 
 .include
 	%call :__lex_string, @fd, .buffer, 32
-	
+	%call :__lex_open_include, @fd, .buffer
 	%ret
 
 .define
