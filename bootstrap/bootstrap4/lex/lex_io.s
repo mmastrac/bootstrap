@@ -5,9 +5,12 @@
 #define LEX_INCLUDE_DIRS 0
 #define LEX_SIZE 4
 
-#define LEX_FILE_TOKENS 0
-#define LEX_FILE_MACROS 4
-#define LEX_FILE_PEEK 8
+#define LEX_FILE_LEX 0
+#define LEX_FILE_TOKENS 4
+#define LEX_FILE_MACROS 8
+#define LEX_FILE_PEEK 12
+#define LEX_FILE_PEEK_BUFFER 16
+#define LEX_FILE_SIZE 144
 
 #define LEX_TOKEN_OFFSET 0
 #define LEX_TOKEN_DATA 4
@@ -39,14 +42,13 @@
 	%call :_malloc, @LEX_SIZE
 	mov @lex, @ret
 	%call :_store_record, @lex, @LEX_INCLUDE_DIRS, @include_dirs
-
 	mov @ret, @lex
 	%ret
 #===========================================================================
 
 
 #===========================================================================
-# void _lex_activate(lex* lex, int offset, int data, void* read_fn, void* peek_fn)
+# void _lex_activate(lex_file* lex, int offset, int data, void* read_fn, void* peek_fn)
 #===========================================================================
 :__lex_activate
 	%arg fd
@@ -89,7 +91,7 @@
 	%local token_buf
 	%local fd
 
-	%call :_malloc, 140 # ll, ht, peek, peek_buf (128)
+	%call :_malloc, @LEX_FILE_SIZE
 	mov @file, @ret
 
 	# Include/macro linked list
@@ -100,6 +102,7 @@
 	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
 	mov @ht, @ret
 
+	%call :_store_record, @file, @LEX_FILE_LEX, @lex
 	%call :_store_record, @file, @LEX_FILE_TOKENS, @ll
 	%call :_store_record, @file, @LEX_FILE_MACROS, @ht
 	%call :_store_record, @file, @LEX_FILE_PEEK, @TOKEN_NONE
@@ -114,7 +117,7 @@
 
 
 #===========================================================================
-# void _lex_open_include(lex* lex, char* name)
+# void _lex_open_include(lex_file* lex, char* name)
 #
 # Opens a lexer file as an include. Returns the same file as parent if
 # successful, otherwise 0. Future reads will take place from the include
@@ -122,19 +125,33 @@
 # return to the parent file).
 #===========================================================================
 :__lex_open_include
-	%arg lex
+	%arg file
 	%arg name
 	%local fd
+	%local lex
+	%local ll_include
 
-#	ld.d @tmp0, [@fd]
-#	%call :_ll_search, 
+	%call :_load_record, @file, @LEX_FILE_LEX
+	mov @lex, @ret
+	%call :_load_record, @lex, @LEX_INCLUDE_DIRS
+	mov @ll_include, @ret
+
+#	%call :_ll_search, @ll_include, :__lex_open_search, @name
 
 	%call :_open, @name, 0
 	mov @fd, @ret
 
-	%call :__lex_activate, @lex, 0, @fd, :__lex_read_fd, :__lex_peek_fd
+	%call :__lex_activate, @file, 0, @fd, :__lex_read_fd, :__lex_peek_fd
 	%ret
 #===========================================================================
+
+
+:__lex_open_search
+	%arg node
+	%arg data
+	ld.d @node, [@node]
+#	%call :_open2, @node, @data, 0
+	%ret
 
 
 #===========================================================================
@@ -269,7 +286,7 @@
 #===========================================================================
 :__lex_get_token_buf
 	%arg file
-	add @file, 12
+	add @file, @LEX_FILE_PEEK_BUFFER
 	mov @ret, @file
 	%ret
 #===========================================================================
