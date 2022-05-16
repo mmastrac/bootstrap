@@ -486,10 +486,6 @@
 	eq @c, @TOKEN_EOF
 	%ret?
 
-	# EOT?
-	eq @c, @TOKEN_EOT
-	jump? .whitespace
-
 	# Eat whitespace
 	%call :_iswhitespace, @c
 	eq @ret, @TRUE

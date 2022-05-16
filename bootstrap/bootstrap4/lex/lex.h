@@ -1,7 +1,5 @@
 #define TOKEN_NONE		0
 #define TOKEN_EOF		-1
-// End-of-token
-#define TOKEN_EOT		-2
 #define TOKEN_AUTO 		100
 #define TOKEN_BREAK 	101
 #define TOKEN_CASE 		102

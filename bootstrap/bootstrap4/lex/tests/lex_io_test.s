@@ -116,11 +116,11 @@
 
 	%call :__lex_peek, @file
 	mov @tmp0, @ret
-	%call :_test_assert_equal, @TOKEN_EOT, @tmp0, &"Expected fourth peek to be EOT"
+	%call :_test_assert_equal, ' ', @tmp0, &"Expected fourth peek to be space (end of token)"
 
 	%call :__lex_read, @file
 	mov @tmp0, @ret
-	%call :_test_assert_equal, @TOKEN_EOT, @tmp0, &"Expected fourth char to be EOT"
+	%call :_test_assert_equal, ' ', @tmp0, &"Expected fourth char to be space (end of token)"
 
 	%call :__lex_peek, @file
 	mov @tmp0, @ret

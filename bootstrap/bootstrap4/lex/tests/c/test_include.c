@@ -1,2 +1,2 @@
 #include "include.h"
-1 MACRO 3
+1 MACRO MACRO2

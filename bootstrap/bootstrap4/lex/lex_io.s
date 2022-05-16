@@ -15,7 +15,7 @@
 #define LEX_TOKEN_OFFSET 0
 #define LEX_TOKEN_DATA 4
 #define LEX_TOKEN_READ_FN 8
-#define LEX_TOKEN_PEEK_FN 12
+#define LEX_TOKEN_PEEK_CHAR 12
 #define LEX_TOKEN_SIZE 16
 
 :__lex_hash_table_test_key_compare
@@ -48,7 +48,7 @@
 
 
 #===========================================================================
-# void _lex_activate(lex_file* lex, int offset, int data, void* read_fn, void* peek_fn)
+# void _lex_activate(lex_file* lex, int offset, int data, void* read_fn)
 #===========================================================================
 :__lex_activate
 	%arg fd
@@ -68,7 +68,6 @@
 	%call :_store_record, @node, @LEX_TOKEN_OFFSET, @offset
 	%call :_store_record, @node, @LEX_TOKEN_DATA, @data
 	%call :_store_record, @node, @LEX_TOKEN_READ_FN, @read_fn
-	%call :_store_record, @node, @LEX_TOKEN_PEEK_FN, @peek_fn
 
 	%call :_ll_insert_head, @ll, @node
 
@@ -109,7 +108,7 @@
 
 	%call :_open, @name, 0
 	mov @fd, @ret
-	%call :__lex_activate, @file, 0, @fd, :__lex_read_fd, :__lex_peek_fd
+	%call :__lex_activate, @file, 0, @fd, :__lex_read_fd
 
 	mov @ret, @file
 	%ret
@@ -139,7 +138,7 @@
 	%call :_ll_search, @ll_include, :__lex_open_search, @name
 	mov @fd, @ret2
 
-	%call :__lex_activate, @file, 0, @fd, :__lex_read_fd, :__lex_peek_fd
+	%call :__lex_activate, @file, 0, @fd, :__lex_read_fd
 	%ret
 #===========================================================================
 
@@ -175,31 +174,6 @@
 
 
 #===========================================================================
-# Read function for fd-based source
-#===========================================================================
-:__lex_peek_fd
-	%arg fd
-	%arg offset
-
-	%call :syscall4, @SC_READ, @fd, .buffer, 1
-
-	eq @ret, 0
-	mov? @ret, @TOKEN_EOF
-	%ret?
-
-	# Seek back over that read
-	%call :syscall4, @SC_SEEK, @fd, -1, @SEEK_CUR
-
-	ld.b @ret, [.buffer]
-
-	%ret
-
-.buffer
-	db 0
-#===========================================================================
-
-
-#===========================================================================
 # Read function for macro-based source
 #===========================================================================
 :__lex_read_macro
@@ -227,15 +201,10 @@
 :__lex_read
 	%arg file
 	%local ll
-	%local fd
-	%local offset
-	%local read_fn
 	%local node
 
 	%call :_load_record, @file, @LEX_FILE_TOKENS
 	mov @ll, @ret
-
-.reread
 	%call :_ll_get_head, @ll
 	mov @node, @ret
 
@@ -243,6 +212,39 @@
 	eq @ret, 0
 	mov? @ret, @TOKEN_EOF
 	%ret?
+
+	%call :__lex_peek_node, @node
+	eq @ret, @TOKEN_EOF
+	jump? .eof
+	push @ret
+	%call :_store_record, @node, @LEX_TOKEN_PEEK_CHAR, 0
+	pop @ret
+	%ret
+
+.eof
+	# We hit EOF on that particular file/macro, so return whitespace and pop a step
+	%call :_load_record, @file, @LEX_FILE_TOKENS
+	%call :_ll_remove_head, @ll
+	#%call :_quicklog, &"Read: EOT\n"
+	mov @ret, ' '
+	%ret
+
+.buffer
+	db 0
+#===========================================================================
+
+
+#===========================================================================
+# Read a char from the current head node and places it into the peek char field.
+#
+# int _lex_read_node(node)
+#===========================================================================
+:__lex_read_node
+	%arg node
+	%local fd
+	%local offset
+	%local read_fn
+	%local c
 
 	%call :_load_record, @node, @LEX_TOKEN_OFFSET
 	mov @offset, @ret
@@ -252,29 +254,15 @@
 	mov @read_fn, @ret
 
 	%call @read_fn, @fd, @offset
+	mov @c, @ret
+	%call :_store_record, @node, @LEX_TOKEN_PEEK_CHAR, @c
 
-	# push @ret
-	# mov @tmp0, @ret
-	# %call :_quicklog, &"Read: %x %c\n", @tmp0, @tmp0
-	# pop @ret
+	#%call :_quicklog, &"Read: %x %c\n", @c, @c
 
-	eq @ret, @TOKEN_EOF
-	jump? .eof
 	add @offset, 1
-	push @ret
 	%call :_store_record, @node, @LEX_TOKEN_OFFSET, @offset
-	pop @ret
+	mov @ret, 0
 	%ret
-
-.eof
-	# We hit EOF on that particular file/macro, so return EOT and pop a step
-	%call :_ll_remove_head, @ll
-	# %call :_quicklog, &"Read: EOT\n"
-	mov @ret, @TOKEN_EOT
-	%ret
-
-.buffer
-	db 0
 #===========================================================================
 
 
@@ -319,16 +307,12 @@
 #===========================================================================
 :__lex_peek
 	%arg file
+	%local c
 	%local ll
-	%local fd
-	%local offset
-	%local peek_fn
 	%local node
-
+	
 	%call :_load_record, @file, @LEX_FILE_TOKENS
 	mov @ll, @ret
-
-.reread
 	%call :_ll_get_head, @ll
 	mov @node, @ret
 
@@ -337,31 +321,24 @@
 	mov? @ret, @TOKEN_EOF
 	%ret?
 
-	%call :_load_record, @node, @LEX_TOKEN_OFFSET
-	mov @offset, @ret
-	%call :_load_record, @node, @LEX_TOKEN_DATA
-	mov @fd, @ret
-	%call :_load_record, @node, @LEX_TOKEN_PEEK_FN
-	mov @peek_fn, @ret
-
-	%call @peek_fn, @fd, @offset
-
-	# push @ret
-	# mov @tmp0, @ret
-	# %call :_quicklog, &"Peek: %x %c\n", @tmp0, @tmp0
-	# pop @ret
-
+	%call :__lex_peek_node, @node
 	ne @ret, @TOKEN_EOF
+	jump? .ret
+	mov @ret, ' '
+.ret
+	%ret
+#===========================================================================
+
+
+:__lex_peek_node
+	%arg node
+	%call :_load_record, @node, @LEX_TOKEN_PEEK_CHAR
+	ne @ret, 0
 	%ret?
 
-	# We hit EOF on that particular file/macro, so return EOT
-	# %call :_quicklog, &"Peek: EOT\n"
-	mov @ret, @TOKEN_EOT
+	%call :__lex_read_node, @node
+	%call :_load_record, @node, @LEX_TOKEN_PEEK_CHAR
 	%ret
-
-.buffer
-	db 0
-#===========================================================================
 
 
 #===========================================================================
@@ -406,5 +383,6 @@
 	mov? @ret, 0
 	%ret?
 
-	%call :__lex_activate, @fd, 0, @value, :__lex_read_macro, :__lex_read_macro
+	#%call :_quicklog, &"macro=%s\n", @name
+	%call :__lex_activate, @fd, 0, @value, :__lex_read_macro
 	%ret
