@@ -67,12 +67,27 @@
     mov @tmp0, .jump_table
     jump :_compiler_jump_table
 
+.error
+    %call :_fatal, &"Unexpected token in _compile_expr_stack!\n"
+    dd 0
+
 .jump_table
     dd @TOKEN_CONSTANT, .constant
     dd @TOKEN_STRING_LITERAL, .string_literal
     dd @TOKEN_IDENTIFIER, .identifier
     dd '(', .paren
-    dd @TOKEN_NONE, @TOKEN_NONE
+    dd '-', .unary_neg
+    dd @TOKEN_NONE, .error
+
+.unary_neg
+    %call :_lex, @file, @buf, @buflen
+    %call :_compiler_out, &"# unary neg\n"
+    %call :_compile_expr_stack, @file, @buf, @buflen
+    %call :_compiler_out, &"    pop @tmp0\n"
+    %call :_compiler_out, &"    mov @tmp1, 0\n"
+    %call :_compiler_out, &"    sub @tmp1, @tmp0\n"
+    %call :_compiler_out, &"    push @tmp1\n"
+    jump .done
 
 .paren
     %call :_compile_expr_paren_stack, @file, @buf, @buflen

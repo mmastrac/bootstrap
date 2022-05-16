@@ -1,0 +1,2 @@
+#define INCLUDED_VAR 50
+#define INCLUDED_VAR2 8
