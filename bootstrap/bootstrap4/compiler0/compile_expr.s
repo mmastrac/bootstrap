@@ -6,12 +6,18 @@
     dd @TOKEN_NE_OP, &"    eq @tmp0, @tmp1\n    mov @tmp0, 0\n    mov^ @tmp0, 1"
     dd @TOKEN_GE_OP, &"    lt @tmp0, @tmp1\n    mov @tmp0, 0\n    mov^ @tmp0, 1"
     dd @TOKEN_LE_OP, &"    gt @tmp0, @tmp1\n    mov @tmp0, 0\n    mov^ @tmp0, 1"
+    dd @TOKEN_LEFT_OP, &""
+    dd @TOKEN_RIGHT_OP, &""
+    dd @TOKEN_AND_OP, &""
+    dd @TOKEN_OR_OP, &""
     dd '<', &"    lt @tmp0, @tmp1\n    mov @tmp0, 1\n    mov^ @tmp0, 0"
     dd '>', &"    gt @tmp0, @tmp1\n    mov @tmp0, 1\n    mov^ @tmp0, 0"
     dd '+', &"    add @tmp0, @tmp1"
     dd '-', &"    sub @tmp0, @tmp1"
     dd '/', &"    div @tmp0, @tmp1"
     dd '*', &"    mul @tmp0, @tmp1"
+    dd '|', &""
+    dd '&', &""
     dd 0, 0
 
 :_binary_expressions
@@ -77,7 +83,19 @@
     dd @TOKEN_IDENTIFIER, .identifier
     dd '(', .paren
     dd '-', .unary_neg
+    dd '!', .unary_not
     dd @TOKEN_NONE, .error
+
+.unary_not
+    %call :_lex, @file, @buf, @buflen
+    %call :_compiler_out, &"# unary neg\n"
+    %call :_compile_expr_stack, @file, @buf, @buflen
+    %call :_compiler_out, &"    pop @tmp0\n"
+    %call :_compiler_out, &"    eq @tmp0, 0\n"
+    %call :_compiler_out, &"    mov? @tmp0, 1\n"
+    %call :_compiler_out, &"    mov^ @tmp0, 0\n"
+    %call :_compiler_out, &"    push @tmp0\n"
+    jump .done
 
 .unary_neg
     %call :_lex, @file, @buf, @buflen
@@ -202,6 +220,8 @@
     %call :_compiler_out, &"    pop @tmp1\n"
     %call :_compiler_out, &"    pop @tmp0\n"
     %call :_ht_lookup, @ht, @saved_op
+    eq @ret, 0
+    jump? .bad_op
     mov @buf, @ret
     %call :_compiler_out, &"%s\n", @buf
     %call :_compiler_out, &"    push @tmp0\n"
@@ -209,6 +229,9 @@
 .return
     %call :_compiler_out, &"# expr end\n"
     %ret
+
+.bad_op
+    %call :_fatal, &"Unexpected binary operation\n"
 
 :_compile_expr_paren_stack
     %arg file

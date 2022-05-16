@@ -1,4 +1,13 @@
-#include "../lex/lex.h"
+#include "lex/lex.h"
+
+void lookup_struct() {
+}
+
+void lookup_type() {
+}
+
+void is_type_token() {
+}
 
 // Type bit layout
 // WXYZ
@@ -12,12 +21,12 @@ int parse_type() {
     int pointer_count = 0;
 
     while (1) {
-        token = token_peek();
+        token = lex_peek();
         if (!is_type_token(token)) {
             return type | pointer_count;
         }
 
-        token = token_read();
+        token = lex_read();
         if (token == '*') {
             pointer_count = pointer_count + 1;
         }
@@ -37,10 +46,10 @@ int parse_type() {
             type = type | (4 << 1);
         }
         if (token == TOKEN_IDENTIFIER) {
-            type = lookup_type(token_string());
+            type = lookup_type(lex_token_buffer());
         }
         if (token == TOKEN_STRUCT) {
-            type = lookup_struct(token_string());
+            type = lookup_struct(lex_token_buffer());
         }
     }
 }
