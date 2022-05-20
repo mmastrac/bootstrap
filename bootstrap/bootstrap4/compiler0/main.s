@@ -103,15 +103,20 @@
 
 	eq @ret, '='
 	jump? .inited
+	eq @ret, '['
+	jump? .equal
 
 	%call :_track_global, @buf1
 	%call :_compiler_out, &"    dd 0\n"
     %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, ';'
 	jump .loop
 
+.equal
+    %call :_compiler_read_expect, @file, 0, 0, '['
+    %call :_compiler_read_expect, @file, 0, 0, ']'
+
 .inited
 	%call :_track_global, @buf1
-	%call :_lex_peek, @file, 0, 0
     %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, '='
 	%call :_compile_constant, @file, @buf1, @BUFFER_SIZE
     %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, ';'

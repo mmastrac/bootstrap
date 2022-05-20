@@ -1,5 +1,5 @@
-int* global_int = { 10, 20, 30 };
-char** global_str = { "abc", "1234", "abcde", 0 };
+int global_int[] = { 10, 20, 30 };
+char* global_str[] = { "abc", "1234", "abcde", 0 };
 
 int result_inited() {
     int result = 0;
