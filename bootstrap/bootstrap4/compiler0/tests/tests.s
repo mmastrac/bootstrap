@@ -12,6 +12,7 @@
 	dd :_compile_test_function, &"compile_test_function"
 	dd :_compile_test_global, &"compile_test_global"
 	dd :_compile_test_include, &"compile_test_include"
+	dd :_compile_test_inited, &"compile_test_inited"
 	dd :_compile_test_local, &"compile_test_local"
     dd :_compile_test_string_literal, &"compile_test_string_literal"
 	dd :_compile_test_unary, &"compile_test_unary"
@@ -64,6 +65,11 @@
 
 :_compile_test_include
     %call :result_include
+	%call :_test_assert_equal, @ret, 42, &"Expected 42"
+    %ret
+
+:_compile_test_inited
+    %call :result_inited
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 

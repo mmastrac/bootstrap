@@ -209,10 +209,13 @@
     dd ')', .return
     dd ',', .return
     dd ';', .return
+    dd ']', .return
     dd @TOKEN_NONE, .binary
 
 .binary
     %call :_lex, @file, @buf, @buflen
+    eq @ret, '['
+    jump? .load
     %call :_compiler_out, &"# operator '%s'\n", @buf
     # Do the RHS
     %call :_compile_expr_stack, @file, @buf, @buflen
@@ -229,6 +232,17 @@
 .return
     %call :_compiler_out, &"# expr end\n"
     %ret
+
+.load
+    %call :_compile_expr_stack, @file, @buf, @buflen
+    %call :_compiler_out, &"    pop @tmp0\n"
+    %call :_compiler_out, &"    pop @tmp1\n"
+    %call :_compiler_out, &"    mul @tmp0, 4\n"
+    %call :_compiler_out, &"    add @tmp0, @tmp1\n"
+    %call :_compiler_out, &"    ld.d @tmp0, [@tmp0]\n"
+    %call :_compiler_out, &"    push @tmp0\n"
+    %call :_compiler_read_expect, @file, @buf, @buflen, ']'
+    jump .done
 
 .bad_op
     %call :_fatal, &"Unexpected binary operation\n"

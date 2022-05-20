@@ -13,10 +13,10 @@ enhanced versions by changing the files we are linking.
 
 This `compiler0` stage supports:
 
- * Simple, binary expressions, nesting must use parentheses
+ * Simple, binary expressions, nesting and unary operations must use parentheses
  * Function calls
- * Local variables (defined top-of-function, initialization allowed) and function args
- * Basic globals (int-style) with optional constant initializers only. `extern` is also supported for assembly interop.
+ * Local variables (defined top-of-function, int initialization allowed) and function args
+ * Basic globals (int-style) with optional constant/array initializers only. `extern` is also supported for assembly interop.
  * `if` statements (no `else`)
  * `while`/`for` loops, plus `break` and `continue` (`break`/`continue` don't work w/nesting)
  

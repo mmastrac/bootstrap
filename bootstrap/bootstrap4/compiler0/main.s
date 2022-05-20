@@ -111,9 +111,9 @@
 
 .inited
 	%call :_track_global, @buf1
+	%call :_lex_peek, @file, 0, 0
     %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, '='
-    %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, @TOKEN_CONSTANT
-	%call :_compiler_out, &"    dd %s\n", @buf1
+	%call :_compile_constant, @file, @buf1, @BUFFER_SIZE
     %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, ';'
 	jump .loop
 
