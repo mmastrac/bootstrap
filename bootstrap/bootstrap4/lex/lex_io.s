@@ -84,6 +84,39 @@
 :__lex_open
 	%arg lex
 	%arg name
+	%local fd
+
+	%call :_open, @name, 0
+	mov @fd, @ret
+	%call :__lex_open_something, @lex, @fd, :__lex_read_fd
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# lex_file* _lex_open_string(lex* lex, char* string)
+#
+# Opens a top-level string.
+#===========================================================================
+:__lex_open_string
+	%arg lex
+	%arg s
+	%local fd
+
+	%call :__lex_open_something, @lex, @s, :__lex_read_macro
+	%ret
+#===========================================================================
+
+
+#===========================================================================
+# lex_file* __lex_open_something(lex* lex, void* read_context, void* read_fn)
+#
+# Opens a top-level lexer "something" (could be a file or string).
+#===========================================================================
+:__lex_open_something
+	%arg lex
+	%arg read_context
+	%arg read_fn
 	%local file
 	%local ll
 	%local ht
@@ -106,9 +139,7 @@
 	%call :_store_record, @file, @LEX_FILE_MACROS, @ht
 	%call :_store_record, @file, @LEX_FILE_PEEK, @TOKEN_NONE
 
-	%call :_open, @name, 0
-	mov @fd, @ret
-	%call :__lex_activate, @file, 0, @fd, :__lex_read_fd
+	%call :__lex_activate, @file, 0, @read_context, @read_fn
 
 	mov @ret, @file
 	%ret
