@@ -3,6 +3,9 @@
 :__assertion
 	dd 0
 
+:__test_result
+	dd 0
+
 #===========================================================================
 # Args:
 #   R0: Must be non-zero
@@ -112,10 +115,11 @@
 	pop @total
 	eq @passed, @total
 	jump? .success
-	mov @ret, 1
-	%ret
+	mov @ret, :__test_result
+	st.d [@ret], 1
 
 .success
-	mov @ret, 0
+	mov @ret, :__test_result
+	ld.d @ret, [@ret]
 	%ret
 #===========================================================================
