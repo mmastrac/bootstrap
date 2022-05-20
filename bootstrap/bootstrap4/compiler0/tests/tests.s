@@ -1,7 +1,6 @@
 #include "regs.h"
 
 :_compile_test
-	dd &"compile"
 	dd :_compile_test_basic, &"compile_test_basic"
 	dd :_compile_test_binary, &"compile_test_binary"
     dd :_compile_test_char_literal, &"compile_test_char_literal"
@@ -108,5 +107,5 @@
     %ret
 
 :_main
-	%call :_test_main, :_compile_test
+	%call :_test_main, :_compile_test, &"compile_test"
     %ret

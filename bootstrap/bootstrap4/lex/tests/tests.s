@@ -1,8 +1,8 @@
 #include "regs.h"
 
 :_main
-	%call :_test_main, :_lex_io_test
-	%call :_test_main, :_lex_test
+	%call :_test_main, :_lex_io_test, &"lex_io_test"
+	%call :_test_main, :_lex_test, &"lex_test"
 	%ret
 
 :__lex_test_create_lex

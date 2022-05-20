@@ -1,7 +1,6 @@
 #include "regs.h"
 
 :_array_test
-	dd &"array_test"
 	dd :_array_test_basic, &"test_basic"
 	dd :_array_test_push_pop, &"test_push_pop"
 	dd 0, 0

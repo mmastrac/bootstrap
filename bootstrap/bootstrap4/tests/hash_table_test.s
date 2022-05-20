@@ -1,7 +1,6 @@
 #include "regs.h"
 
 :_hash_table_test
-	dd &"hash_table"
 	dd :_hash_table_test_string, &"test_string"
 	dd 0, 0
 

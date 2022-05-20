@@ -1,7 +1,6 @@
 #include "regs.h"
 
 :_strings_test
-	dd &"strings"
 	dd :_strings_test_isdigit, &"test_isdigit"
 	dd :_strings_test_strchr, &"test_strchr"
 	dd :_strings_test_strcmp, &"test_strcmp"

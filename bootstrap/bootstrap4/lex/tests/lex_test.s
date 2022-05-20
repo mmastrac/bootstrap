@@ -4,7 +4,6 @@
 #define BUFFER_SIZE 256
 
 :_lex_test
-	dd &"lex"
 	dd :_lex_test_operators, &"test_operators"
 	dd :_lex_test_tokens, &"test_tokens"
 	dd :_lex_test_tokens_define, &"test_tokens_define"

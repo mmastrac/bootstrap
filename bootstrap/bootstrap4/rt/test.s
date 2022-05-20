@@ -76,16 +76,15 @@
 #===========================================================================
 :_test_main
 	%arg tests
+	%arg name
 	%local passed
 	%local total
 	%local test
 	mov @passed, 0
 	mov @total, 0
-	ld.d @tmp0, [@tests]
-	push @tmp0
+	push @name
 	%call :_dprintf, 2, &"Suite: %s\n"
-	pop @tmp0
-	add @tests, 4
+	pop @name
 .loop
 	mov @tmp0, 0
 	st.d [:__assertion], @tmp0

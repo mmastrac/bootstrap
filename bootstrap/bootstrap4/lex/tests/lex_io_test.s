@@ -2,7 +2,6 @@
 #include "../bootstrap4/lex/lex.h"
 
 :_lex_io_test
-	dd &"lex_io"
 	dd :_lex_io_test_create, &"test_create"
 	dd :_lex_io_test_read_peek, &"test_read_peek"
 	dd :_lex_io_test_macro, &"test_macro"

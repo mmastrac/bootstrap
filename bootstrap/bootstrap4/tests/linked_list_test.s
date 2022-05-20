@@ -1,7 +1,6 @@
 #include "regs.h"
 
 :_linked_list_test
-	dd &"linked_list"
 	dd :_linked_list_test_walk, &"test_walk"
 	dd :_linked_list_test_insert_remove, &"test_insert_remove"
 	dd 0, 0
