@@ -44,7 +44,7 @@ int lex_peek() {
 const char* lex_token_buffer() {
     return _arrayread32(lex_token_buffers, lex_token_slot);
 }
- 
+
 // Returns the last lexed token
 int lex_token() {
 }
@@ -56,8 +56,10 @@ int lex_token_equals(const char* token) {
 
 // Pushes the lex token context, storing the old token for later use
 void lex_push() {
+    lex_token_slot = lex_token_slot + 1;
 }
 
 // Pops the lex token context
 void lex_pop() {
+    lex_token_slot = lex_token_slot - 1;
 }

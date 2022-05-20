@@ -5,9 +5,9 @@ void* create_argument_array(int argc, char** argv) {
     return array;
 }
 
-int _main(int argc, char** argv) {
-    void* args = create_argument_array(argc, argv);
-    lex_init(_array_get(args, 1));
-
-    compile_translation_unit();
-}
+// int _main(int argc, char** argv) {
+    // void* args = create_argument_array(argc, argv);
+    // lex_init(_array_get(args, 1));
+// 
+    // compile_translation_unit();
+// }

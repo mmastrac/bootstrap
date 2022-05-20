@@ -122,6 +122,8 @@ echo Compile 4
 echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_include.c $BUILD/b4/test_include.s
 echo Compile 4
+./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_inited.c $BUILD/b4/test_inited.s
+echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_local.c $BUILD/b4/test_local.s
 echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_string_literal.c $BUILD/b4/test_string_literal.s
@@ -136,6 +138,12 @@ echo Compile 4-1
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/compile_file.c $BUILD/b4/compiler1_compile_file.s
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/struct.c $BUILD/b4/compiler1_struct.s
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/types.c $BUILD/b4/compiler1_types.s
+mkdir $BUILD/b4/t
+./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/tests/tests.c $BUILD/b4/t/tests.s
+./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/tests/test_lex.c $BUILD/b4/t/test_lex.s
+./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/lex/*.s $BUILD/b4/compiler1_*.s $BUILD/b4/t/*.s $BUILD/b4/t/t.bin
+./vm $BUILD/b4/t/t.bin
+
 ./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/lex/*.s $BUILD/b4/compiler1_*.s $BUILD/b4-1.bin
 
 echo Compile 4-1

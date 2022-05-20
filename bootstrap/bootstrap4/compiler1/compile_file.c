@@ -2,7 +2,7 @@
 
 // Because we have an identifier in the mix, this pushes and then pops the token context, leaving the identifier
 // in the token buffer for use by calling code.
-void compile_declarator() {
+int compile_declarator() {
 
 }
 
