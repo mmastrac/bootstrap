@@ -4,6 +4,7 @@
 void* lex_lexer;
 void** lex_token_buffers;
 int lex_token_slot;
+int* lex_tokens;
 
 // Initialize the lexer
 //
@@ -21,6 +22,17 @@ void lex_init(const char* file) {
     for (i = 0; i < SLOT_COUNT; i = i + 1) {
         _arraywrite32(lex_token_buffers, i, _malloc(BUFFER_SIZE));
     }
+    lex_tokens = _malloc(SLOT_COUNT * 4);
+}
+
+void lex_init_string(const char* s) {
+    int i;
+    lex_lexer = __lex_open_string(__lex_create(0), s);
+    // Create the token slots
+    for (i = 0; i < SLOT_COUNT; i = i + 1) {
+        _arraywrite32(lex_token_buffers, i, _malloc(BUFFER_SIZE));
+    }
+    lex_tokens = _malloc(SLOT_COUNT * 4);
 }
 
 // Read a token
@@ -29,7 +41,9 @@ void lex_init(const char* file) {
 // be used to retrieve this buffer's text, and lex_token_equals can be used to compare the value of this
 // buffer with a given string constant.
 int lex_read() {
-    return _lex(lex_lexer, _arrayread32(lex_token_buffers, lex_token_slot), BUFFER_SIZE);
+    int token = _lex(lex_lexer, _arrayread32(lex_token_buffers, lex_token_slot), BUFFER_SIZE);
+    _arraywrite32(lex_tokens, lex_token_slot, token);
+    return token;
 }
 
 // Peek a token
@@ -47,6 +61,7 @@ const char* lex_token_buffer() {
 
 // Returns the last lexed token
 int lex_token() {
+    return lex_tokens[lex_token_slot];
 }
 
 // Compares the lex token to the given string
