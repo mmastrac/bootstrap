@@ -9,6 +9,10 @@ This stage contains multiple sub-stages where we bootstrap a compiler in assembl
 The lexer is written in assembly and used for both sub-stages. It handles C tokens and _very_ basic preprocessor declarations. It does
 not support complex macros at this time.
 
+`bootstrap4` makes use of the assembly compiler and linker in `bootstrap3`, and does not emit assembly code directly. This allows us
+to build on top of a rich runtime with simple data structions and useful runtime functionality. One `.c` file is compiled to a single `.s`
+assembly output, then assembled with `bootstrap3`'s one-shot assembler and linker.
+
 ### `compiler0`
 
 The `compiler0` sub-stage is a very basic C compiler written entirely in assembly language. It uses the lexer directly and emits
