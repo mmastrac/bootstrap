@@ -11,6 +11,16 @@ bootstrapping process to generate C binaries for this virtual platform or any ot
  2. Longevity - the VM spec is small enough that it can be contained in the executables it produces, allowing them to be run
     decades into the future
 
+## Philosophy
+
+Each bootstrap stage should do just enough to compile the next stage. Our goal is to hit a level of C89/C99 support that will allow us to
+compile and run arbitrary software for the VM, and to build the entire software tower underneath to get us there.
+
+The stages should be easy to understand in isolation, and enough to hold one-at-a-time in your head.
+
+In some cases we may define useful compilation utilities in earlier stages that are re-used later in the bootstrap chain, for example linkers
+and shell-style utilities.
+
 ## Bootstrap stages
 
 ### Stage 0
@@ -55,7 +65,8 @@ Status: *work in progress* 🚧
 
 [`bootstrap4`](bootstrap/bootstrap4/):This is the first stage C compiler that compilers a (very reduced) subset of C. Currently a work-in-progress.
 
-There are multiple stages inside bootstrap4 to build a basic compiler.
+There are multiple stages inside `bootstrap4` to build a basic compiler: `compiler0` which builds a barebones C compiler and allows us to
+escape from the world of assembly, and `compiler1` that is a much more familiar C program that is used to compile `bootstrap5`.
 
 ### Stage 5
 
