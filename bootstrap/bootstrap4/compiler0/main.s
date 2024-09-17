@@ -149,7 +149,7 @@
 
 .inited
 	%call :_track_global, @buf1, @size
-    %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, '='
+    %call :_compiler_read_expect, @file, 0, 0, '='
 	%call :_compile_constant, @file, @buf1, @BUFFER_SIZE, @size
     %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, ';'
 	jump .loop

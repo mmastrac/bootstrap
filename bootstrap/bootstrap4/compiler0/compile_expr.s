@@ -87,6 +87,8 @@
     dd '(', .paren
     dd '-', .unary_neg
     dd '!', .unary_not
+    dd '*', .unary_deref
+    dd '&', .unary_address_of
     dd @TOKEN_NONE, .error
 
 .unary_not
@@ -110,6 +112,12 @@
     %call :_compiler_out, &"    push @tmp1\n"
     jump .done
 
+.unary_address_of
+    %call :_lex, @file, @buf, @buflen
+    %call :_lex, @file, @buf, @buflen
+    %call :_compiler_out, &"    push [:%s]\n", @buf
+    jump .done
+
 .paren
     %call :_compile_expr_paren_stack, @file, @buf, @buflen
     jump .done
@@ -126,6 +134,7 @@
 
 .identifier
     %call :_lex, @file, @buf, @buflen
+    %call :_compiler_out, &"    # ref %s\n", @buf
     %call :_lex_peek, @file, 0, 0
     eq @ret, '('
     jump? .call
@@ -145,7 +154,41 @@
     %call :_compiler_out, &"    push [:%s]\n", @buf
     jump .done
 .identifier_not_found
-    %call :_fatal, &"Undefined variable\n"
+    %call :_fatal, &"Undefined variable in assignment\n"
+    jump .done
+
+.unary_deref
+    %call :_lex, @file, @buf, @buflen
+    %call :_lex, @file, @buf, @buflen
+    %call :_compiler_out, &"    # deref %s\n", @buf
+    %call :_is_global, @buf
+    mov @last_size, @ret
+    eq @ret, 0
+    jump^ .deref_identifier_global
+    %call :_is_local, @buf
+    mov @last_size, @ret
+    eq @ret, 0
+    jump? .deref_identifier_not_found
+    %call :_compiler_out, &"    mov @tmp0, @%s\n", @buf
+    jump .deref_done
+.deref_identifier_global
+    %call :_compiler_out, &"    mov @tmp0, [:%s]\n", @buf
+    jump .deref_done
+.deref_done
+    %call :_lex_peek, @file, 0, 0
+    eq @ret, '='
+    jump? .assign_deref
+    eq @last_size, 4
+    jump? .deref_load_d
+    %call :_compiler_out, &"    ld.b @tmp0, [@tmp0]\n"
+    %call :_compiler_out, &"    push @tmp0\n"
+    jump .done
+.deref_load_d
+    %call :_compiler_out, &"    ld.d @tmp0, [@tmp0]\n"
+    %call :_compiler_out, &"    push @tmp0\n"
+    jump .done
+.deref_identifier_not_found
+    %call :_fatal, &"Undefined variable in deref\n"
     jump .done
 
 .call
@@ -209,6 +252,25 @@
     %call :_compiler_out, &"    jump .assign_value_2_%d\n", @label
     %call :_compiler_out, &".assign_value_3_%d\n", @label
     jump .done
+
+.assign_deref
+    %call :_compiler_read_expect, @file, 0, 0, '='
+    %call :_compiler_out, &"# assign deref %s\n", @buf
+    %call :_compiler_out, &"    push @tmp0\n"
+    %call :_compile_expr_stack, @file, @buf, @buflen
+    %call :_compiler_out, &"    pop @tmp1\n"
+    %call :_compiler_out, &"    pop @tmp0\n"
+
+    eq @last_size, 4
+    jump? .assign_deref_d
+    %call :_compiler_out, &"    st.b [@tmp0], @tmp1\n"
+    jump .assign_deref_finish
+.assign_deref_d
+    %call :_compiler_out, &"    st.d [@tmp0], @tmp1\n"
+.assign_deref_finish
+    %call :_compiler_out, &"    push @tmp1\n"
+    jump .done
+
 
 .done
     %call :_lex_peek, @file, @buf, @buflen

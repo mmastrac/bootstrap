@@ -5,6 +5,7 @@
 	dd :_compile_test_binary, &"compile_test_binary"
     dd :_compile_test_char_literal, &"compile_test_char_literal"
 	dd :_compile_test_compare, &"compile_test_compare"
+    dd :_compile_test_deref, &"compile_test_deref"
 	dd :_compile_test_fib, &"compile_test_fib"
 	dd :_compile_test_fn_in_fn, &"compile_test_fn_in_fn"
     dd :_compile_test_if_else, &"compile_test_if_else",
@@ -35,6 +36,11 @@
 
 :_compile_test_compare
     %call :result_compare
+	%call :_test_assert_equal, @ret, 42, &"Expected 42"
+    %ret
+
+:_compile_test_deref
+    %call :result_deref
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 

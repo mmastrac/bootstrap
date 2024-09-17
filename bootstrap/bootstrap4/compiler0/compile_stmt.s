@@ -32,7 +32,8 @@
     dd @TOKEN_IF, .if
     dd @TOKEN_FOR, .for
     dd @TOKEN_WHILE, .while
-    dd @TOKEN_IDENTIFIER, .identifier
+    dd @TOKEN_IDENTIFIER, .expr
+    dd '*', .expr
     dd @TOKEN_RETURN, .return
     # Assume anything else is a local declaration
     dd @TOKEN_NONE, .local
@@ -49,7 +50,7 @@
     %call :_compile_stmt_while, @file, @buf, @buflen
     jump .done
 
-.identifier
+.expr
     %call :_compile_expr_ret, @file, @buf, @buflen
     %call :_compiler_read_expect, @file, @buf, @buflen, ';'
     jump .done

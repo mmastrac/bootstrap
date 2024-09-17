@@ -11,7 +11,7 @@
     %arg size
     %local label
 
-    %call :_lex_peek, @file, @buf, @buflen
+    %call :_lex_peek, @file, 0, 0
     mov @tmp0, .jump_table
     jump :_compiler_jump_table
 
@@ -50,10 +50,8 @@
 
 .array
     # Create an indirection for array data
-    %call :_compile_get_next_label
-    mov @label, @ret
-    %call :_compiler_out, &"    dd :__array_data_%d\n", @label
-    %call :_compiler_out, &":__array_data_%d\n", @label
+    %call :_compiler_out, &"    dd :__array_data_%s\n", @buf
+    %call :_compiler_out, &":__array_data_%s\n", @buf
 
     %call :_compiler_read_expect, @file, @buf, @buflen, '{'
 .array_loop

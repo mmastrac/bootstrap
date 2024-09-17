@@ -113,6 +113,8 @@ echo Compile 4
 echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_compare.c $BUILD/b4/test_compare.s
 echo Compile 4
+./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_deref.c $BUILD/b4/test_deref.s
+echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_fn_in_fn.c $BUILD/b4/test_fn_in_fn.s
 echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_for.c $BUILD/b4/test_for.s
@@ -137,6 +139,12 @@ echo Compile 4
 echo Compile 4
 ./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/compiler0/tests/*.s $BUILD/b4/test_*.s $BUILD/t4_0.bin
 ./vm $BUILD/t4_0.bin
+echo Compile 4-1
+mkdir $BUILD/b4-1
+./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/rt/heap.c $BUILD/b4-1/heap.s
+./vm $BUILD/b3.bin -l -I $ROOT/include $BUILD/b4-1/*.s $BUILD/b4-1.bin
+
+
 echo Compile 4-1
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/main.c $BUILD/b4/compiler1_main.s
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/lex.c $BUILD/b4/compiler1_lex.s
