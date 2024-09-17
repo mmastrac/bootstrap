@@ -7,6 +7,7 @@
 	dd :_compile_test_compare, &"compile_test_compare"
 	dd :_compile_test_fib, &"compile_test_fib"
 	dd :_compile_test_fn_in_fn, &"compile_test_fn_in_fn"
+    dd :_compile_test_if_else, &"compile_test_if_else",
 	dd :_compile_test_for, &"compile_test_for"
 	dd :_compile_test_function, &"compile_test_function"
 	dd :_compile_test_global, &"compile_test_global"
@@ -59,6 +60,11 @@
 
 :_compile_test_global
     %call :result_global
+	%call :_test_assert_equal, @ret, 42, &"Expected 42"
+    %ret
+
+:_compile_test_if_else
+    %call :result_if_else
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 

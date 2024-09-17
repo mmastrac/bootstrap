@@ -69,19 +69,60 @@
     %arg file
     %arg buf
     %arg buflen
-    %local label
+    %local if_label
+    %local else_label
+    %local end_label
 
     %call :_compile_get_next_label
-    mov @label, @ret
+    mov @if_label, @ret
+    %call :_compile_get_next_label
+    mov @else_label, @ret
+    %call :_compile_get_next_label
+    mov @end_label, @ret
 
     %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_IF
     %call :_compiler_out, &"# if\n"
     %call :_compile_expr_paren_ret, @file, @buf, @buflen
     %call :_compiler_out, &"# if test\n"
     %call :_compiler_out, &"    eq @ret, 0\n"
-    %call :_compiler_out, &"    jump? .end_%d\n", @label
+    %call :_compiler_out, &"    jump? .else_%d\n", @else_label
     %call :_compile_block, @file, @buf, @buflen
-    %call :_compiler_out, &".end_%d\n", @label
+    %call :_compiler_out, &"    jump .end_%d\n", @end_label
+    %call :_compiler_out, &".else_%d\n", @else_label
+
+.check_else
+    %call :_lex_peek, @file, 0, 0
+    eq @ret, @TOKEN_ELSE
+    jump^ .done_if
+
+    # We have an else, so consume it
+    %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_ELSE
+
+    # Check if it's an else if
+    %call :_lex_peek, @file, 0, 0
+    eq @ret, @TOKEN_IF
+    jump^ .else_block
+
+    # It's an else if
+    %call :_lex, @file, @buf, @buflen
+    %call :_compile_get_next_label
+    mov @if_label, @ret
+    %call :_compiler_out, &"# else if\n"
+    %call :_compile_expr_paren_ret, @file, @buf, @buflen
+    %call :_compiler_out, &"# else if test\n"
+    %call :_compiler_out, &"    eq @ret, 0\n"
+    %call :_compiler_out, &"    jump? .else_%d\n", @if_label
+    %call :_compile_block, @file, @buf, @buflen
+    %call :_compiler_out, &"    jump .end_%d\n", @end_label
+    %call :_compiler_out, &".else_%d\n", @if_label
+    jump .check_else
+
+.else_block
+    %call :_compiler_out, &"# else\n"
+    %call :_compile_block, @file, @buf, @buflen
+
+.done_if
+    %call :_compiler_out, &".end_%d\n", @end_label
     %ret
 
 :_compile_stmt_for
