@@ -11,8 +11,8 @@ enhanced versions by changing the files we are linking.
 
 This `compiler0` stage supports:
 
- * Simple, binary expressions, nesting and unary operations must use parentheses
- * Array read (int-sized only)
+ * Simple binary expressions, nesting and unary operations must use parentheses: NO ORDER OF OPERATIONS!
+ * Array read (int or byte size)
  * Function calls
  * Local variables (defined top-of-function, simple integer or string expression initialization allowed) and function args
     * `int sum = 10 * 2;`
@@ -20,5 +20,5 @@ This `compiler0` stage supports:
  * Basic globals (int-style) with optional constant/array initializers only. `extern` is also supported for assembly interop.
     * `int x = 2;`
     * `int numbers[] = { 1, 2, 3 };`
- * `if` statements (no `else`)
- * `while`/`for` loops, plus `break` and `continue` (`break`/`continue` don't work w/nesting)
+ * `if` statements, including `else`, and `else if` chaining
+ * `while`/`for` loops, plus `break` and `continue` (`break`/`continue` don't work yet)

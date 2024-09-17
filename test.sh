@@ -92,15 +92,18 @@ echo Test 4
 echo Test 4
 ./vm $BUILD/b3.bin -l -I $ROOT/include $TEST/bootstrap4/test4.s $ROOT/bootstrap4/rt/crt0.s $ROOT/bootstrap4/rt/memory.s $ROOT/bootstrap4/rt/string.s $ROOT/bootstrap4/rt/sys.s $ROOT/bootstrap4/rt/dprintf.s $BUILD/t4.bin
 ./vm $BUILD/t4.bin
+
 echo Test 4
 ./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/tests/*.s $BUILD/t4.bin
 ./vm $BUILD/t4.bin
 echo Test 4
 ./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/lex/lex.s $ROOT/bootstrap4/lex/lex_io.s $ROOT/bootstrap4/lex/tests/*.s $BUILD/t4.bin
 ./vm $BUILD/t4.bin
+
 echo Compile 4
 ./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/lex/*.s $ROOT/bootstrap4/compiler0/*.s $BUILD/t4.bin
 mkdir $BUILD/b4
+
 echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_basic.c $BUILD/b4/test_basic.s
 echo Compile 4

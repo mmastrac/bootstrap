@@ -8,6 +8,7 @@
     %arg file
     %arg buf
     %arg buflen
+    %arg size
     %local label
 
     %call :_lex_peek, @file, @buf, @buflen
@@ -28,7 +29,13 @@
 
 .constant
     %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_CONSTANT
+    eq @size, 1
+    jump? .use_db
     %call :_compiler_out, &"    dd %s\n", @buf
+    jump .end_constant
+.use_db
+    %call :_compiler_out, &"    db %s\n", @buf
+.end_constant
     jump .done
 
 .string_literal
@@ -50,7 +57,7 @@
 
     %call :_compiler_read_expect, @file, @buf, @buflen, '{'
 .array_loop
-    %call :_compile_constant, @file, @buf, @buflen
+    %call :_compile_constant, @file, @buf, @buflen, @size
     %call :_lex_peek, @file, @buf, @buflen
     eq @ret, '}'
     jump? .array_done

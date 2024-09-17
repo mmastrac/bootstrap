@@ -11,19 +11,48 @@
 
 :_track_global
 	%arg global
-	%arg ht
+	%arg size
+	%local ht
 	ld.d @ht, [:_global_symbols]
 	# Make a copy and insert it into the globals hash table
 	%call :_stralloc, @global
 	mov @global, @ret
-	%call :_ht_insert, @ht, @global, 1
+	%call :_ht_insert, @ht, @global, @size
 	%ret
 
 :_is_global
 	%arg global
-	%arg ht
+	%local ht
 	ld.d @ht, [:_global_symbols]
 	%call :_ht_lookup, @ht, @global
+	%ret
+
+# Track local identifiers
+:_local_symbols
+	dd 0
+
+:_track_local
+	%arg local
+	%arg size
+	%local ht
+	ld.d @ht, [:_local_symbols]
+	# Make a copy and insert it into the locals hash table
+	%call :_stralloc, @local
+	mov @local, @ret
+	%call :_ht_insert, @ht, @local, @size
+	%ret
+
+:_is_local
+	%arg local
+	%local ht
+	ld.d @ht, [:_local_symbols]
+	%call :_ht_lookup, @ht, @local
+	%ret
+
+:_teardown_locals
+	# Leaks locals because we don't have a proper heap yet
+	mov @tmp0, 0
+	st.d [:_local_symbols], @tmp0
 	%ret
 
 :_main
@@ -38,6 +67,7 @@
 	%local file
 	%local args
 	%local output
+	%local size
 
 # Allocate a 256-byte buffer
 	%call :_malloc, @BUFFER_SIZE
@@ -89,6 +119,7 @@
 
 	# We only support int functions for this basic parser
 	%call :_compile_function_type, @file, @buf1, @BUFFER_SIZE
+	mov @size, @ret
 
 	%call :_lex, @file, @buf1, @BUFFER_SIZE
 	mov @token, @ret
@@ -106,19 +137,20 @@
 	eq @ret, '['
 	jump? .equal
 
-	%call :_track_global, @buf1
+	%call :_track_global, @buf1, @size
 	%call :_compiler_out, &"    dd 0\n"
     %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, ';'
 	jump .loop
 
 .equal
+	mov @size, 4
     %call :_compiler_read_expect, @file, 0, 0, '['
     %call :_compiler_read_expect, @file, 0, 0, ']'
 
 .inited
-	%call :_track_global, @buf1
+	%call :_track_global, @buf1, @size
     %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, '='
-	%call :_compile_constant, @file, @buf1, @BUFFER_SIZE
+	%call :_compile_constant, @file, @buf1, @BUFFER_SIZE, @size
     %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, ';'
 	jump .loop
 
@@ -126,13 +158,16 @@
 	# extern (type) (identifier);
     %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, @TOKEN_EXTERN
 	%call :_compile_function_type, @file, @buf1, @BUFFER_SIZE
+	mov @size, @ret
 	%call :_lex, @file, @buf1, @BUFFER_SIZE
-	%call :_track_global, @buf1
+	%call :_track_global, @buf1, @size
     %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, ';'
 	jump .loop
 
 
 .fn
+	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
+	st.d [:_local_symbols], @ret
 	%call :_compile_function_args, @file, @buf1, @BUFFER_SIZE
 	%call :_compiler_out, &"    %%arg arg0\n"
 	%call :_compiler_out, &"    %%arg arg1\n"
@@ -144,6 +179,7 @@
 	%call :_compiler_out, &"    %%arg arg7\n"
 	%call :_compile_block, @file, @buf1, @BUFFER_SIZE
 	%call :_compiler_out, &"    %%ret\n"
+	%call :_teardown_locals
 	jump .loop
 
 .done

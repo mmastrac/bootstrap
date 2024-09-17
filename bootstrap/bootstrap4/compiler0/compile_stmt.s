@@ -214,10 +214,13 @@
     %arg buf
     %arg buflen
     %local label
+    %local size
 
     %call :_compile_function_type, @file, @buf, @buflen
+    mov @size, @ret
     %call :_compiler_out, &"# local\n"
     %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_IDENTIFIER
+    %call :_track_local, @buf, @size
     %call :_is_global, @buf
     eq @ret, 0
     jump? .no_shadow

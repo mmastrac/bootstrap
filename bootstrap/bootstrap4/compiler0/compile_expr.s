@@ -57,6 +57,9 @@
     %local ht
     %local label
     %local arg_count
+    %local last_size
+
+    mov @last_size, 4
 
     ld.d @ht, [:_binary_expressions]
     eq @ht, 0
@@ -129,12 +132,20 @@
     eq @ret, '='
     jump? .assign
     %call :_is_global, @buf
-    eq @ret, 1
-    jump? .identifier_global
+    mov @last_size, @ret
+    eq @ret, 0
+    jump^ .identifier_global
+    %call :_is_local, @buf
+    mov @last_size, @ret
+    eq @ret, 0
+    jump? .identifier_not_found
     %call :_compiler_out, &"    push @%s\n", @buf
     jump .done
 .identifier_global
     %call :_compiler_out, &"    push [:%s]\n", @buf
+    jump .done
+.identifier_not_found
+    %call :_fatal, &"Undefined variable\n"
     jump .done
 
 .call
@@ -183,8 +194,8 @@
     %call :_compiler_out, &"    jump .assign_value_1_%d\n", @label
     %call :_compiler_out, &".assign_value_2_%d\n", @label
     %call :_is_global, @buf
-    eq @ret, 1
-    jump? .assign_global
+    eq @ret, 0
+    jump^ .assign_global
     %call :_compiler_out, &"    mov @%s, @ret\n", @buf
     jump .assign_finish
 .assign_global
@@ -237,9 +248,16 @@
     %call :_compile_expr_stack, @file, @buf, @buflen
     %call :_compiler_out, &"    pop @tmp0\n"
     %call :_compiler_out, &"    pop @tmp1\n"
+    eq @last_size, 4
+    jump? .load_d
+    %call :_compiler_out, &"    add @tmp0, @tmp1\n"
+    %call :_compiler_out, &"    ld.b @tmp0, [@tmp0]\n"
+    jump .load_done
+.load_d
     %call :_compiler_out, &"    mul @tmp0, 4\n"
     %call :_compiler_out, &"    add @tmp0, @tmp1\n"
     %call :_compiler_out, &"    ld.d @tmp0, [@tmp0]\n"
+.load_done
     %call :_compiler_out, &"    push @tmp0\n"
     %call :_compiler_read_expect, @file, @buf, @buflen, ']'
     jump .done

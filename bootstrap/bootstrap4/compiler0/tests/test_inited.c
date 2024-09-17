@@ -1,5 +1,6 @@
 int global_int[] = { 10, 20, 30 };
 char* global_str[] = { "abc", "1234", "abcde", 0 };
+char global_char[] = { 'a', 'b', 'c' };
 
 int result_inited() {
     int result = 0;
@@ -9,7 +10,10 @@ int result_inited() {
     _test_assert_equal(_strlen(global_str[0]), 3, "strlen(global_str[0])");
     _test_assert_equal(_strlen(global_str[1]), 4, "strlen(global_str[1])");
     _test_assert_equal(_strlen(global_str[2]), 5, "strlen(global_str[2])");
-    
+    _test_assert_equal(global_char[0], 'a', "global_char[0]");
+    _test_assert_equal(global_char[1], 'b', "global_char[1]");
+    _test_assert_equal(global_char[2], 'c', "global_char[2]");
+
     result = global_int[0] + global_int[1] + global_int[2] - 18;
     return result;
 }
