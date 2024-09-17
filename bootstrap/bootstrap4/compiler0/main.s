@@ -166,6 +166,7 @@
 
 
 .fn
+	%call :_track_global, @buf1, @size
 	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
 	st.d [:_local_symbols], @ret
 	%call :_compile_function_args, @file, @buf1, @BUFFER_SIZE

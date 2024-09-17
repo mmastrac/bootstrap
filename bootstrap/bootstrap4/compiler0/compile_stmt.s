@@ -70,12 +70,9 @@
     %arg file
     %arg buf
     %arg buflen
-    %local if_label
     %local else_label
     %local end_label
 
-    %call :_compile_get_next_label
-    mov @if_label, @ret
     %call :_compile_get_next_label
     mov @else_label, @ret
     %call :_compile_get_next_label
@@ -107,15 +104,15 @@
     # It's an else if
     %call :_lex, @file, @buf, @buflen
     %call :_compile_get_next_label
-    mov @if_label, @ret
+    mov @else_label, @ret
     %call :_compiler_out, &"# else if\n"
     %call :_compile_expr_paren_ret, @file, @buf, @buflen
     %call :_compiler_out, &"# else if test\n"
     %call :_compiler_out, &"    eq @ret, 0\n"
-    %call :_compiler_out, &"    jump? .else_%d\n", @if_label
+    %call :_compiler_out, &"    jump? .else_%d\n", @else_label
     %call :_compile_block, @file, @buf, @buflen
     %call :_compiler_out, &"    jump .end_%d\n", @end_label
-    %call :_compiler_out, &".else_%d\n", @if_label
+    %call :_compiler_out, &".else_%d\n", @else_label
     jump .check_else
 
 .else_block

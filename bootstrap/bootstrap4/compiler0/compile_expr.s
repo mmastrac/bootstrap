@@ -134,7 +134,6 @@
 
 .identifier
     %call :_lex, @file, @buf, @buflen
-    %call :_compiler_out, &"    # ref %s\n", @buf
     %call :_lex_peek, @file, 0, 0
     eq @ret, '('
     jump? .call
@@ -308,6 +307,10 @@
 
 .load
     %call :_compile_expr_stack, @file, @buf, @buflen
+    %call :_compiler_read_expect, @file, @buf, @buflen, ']'
+    %call :_lex_peek, @file, 0, 0
+    eq @ret, '='
+    jump? .store
     %call :_compiler_out, &"    pop @tmp0\n"
     %call :_compiler_out, &"    pop @tmp1\n"
     eq @last_size, 4
@@ -321,7 +324,32 @@
     %call :_compiler_out, &"    ld.d @tmp0, [@tmp0]\n"
 .load_done
     %call :_compiler_out, &"    push @tmp0\n"
-    %call :_compiler_read_expect, @file, @buf, @buflen, ']'
+    jump .done
+.store
+    %call :_compiler_read_expect, @file, @buf, @buflen, '='
+    eq @last_size, 4
+    jump? .store_d
+    %call :_compiler_out, &"    pop @tmp0\n"
+    %call :_compiler_out, &"    pop @tmp1\n"
+    %call :_compiler_out, &"    add @tmp0, @tmp1\n"
+    %call :_compiler_out, &"    push @tmp0\n"
+    %call :_compile_expr_stack, @file, @buf, @buflen
+    %call :_compiler_out, &"    pop @tmp1\n"
+    %call :_compiler_out, &"    pop @tmp0\n"
+    %call :_compiler_out, &"    st.b [@tmp0], @tmp1\n"
+    jump .store_done
+.store_d
+    %call :_compiler_out, &"    pop @tmp0\n"
+    %call :_compiler_out, &"    mul @tmp0, 4\n"
+    %call :_compiler_out, &"    pop @tmp1\n"
+    %call :_compiler_out, &"    add @tmp0, @tmp1\n"
+    %call :_compiler_out, &"    push @tmp0\n"
+    %call :_compile_expr_stack, @file, @buf, @buflen
+    %call :_compiler_out, &"    pop @tmp1\n"
+    %call :_compiler_out, &"    pop @tmp0\n"
+    %call :_compiler_out, &"    st.d [@tmp0], @tmp1\n"
+.store_done
+    %call :_compiler_out, &"    push @tmp1\n"
     jump .done
 
 .bad_op

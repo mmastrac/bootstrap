@@ -10,6 +10,8 @@ int result_deref() {
     *ptr = 20;
     _test_assert_equal(ptr[0], 20, "ptr[0]");
     _test_assert_equal(*ptr, 20, "*ptr");
+    ptr[1] = 30;
+    _test_assert_equal(ptr[1], 30, "ptr[1]");
 
     _test_assert_equal(ptr_byte[0], 'a', "ptr_byte[0]");
     _test_assert_equal(ptr_byte[1], 'b', "ptr_byte[1]");
