@@ -94,7 +94,7 @@ echo Test 4
 ./vm $BUILD/t4.bin
 
 echo Test 4
-./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/tests/*.s $BUILD/t4.bin
+./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/rt/tests/*.s $BUILD/t4.bin
 ./vm $BUILD/t4.bin
 echo Test 4
 ./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/lex/lex.s $ROOT/bootstrap4/lex/lex_io.s $ROOT/bootstrap4/lex/tests/*.s $BUILD/t4.bin
