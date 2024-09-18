@@ -170,14 +170,14 @@
 	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
 	st.d [:_local_symbols], @ret
 	%call :_compile_function_args, @file, @buf1, @BUFFER_SIZE
-	%call :_compiler_out, &"    %%arg arg0\n"
-	%call :_compiler_out, &"    %%arg arg1\n"
-	%call :_compiler_out, &"    %%arg arg2\n"
-	%call :_compiler_out, &"    %%arg arg3\n"
-	%call :_compiler_out, &"    %%arg arg4\n"
-	%call :_compiler_out, &"    %%arg arg5\n"
-	%call :_compiler_out, &"    %%arg arg6\n"
-	%call :_compiler_out, &"    %%arg arg7\n"
+	%call :_compiler_out, &"    %%local _carg0\n"
+	%call :_compiler_out, &"    %%local _carg1\n"
+	%call :_compiler_out, &"    %%local _carg2\n"
+	%call :_compiler_out, &"    %%local _carg3\n"
+	%call :_compiler_out, &"    %%local _carg4\n"
+	%call :_compiler_out, &"    %%local _carg5\n"
+	%call :_compiler_out, &"    %%local _carg6\n"
+	%call :_compiler_out, &"    %%local _carg7\n"
 	%call :_compile_block, @file, @buf1, @BUFFER_SIZE
 	%call :_compiler_out, &"    %%ret\n"
 	%call :_teardown_locals

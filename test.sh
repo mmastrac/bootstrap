@@ -115,6 +115,8 @@ echo Compile 4
 echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_deref.c $BUILD/b4/test_deref.s
 echo Compile 4
+./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_fn_args.c $BUILD/b4/test_fn_args.s
+echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_fn_in_fn.c $BUILD/b4/test_fn_in_fn.s
 echo Compile 4
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler0/tests/test_for.c $BUILD/b4/test_for.s
@@ -142,24 +144,27 @@ echo Compile 4
 echo Compile 4-1
 mkdir $BUILD/b4-1
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/rt/heap.c $BUILD/b4-1/heap.s
-./vm $BUILD/b3.bin -l -I $ROOT/include $BUILD/b4-1/*.s $BUILD/b4-1.bin
+./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/rt/crt1.c $BUILD/b4-1/crt1.s
+./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/rt/printf.c $BUILD/b4-1/printf.s
+./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/string.s $ROOT/bootstrap4/compiler1/rt/*.s $BUILD/b4-1/*.s $BUILD/b4-1.bin
 
+./vm $BUILD/b4-1.bin
 
-echo Compile 4-1
-./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/main.c $BUILD/b4/compiler1_main.s
-./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/lex.c $BUILD/b4/compiler1_lex.s
-./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/compile_file.c $BUILD/b4/compiler1_compile_file.s
-./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/struct.c $BUILD/b4/compiler1_struct.s
-./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/types.c $BUILD/b4/compiler1_types.s
-mkdir $BUILD/b4/t
-./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/tests/tests.c $BUILD/b4/t/tests.s
-./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/tests/test_lex.c $BUILD/b4/t/test_lex.s
-./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/lex/*.s $BUILD/b4/compiler1_*.s $BUILD/b4/t/*.s $BUILD/b4/t/t.bin
-./vm $BUILD/b4/t/t.bin
-
-./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/lex/*.s $BUILD/b4/compiler1_*.s $BUILD/b4-1.bin
-
-echo Compile 4-1
-mkdir $BUILD/b4-1
-./vm $BUILD/b4-1.bin $ROOT/bootstrap4/compiler1/tests/test_simple.c $BUILD/b4-1/test_struct.s
-echo Done
+#echo Compile 4-1
+#./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/main.c $BUILD/b4/compiler1_main.s
+#./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/lex.c $BUILD/b4/compiler1_lex.s
+#./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/compile_file.c $BUILD/b4/compiler1_compile_file.s
+#./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/struct.c $BUILD/b4/compiler1_struct.s
+#./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/types.c $BUILD/b4/compiler1_types.s
+#mkdir $BUILD/b4/t
+#./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/tests/tests.c $BUILD/b4/t/tests.s
+#./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/tests/test_lex.c $BUILD/b4/t/test_lex.s
+#./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/lex/*.s $BUILD/b4/compiler1_*.s $BUILD/b4/t/*.s $BUILD/b4/t/t.bin
+#./vm $BUILD/b4/t/t.bin
+#
+#./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/lex/*.s $BUILD/b4/compiler1_*.s $BUILD/b4-1.bin
+#
+#echo Compile 4-1
+#mkdir $BUILD/b4-1
+#./vm $BUILD/b4-1.bin $ROOT/bootstrap4/compiler1/tests/test_simple.c $BUILD/b4-1/test_struct.s
+#echo Done

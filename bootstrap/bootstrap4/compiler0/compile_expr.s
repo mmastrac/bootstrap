@@ -8,13 +8,14 @@
     dd @TOKEN_LE_OP, &"    gt @tmp0, @tmp1\n    mov @tmp0, 0\n    mov^ @tmp0, 1"
     dd @TOKEN_LEFT_OP, &""
     dd @TOKEN_RIGHT_OP, &""
-    dd @TOKEN_AND_OP, &""
-    dd @TOKEN_OR_OP, &""
+    dd @TOKEN_AND_OP, &"    and @tmp0, @tmp1"
+    dd @TOKEN_OR_OP, &"    or @tmp0, @tmp1"
     dd '<', &"    lt @tmp0, @tmp1\n    mov @tmp0, 1\n    mov^ @tmp0, 0"
     dd '>', &"    gt @tmp0, @tmp1\n    mov @tmp0, 1\n    mov^ @tmp0, 0"
     dd '+', &"    add @tmp0, @tmp1"
     dd '-', &"    sub @tmp0, @tmp1"
     dd '/', &"    div @tmp0, @tmp1"
+    dd '%', &"    mod @tmp0, @tmp1"
     dd '*', &"    mul @tmp0, @tmp1"
     dd '|', &""
     dd '&', &""
@@ -197,7 +198,7 @@
     %call :_compiler_out, &"# call %s\n", @buf
     %call :_compiler_out, &"    jump .setup_args_1_%d\n", @label
     %call :_compiler_out, &".setup_args_2_%d\n", @label
-    %call :_compiler_out, &"    %%call :%s, @arg0, @arg1, @arg2, @arg3, @arg4, @arg5, @arg6, @arg7\n", @buf
+    %call :_compiler_out, &"    %%call :%s, @_carg0, @_carg1, @_carg2, @_carg3, @_carg4, @_carg5, @_carg6, @_carg7\n", @buf
     %call :_compiler_out, &"    push @ret\n"
     %call :_compiler_out, &"    jump .setup_args_3_%d\n", @label
     %call :_compiler_out, &".setup_args_1_%d\n", @label
@@ -221,7 +222,7 @@
     eq @arg_count, 0
     jump? .call_args_done
     sub @arg_count, 1
-    %call :_compiler_out, &"    pop @arg%d\n", @arg_count
+    %call :_compiler_out, &"    pop @_carg%d\n", @arg_count
     jump .call_done
 .call_args_done
     %call :_compiler_read_expect, @file, @buf, @buflen, ')'
