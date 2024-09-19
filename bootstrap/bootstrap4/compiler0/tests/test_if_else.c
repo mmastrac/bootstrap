@@ -14,5 +14,5 @@ int result_if_else() {
             result = result + 5;
         }
     }
-    return result + (42 - (1 + 2 + 3 + 4 + 5 + 5 + 5 + 5 + 5 + 5));
+    return result + (42 - (1 + (2 + (3 + (4 + (5 + (5 + (5 + (5 + (5 + 5))))))))));
 }

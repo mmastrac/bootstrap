@@ -92,6 +92,8 @@
     jump? .done
     eq @ret, ','
     jump? .comma
+    eq @ret, @TOKEN_ELLIPSIS
+    jump? .comma
 
     %call :_compile_function_type, @file, @buf, @buflen
     mov @size, @ret

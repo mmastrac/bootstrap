@@ -24,6 +24,9 @@
 :_binary_expressions
     dd 0
 
+:_binary_op_allowed
+    dd 0
+
 :_compile_next_label
     dd 0
 
@@ -43,6 +46,8 @@
     %arg buf
     %arg buflen
 
+    mov @tmp0, 1
+    st.d [:_binary_op_allowed], @tmp0
     %call :_compile_expr_stack, @file, @buf, @buflen
     %call :_compiler_out, &"    pop @ret\n", @buf
     %ret
@@ -93,6 +98,11 @@
     dd @TOKEN_NONE, .error
 
 .unary_not
+    ld.d @tmp0, [:_binary_op_allowed]
+    push @tmp0
+    mov @tmp0, 0
+    st.d [:_binary_op_allowed], @tmp0
+
     %call :_lex, @file, @buf, @buflen
     %call :_compiler_out, &"# unary neg\n"
     %call :_compile_expr_stack, @file, @buf, @buflen
@@ -101,9 +111,18 @@
     %call :_compiler_out, &"    mov? @tmp0, 1\n"
     %call :_compiler_out, &"    mov^ @tmp0, 0\n"
     %call :_compiler_out, &"    push @tmp0\n"
+
+    pop @tmp0
+    st.d [:_binary_op_allowed], @tmp0
+
     jump .done
 
 .unary_neg
+    ld.d @tmp0, [:_binary_op_allowed]
+    push @tmp0
+    mov @tmp0, 0
+    st.d [:_binary_op_allowed], @tmp0
+
     %call :_lex, @file, @buf, @buflen
     %call :_compiler_out, &"# unary neg\n"
     %call :_compile_expr_stack, @file, @buf, @buflen
@@ -111,12 +130,25 @@
     %call :_compiler_out, &"    mov @tmp1, 0\n"
     %call :_compiler_out, &"    sub @tmp1, @tmp0\n"
     %call :_compiler_out, &"    push @tmp1\n"
+
+    pop @tmp0
+    st.d [:_binary_op_allowed], @tmp0
+
     jump .done
 
 .unary_address_of
+    ld.d @tmp0, [:_binary_op_allowed]
+    push @tmp0
+    mov @tmp0, 0
+    st.d [:_binary_op_allowed], @tmp0
+
     %call :_lex, @file, @buf, @buflen
     %call :_lex, @file, @buf, @buflen
     %call :_compiler_out, &"    push [:%s]\n", @buf
+
+    pop @tmp0
+    st.d [:_binary_op_allowed], @tmp0
+
     jump .done
 
 .paren
@@ -130,7 +162,33 @@
 
 .string_literal
     %call :_lex, @file, @buf, @buflen
-    %call :_compiler_out, &"    push &\"%s\"\n", @buf
+    %call :_compiler_out, &"    push &\""
+    mov @tmp0, 0
+.string_loop
+    ld.b @tmp1, [@buf]
+    eq @tmp1, 0
+    jump? .string_loop_end
+    eq @tmp1, 10
+    jump? .escape_n
+    eq @tmp1, 13
+    jump? .escape_r
+    eq @tmp1, '"'
+    jump? .escape_quote
+    %call :_compiler_out, &"%c", @tmp1
+    jump .string_loop_continue
+.escape_n
+    %call :_compiler_out, &"\\n"
+    jump .string_loop_continue
+.escape_r
+    %call :_compiler_out, &"\\r"
+    jump .string_loop_continue
+.escape_quote
+    %call :_compiler_out, &"\\\""
+.string_loop_continue
+    add @buf, 1
+    jump .string_loop
+.string_loop_end
+    %call :_compiler_out, &"\"\n"
     jump .done
 
 .identifier
@@ -192,18 +250,16 @@
     jump .done
 
 .call
-    %call :_compile_get_next_label
-    mov @label, @ret
+    sub @sp, 32
+    mov @label, @sp
+    %call :_strcpy, @label, @buf
     mov @arg_count, 0
     %call :_compiler_out, &"# call %s\n", @buf
-    %call :_compiler_out, &"    jump .setup_args_1_%d\n", @label
-    %call :_compiler_out, &".setup_args_2_%d\n", @label
-    %call :_compiler_out, &"    %%call :%s, @_carg0, @_carg1, @_carg2, @_carg3, @_carg4, @_carg5, @_carg6, @_carg7\n", @buf
-    %call :_compiler_out, &"    push @ret\n"
-    %call :_compiler_out, &"    jump .setup_args_3_%d\n", @label
-    %call :_compiler_out, &".setup_args_1_%d\n", @label
     %call :_compiler_read_expect, @file, @buf, @buflen, '('
 .call_loop
+    mov @tmp0, 1
+    st.d [:_binary_op_allowed], @tmp0
+
     %call :_lex_peek, @file, 0, 0
     eq @ret, ')'
     jump? .call_done
@@ -211,7 +267,6 @@
     jump? .call_comma
     %call :_compiler_out, &"# arg\n"
     %call :_compile_expr_stack, @file, @buf, @buflen
-    %call :_compiler_out, &"# arg\n"
     add @arg_count, 1
     jump .call_loop
 .call_comma
@@ -219,15 +274,41 @@
     %call :_compiler_read_expect, @file, @buf, @buflen, ','
     jump .call_loop
 .call_done
-    eq @arg_count, 0
-    jump? .call_args_done
-    sub @arg_count, 1
-    %call :_compiler_out, &"    pop @_carg%d\n", @arg_count
-    jump .call_done
-.call_args_done
     %call :_compiler_read_expect, @file, @buf, @buflen, ')'
-    %call :_compiler_out, &"    jump .setup_args_2_%d\n", @label
-    %call :_compiler_out, &".setup_args_3_%d\n", @label
+    
+    # Pop each arg, starting from the last one
+    push @arg_count
+.assign_args_loop
+    eq @arg_count, 0
+    jump? .assign_args_done
+    mov @tmp0, @arg_count
+    sub @tmp0, 1
+    %call :_compiler_out, &"    pop @_carg%d\n", @tmp0
+    sub @arg_count, 1
+    jump .assign_args_loop
+.assign_args_done
+    pop @arg_count
+
+    # Now call the function
+    %call :_compiler_out, &"    %%call :%s ", @label
+
+    mov @label, 0
+
+.write_args_loop
+    eq @label, @arg_count
+    jump? .write_args_done
+    %call :_compiler_out, &"@_carg%d", @label
+    add @label, 1
+    eq @label, @arg_count
+    jump? .write_args_done
+    %call :_compiler_out, &", "
+    jump .write_args_loop
+.write_args_done
+
+    %call :_compiler_out, &"\n"  
+    %call :_compiler_out, &"    push @ret\n"
+
+    add @sp, 32
     jump .done
 
 .assign
@@ -290,24 +371,40 @@
     eq @ret, '['
     jump? .load
     %call :_compiler_out, &"# operator '%s'\n", @buf
+    # Check for invalid nesting
+    ld.d @tmp0, [:_binary_op_allowed]
+    eq @tmp0, 0
+    jump? .no_binary_op
+    mov @tmp0, 0
+    st.d [:_binary_op_allowed], @tmp0
     # Do the RHS
     %call :_compile_expr_stack, @file, @buf, @buflen
     # Pop both sides
     %call :_compiler_out, &"    pop @tmp1\n"
     %call :_compiler_out, &"    pop @tmp0\n"
-    %call :_ht_lookup, @ht, @saved_op
+    %call :_ht_lookup, @ht, @saved_op   
     eq @ret, 0
     jump? .bad_op
     mov @buf, @ret
     %call :_compiler_out, &"%s\n", @buf
     %call :_compiler_out, &"    push @tmp0\n"
+    mov @tmp0, 1
+    st.d [:_binary_op_allowed], @tmp0
 
 .return
     %call :_compiler_out, &"# expr end\n"
     %ret
 
+.no_binary_op
+    %call :_fatal, &"Nested binary operations must be parenthesized\n"
+    %ret
+
 .load
+    mov @tmp0, 1
+    st.d [:_binary_op_allowed], @tmp0
     %call :_compile_expr_stack, @file, @buf, @buflen
+    mov @tmp0, 1
+    st.d [:_binary_op_allowed], @tmp0
     %call :_compiler_read_expect, @file, @buf, @buflen, ']'
     %call :_lex_peek, @file, 0, 0
     eq @ret, '='
@@ -360,6 +457,9 @@
     %arg file
     %arg buf
     %arg buflen
+
+    mov @tmp0, 1
+    st.d [:_binary_op_allowed], @tmp0
 
     %call :_compiler_read_expect, @file, @buf, @buflen, '('
     %call :_compile_expr_stack, @file, @buf, @buflen

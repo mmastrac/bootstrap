@@ -14,6 +14,6 @@ int result_inited() {
     _test_assert_equal(global_char[1], 'b', "global_char[1]");
     _test_assert_equal(global_char[2], 'c', "global_char[2]");
 
-    result = global_int[0] + global_int[1] + global_int[2] - 18;
+    result = global_int[0] + (global_int[1] + (global_int[2] - 18));
     return result;
 }

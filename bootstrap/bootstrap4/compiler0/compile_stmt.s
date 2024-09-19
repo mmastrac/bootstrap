@@ -1,6 +1,9 @@
 #include "regs.h"
 #include "../bootstrap4/lex/lex.h"
 
+:_function_has_saved_stack
+    dd 0
+
 :_compile_block
     %arg file
     %arg buf
@@ -51,8 +54,21 @@
     jump .done
 
 .expr
+    %call :_strcmp, @buf, &"__asm__"
+    eq @ret, 0
+    jump? .asm
     %call :_compile_expr_ret, @file, @buf, @buflen
     %call :_compiler_read_expect, @file, @buf, @buflen, ';'
+    jump .done
+
+.asm
+    %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_IDENTIFIER
+    %call :_compiler_read_expect, @file, @buf, @buflen, '('
+    %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_STRING_LITERAL
+    %call :_compiler_out, &"%s\n", @buf
+    %call :_compiler_read_expect, @file, @buf, @buflen, ')'
+    %call :_compiler_read_expect, @file, @buf, @buflen, ';'
+
     jump .done
 
 .return
@@ -203,6 +219,12 @@
     # This will leave the return value in @ret
     %call :_compile_expr_ret, @file, @buf, @buflen
 .just_return
+	ld.d @tmp0, [:_function_has_saved_stack]
+	eq @tmp0, 0
+	jump? .return_no_stack
+	%call :_compiler_out, &"    pop @tmp0\n"
+	%call :_compiler_out, &"    mov @sp, @tmp0\n"
+.return_no_stack
     %call :_compiler_out, &"    %%ret\n"
     %call :_compiler_read_expect, @file, @buf, @buflen, ';'
     %ret
@@ -213,6 +235,10 @@
     %arg buflen
     %local label
     %local size
+
+    ld.d @tmp0, [:_function_has_saved_stack]
+    eq @tmp0, 1
+    jump? .no_locals_after_array
 
     %call :_compile_function_type, @file, @buf, @buflen
     mov @size, @ret
@@ -226,6 +252,8 @@
 .no_shadow
     %call :_compiler_out, &"    %%local %s\n", @buf
     %call :_lex_peek, @file, 0, 0
+    eq @ret, '['
+    jump? .local_array
     eq @ret, '='
     jump^ .done
 
@@ -241,8 +269,28 @@
     %call :_compile_expr_ret, @file, @buf, @buflen
     %call :_compiler_out, &"    jump .assign_value_2_%d\n", @label
     %call :_compiler_out, &".assign_value_3_%d\n", @label
+    jump .done
+
+.local_array
+    mov @tmp0, 1
+    st.d [:_function_has_saved_stack], @tmp0
+
+    sub @sp, 32
+    %call :_strcpy, @sp, @buf
+    %call :_compiler_read_expect, @file, 0, 0, '['
+    %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_CONSTANT
+    %call :_compiler_read_expect, @file, 0, 0, ']'
+    %call :_compiler_out, &"    mov @tmp0, @sp\n"
+    %call :_compiler_out, &"    mov @tmp1, %s\n", @buf
+    %call :_compiler_out, &"    mul @tmp1, %d\n", @size
+    %call :_compiler_out, &"    sub @sp, @tmp1\n"
+    %call :_compiler_out, &"    mov @%s, @sp\n", @sp
+    %call :_compiler_out, &"    push @tmp0\n"
+    add @sp, 32
 
 .done
     %call :_compiler_read_expect, @file, @buf, @buflen, ';'
-
     %ret
+
+.no_locals_after_array
+    %call :_fatal, &"No locals may appear after an array local\n"

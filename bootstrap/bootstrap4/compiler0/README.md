@@ -17,6 +17,8 @@ This `compiler0` stage supports:
  * Local variables (defined top-of-function, simple integer or string expression initialization allowed) and function args
     * `int sum = 10 * 2;`
     * `char* string = "hello world";`
+ * Local array variables (one per function, must be the last local defined and no initializers allowed)
+    * `char buffer[512]`
  * Basic globals (int-style) with optional constant/array initializers only. `extern` is also supported for assembly interop.
     * `int x = 2;`
     * `int numbers[] = { 1, 2, 3 };`

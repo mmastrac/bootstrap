@@ -141,12 +141,15 @@ echo Compile 4
 echo Compile 4
 ./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/*.s $ROOT/bootstrap4/compiler0/tests/*.s $BUILD/b4/test_*.s $BUILD/t4_0.bin
 ./vm $BUILD/t4_0.bin
+
 echo Compile 4-1
 mkdir $BUILD/b4-1
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/rt/heap.c $BUILD/b4-1/heap.s
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/rt/crt1.c $BUILD/b4-1/crt1.s
 ./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/rt/printf.c $BUILD/b4-1/printf.s
-./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/rt/string.s $ROOT/bootstrap4/compiler1/rt/*.s $BUILD/b4-1/*.s $BUILD/b4-1.bin
+./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/compile_expr.c $BUILD/b4-1/compile_expr.s
+./vm $BUILD/t4.bin $ROOT/bootstrap4/compiler1/compile_util.c $BUILD/b4-1/compile_util.s
+./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap4/lex/*.s $ROOT/bootstrap4/rt/string.s $ROOT/bootstrap4/rt/hash_table.s $ROOT/bootstrap4/rt/struct.s $ROOT/bootstrap4/rt/io.s $ROOT/bootstrap4/rt/sys.s $ROOT/bootstrap4/rt/linked_list.s $ROOT/bootstrap4/compiler1/rt/*.s $BUILD/b4-1/*.s $BUILD/b4-1.bin
 
 ./vm $BUILD/b4-1.bin
 

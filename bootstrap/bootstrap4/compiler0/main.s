@@ -164,12 +164,15 @@
     %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, ';'
 	jump .loop
 
-
 .fn
 	%call :_track_global, @buf1, @size
 	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
 	st.d [:_local_symbols], @ret
 	%call :_compile_function_args, @file, @buf1, @BUFFER_SIZE
+	%call :_lex_peek, @file, 0, 0
+	# Abort on forward declarations
+	eq @ret, ';'
+	jump? .fn_forward
 	%call :_compiler_out, &"    %%local _carg0\n"
 	%call :_compiler_out, &"    %%local _carg1\n"
 	%call :_compiler_out, &"    %%local _carg2\n"
@@ -178,15 +181,28 @@
 	%call :_compiler_out, &"    %%local _carg5\n"
 	%call :_compiler_out, &"    %%local _carg6\n"
 	%call :_compiler_out, &"    %%local _carg7\n"
+	mov @tmp0, 0
+	st.d [:_function_has_saved_stack], @tmp0
 	%call :_compile_block, @file, @buf1, @BUFFER_SIZE
+	ld.d @tmp0, [:_function_has_saved_stack]
+	eq @tmp0, 0
+	jump? .fn_no_stack
+	%call :_compiler_out, &"    pop @tmp0\n"
+	%call :_compiler_out, &"    mov @sp, @tmp0\n"
+.fn_no_stack
 	%call :_compiler_out, &"    %%ret\n"
 	%call :_teardown_locals
+	jump .loop
+.fn_forward
+    %call :_compiler_read_expect, @file, @buf1, @BUFFER_SIZE, ';'
+	%call :_compiler_out, &"# forward\n"
 	jump .loop
 
 .done
 	%call :_compiler_out, &"# EOF\n"
 	mov @ret, 0
 	%ret
+
 
 .error
 	%call :_compiler_out, &"# Error\n"
