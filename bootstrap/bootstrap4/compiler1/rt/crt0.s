@@ -7,4 +7,4 @@
 	sys r0
 	mov @sp, r0
 	sub @sp, 4
-    jump :_start1
+    jump :__start1

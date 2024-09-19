@@ -5,7 +5,7 @@ char* __digit_buffer = "....................";
 
 int fputchar(char c) {
     __fputchar_buffer[0] = c;
-    _syscall_write(__print_function_data, __fputchar_buffer, 1);
+    syscall_write(__print_function_data, __fputchar_buffer, 1);
 }
 
 void __printf_putchar(char c) {

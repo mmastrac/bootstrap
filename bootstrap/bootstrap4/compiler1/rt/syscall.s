@@ -63,6 +63,3 @@
     sys @tmp0 r0 r1 r2
     mov @ret, @tmp0
     ret
-
-:__program_end__
-    dd :__END__

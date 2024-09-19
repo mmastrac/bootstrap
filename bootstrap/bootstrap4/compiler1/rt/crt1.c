@@ -1,10 +1,17 @@
 void fatal(char* message) {
-    _syscall_write(2, message, _strlen(message));
-    _syscall_write(2, "\n", 1);
-    _syscall_exit(1);
+    syscall_write(2, message, strlen(message));
+    syscall_write(2, "\n", 1);
+    syscall_exit(1);
+}
+
+int main() {
+    int array[10];
 }
 
 void _start1() {
-    init_heap();
-    _syscall_exit(0);
+    int program_end;
+    __asm__("mov @program_end, :__END__");
+    init_heap(program_end);
+    main();
+    syscall_exit(0);
 }

@@ -1,4 +1,3 @@
-#define HEAP_SIZE 1000000
 #define ALIGN 4
 #define HEADER_SIZE 8
 
@@ -20,14 +19,15 @@
 
 int* heap;
 int* freep = 0;
-extern int __program_end__;
 
-void init_heap() {
-    int memsize = _syscall_getmemsize();
-    int heap_size = (memsize - STACK_SIZE) - __program_end__;
+void init_heap(int program_end) {
+    int memsize = syscall_getmemsize();
+    int heap_size;
+    
+    heap_size = (memsize - STACK_SIZE) - program_end;
 
     heap_size = heap_size / HEADER_SIZE;
-    heap = __program_end__;
+    heap = program_end;
 
     heap[BLOCK_NEXT_IDX] = heap; // Initialize ptr to itself (circular list)
     heap[BLOCK_SIZE_IDX] = heap_size; // Initialize size to full heap
@@ -36,7 +36,7 @@ void init_heap() {
 }
 
 // Function to allocate memory
-void* _malloc(unsigned nbytes) {
+void* malloc(unsigned nbytes) {
     int* p;
     int* prevp;
     unsigned nunits;
@@ -48,7 +48,7 @@ void* _malloc(unsigned nbytes) {
     // A unit is the smallest allocatable block of memory, which is equal to HEADER_SIZE (8 bytes).
     // This ensures that all allocations are aligned to 8-byte boundaries and can fit at least
     // one header (for free list management).
-    nunits = ((nbytes + HEADER_SIZE - 1) / HEADER_SIZE) + 1;
+    nunits = ((nbytes + (HEADER_SIZE - 1)) / HEADER_SIZE) + 1;
 
     prevp = freep;
 
