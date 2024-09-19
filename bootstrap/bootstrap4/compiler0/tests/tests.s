@@ -21,87 +21,87 @@
 	dd 0, 0
 
 :_compile_test_basic
-    %call :result_basic
+    %call :_result_basic
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_binary
-    %call :result_binary
+    %call :_result_binary
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_char_literal
-    %call :result_char_literal
+    %call :_result_char_literal
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_compare
-    %call :result_compare
+    %call :_result_compare
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_deref
-    %call :result_deref
+    %call :_result_deref
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_fib
-    %call :result_fib
+    %call :_result_fib
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_fn_args
-    %call :result_fn_args
+    %call :_result_fn_args
     %call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_fn_in_fn
-    %call :result_fn_in_fn
+    %call :_result_fn_in_fn
     %call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_for
-    %call :result_for
+    %call :_result_for
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_function
-    %call :result_function
+    %call :_result_function
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_global
-    %call :result_global
+    %call :_result_global
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_if_else
-    %call :result_if_else
+    %call :_result_if_else
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_include
-    %call :result_include
+    %call :_result_include
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_inited
-    %call :result_inited
+    %call :_result_inited
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_local
-    %call :result_local
+    %call :_result_local
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_string_literal
-    %call :result_string_literal
+    %call :_result_string_literal
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 
 :_compile_test_unary
-    %call :result_unary
+    %call :_result_unary
 	%call :_test_assert_equal, @ret, 42, &"Expected 42"
     %ret
 

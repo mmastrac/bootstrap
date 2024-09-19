@@ -126,7 +126,7 @@
 	eq @token, @TOKEN_IDENTIFIER
 	jump^ .error
 
-	%call :_compiler_out, &"# global %s\n:%s\n", @buf1, @buf1
+	%call :_compiler_out, &"# global %s\n:_%s\n", @buf1, @buf1
 
 	%call :_lex_peek, @file, 0, 0
 	eq @ret, '('

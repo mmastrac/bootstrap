@@ -144,7 +144,7 @@
 
     %call :_lex, @file, @buf, @buflen
     %call :_lex, @file, @buf, @buflen
-    %call :_compiler_out, &"    push [:%s]\n", @buf
+    %call :_compiler_out, &"    push [:_%s]\n", @buf
 
     pop @tmp0
     st.d [:_binary_op_allowed], @tmp0
@@ -209,7 +209,7 @@
     %call :_compiler_out, &"    push @%s\n", @buf
     jump .done
 .identifier_global
-    %call :_compiler_out, &"    push [:%s]\n", @buf
+    %call :_compiler_out, &"    push [:_%s]\n", @buf
     jump .done
 .identifier_not_found
     %call :_fatal, &"Undefined variable in assignment\n"
@@ -230,7 +230,7 @@
     %call :_compiler_out, &"    mov @tmp0, @%s\n", @buf
     jump .deref_done
 .deref_identifier_global
-    %call :_compiler_out, &"    mov @tmp0, [:%s]\n", @buf
+    %call :_compiler_out, &"    mov @tmp0, [:_%s]\n", @buf
     jump .deref_done
 .deref_done
     %call :_lex_peek, @file, 0, 0
@@ -290,7 +290,7 @@
     pop @arg_count
 
     # Now call the function
-    %call :_compiler_out, &"    %%call :%s ", @label
+    %call :_compiler_out, &"    %%call :_%s ", @label
 
     mov @label, 0
 
@@ -323,7 +323,7 @@
     %call :_compiler_out, &"    mov @%s, @ret\n", @buf
     jump .assign_finish
 .assign_global
-    %call :_compiler_out, &"    st.d [:%s], @ret\n", @buf
+    %call :_compiler_out, &"    st.d [:_%s], @ret\n", @buf
 .assign_finish
     %call :_compiler_out, &"    push @ret\n", @buf
     %call :_compiler_out, &"    jump .assign_value_3_%d\n", @label
