@@ -75,6 +75,7 @@
 	dd &"...",	@TOKEN_ELLIPSIS
 	dd &">>=",	@TOKEN_RIGHT_ASSIGN
 	dd &"<<=",	@TOKEN_LEFT_ASSIGN
+	dd &"..",   @TOKEN_ELLIPSIS # Small hack to fix bug lexing '...'
 	dd &"+=",	@TOKEN_ADD_ASSIGN
 	dd &"-=",	@TOKEN_SUB_ASSIGN
 	dd &"*=",	@TOKEN_MUL_ASSIGN
@@ -227,7 +228,6 @@
 	%ret
 #===========================================================================
 
-
 #===========================================================================
 # int _lex_string(lex_file* file, char* buffer, int buffer_length)
 #===========================================================================
@@ -236,15 +236,56 @@
 	%arg buffer
 	%arg buffer_length
 	%local mark
+	%local char
 
 	%call :__lex_read, @fd
 
 .loop
 	%call :__lex_read, @fd
-	eq @ret, '"'
+	mov @char, @ret
+	eq @char, 34
 	jump? .done
+	eq @char, 92
+	jump? .handle_escape
 
-	st.b [@buffer], @ret
+	st.b [@buffer], @char
+	add @buffer, 1
+	jump .loop
+
+.handle_escape
+	%call :__lex_read, @fd
+	mov @char, @ret
+	eq @char, 'n'
+	jump? .escape_newline
+	eq @char, 't'
+	jump? .escape_tab
+	eq @char, 34
+	jump? .escape_quote
+	eq @char, 92
+	jump? .escape_backslash
+
+	# If it's not a recognized escape, just store the character
+	st.b [@buffer], @char
+	add @buffer, 1
+	jump .loop
+
+.escape_newline
+	mov @char, 10  # ASCII for newline
+	jump .store_escape
+
+.escape_tab
+	mov @char, 9   # ASCII for tab
+	jump .store_escape
+
+.escape_quote
+	mov @char, 34  # ASCII for double quote
+	jump .store_escape
+
+.escape_backslash
+	mov @char, 92  # ASCII for backslash
+
+.store_escape
+	st.b [@buffer], @char
 	add @buffer, 1
 	jump .loop
 
@@ -587,7 +628,7 @@
 	%ret^
 
 .not_operator
-	%call :_fatal, &"Unexpected character"
+	%call :_fatal, &"Unexpected character\n"
 
 .done
 	%ret

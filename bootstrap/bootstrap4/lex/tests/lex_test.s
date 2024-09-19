@@ -113,10 +113,14 @@
 	dd &"main"
 	dd '('
 	dd &"("
+	dd @TOKEN_ELLIPSIS
+	dd &"..."
 	dd ')'
 	dd &")"
 	dd '{'
 	dd &"{"
+	dd @TOKEN_STRING_LITERAL
+	dd &"this is a \"string\"!"
 	dd @TOKEN_RETURN
 	dd &"return"
 	dd @TOKEN_IDENTIFIER

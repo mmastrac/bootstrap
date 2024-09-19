@@ -190,7 +190,10 @@
 	%arg fd
 	%arg offset
 
-	%call :syscall4, @SC_READ, @fd, .buffer, 1
+	mov @ret, @SC_READ
+	mov @tmp0, .buffer
+	mov @tmp1, 1
+	sys @ret @fd @tmp0 @tmp1
 
 	eq @ret, 0
 	mov? @ret, @TOKEN_EOF
