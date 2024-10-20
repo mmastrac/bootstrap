@@ -1,5 +1,5 @@
 #include "regs.h"
-#include "../bootstrap5/lex/lex.h"
+#include "../lex/lex.h"
 
 :_compiler_out_fd
     # stdout by default

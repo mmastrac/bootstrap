@@ -1,7 +1,7 @@
 # Stage 0 compiler: we want to get enough C that we can move out of assembly land
 
 #include "regs.h"
-#include "../bootstrap5/lex/lex.h"
+#include "../lex/lex.h"
 
 #define BUFFER_SIZE 256
 

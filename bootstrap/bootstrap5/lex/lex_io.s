@@ -1,6 +1,6 @@
 #include "regs.h"
 #include "syscall.h"
-#include "../bootstrap5/lex/lex.h"
+#include "../lex/lex.h"
 
 #define LEX_INCLUDE_DIRS 0
 #define LEX_SIZE 4

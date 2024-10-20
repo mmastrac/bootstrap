@@ -1,5 +1,5 @@
 #include "regs.h"
-#include "../bootstrap5/lex/lex.h"
+#include "../lex/lex.h"
 
 #===========================================================================
 # Compiles a constant initializer as int-sized data statements.

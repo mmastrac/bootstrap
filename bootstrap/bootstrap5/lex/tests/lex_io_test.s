@@ -1,5 +1,5 @@
 #include "regs.h"
-#include "../bootstrap5/lex/lex.h"
+#include "../lex/lex.h"
 
 :_lex_io_test
 	dd :_lex_io_test_create, &"test_create"

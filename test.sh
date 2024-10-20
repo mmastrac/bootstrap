@@ -89,7 +89,7 @@ diff $TEST/bootstrap4/test6.bin $BUILD/t6.bin
 diff $TEST/bootstrap4/test7.bin $BUILD/t7.bin
 ./vm $OUT $TEST/bootstrap4/test8.s $BUILD/t8.bin
 diff $TEST/bootstrap4/test8.bin $BUILD/t8.bin
-./vm $OUT -I $ROOT/include $TEST/bootstrap4/test9.s $BUILD/t9.bin
+./vm $OUT -I $ROOT/bootstrap5/include $TEST/bootstrap4/test9.s $BUILD/t9.bin
 diff $TEST/bootstrap4/test9.bin $BUILD/t9.bin
 ./vm $OUT $TEST/bootstrap4/test10.s $BUILD/t10.bin
 diff $TEST/bootstrap4/test10.bin $BUILD/t10.bin
@@ -105,23 +105,23 @@ OUT0=$BUILD/b5-0.bin
 OUT1=$BUILD/b5-1.bin
 
 echo Test RT 5
-./vm $IN -l -I $ROOT/include $TEST/bootstrap5/test1.s $ROOT/bootstrap5/rt/crt0.s $ROOT/bootstrap5/rt/memory.s $ROOT/bootstrap5/rt/string.s $ROOT/bootstrap5/rt/sys.s $BUILD/t4.bin
+./vm $IN -l -I $ROOT/bootstrap5/include $TEST/bootstrap5/test1.s $ROOT/bootstrap5/rt/crt0.s $ROOT/bootstrap5/rt/memory.s $ROOT/bootstrap5/rt/string.s $ROOT/bootstrap5/rt/sys.s $BUILD/t4.bin
 ./vm $BUILD/t4.bin
-./vm $IN -l -I $ROOT/include $TEST/bootstrap5/test2.s $ROOT/bootstrap5/rt/crt0.s $ROOT/bootstrap5/rt/memory.s $ROOT/bootstrap5/rt/string.s $ROOT/bootstrap5/rt/sys.s $ROOT/bootstrap5/rt/dprintf.s $BUILD/t4.bin
+./vm $IN -l -I $ROOT/bootstrap5/include $TEST/bootstrap5/test2.s $ROOT/bootstrap5/rt/crt0.s $ROOT/bootstrap5/rt/memory.s $ROOT/bootstrap5/rt/string.s $ROOT/bootstrap5/rt/sys.s $ROOT/bootstrap5/rt/dprintf.s $BUILD/t4.bin
 ./vm $BUILD/t4.bin
-./vm $IN -l -I $ROOT/include $TEST/bootstrap5/test3.s $ROOT/bootstrap5/rt/crt0.s $ROOT/bootstrap5/rt/memory.s $ROOT/bootstrap5/rt/string.s $ROOT/bootstrap5/rt/sys.s $ROOT/bootstrap5/rt/dprintf.s $BUILD/t4.bin
+./vm $IN -l -I $ROOT/bootstrap5/include $TEST/bootstrap5/test3.s $ROOT/bootstrap5/rt/crt0.s $ROOT/bootstrap5/rt/memory.s $ROOT/bootstrap5/rt/string.s $ROOT/bootstrap5/rt/sys.s $ROOT/bootstrap5/rt/dprintf.s $BUILD/t4.bin
 ./vm $BUILD/t4.bin
-./vm $IN -l -I $ROOT/include $TEST/bootstrap5/test4.s $ROOT/bootstrap5/rt/crt0.s $ROOT/bootstrap5/rt/memory.s $ROOT/bootstrap5/rt/string.s $ROOT/bootstrap5/rt/sys.s $ROOT/bootstrap5/rt/dprintf.s $BUILD/t4.bin
+./vm $IN -l -I $ROOT/bootstrap5/include $TEST/bootstrap5/test4.s $ROOT/bootstrap5/rt/crt0.s $ROOT/bootstrap5/rt/memory.s $ROOT/bootstrap5/rt/string.s $ROOT/bootstrap5/rt/sys.s $ROOT/bootstrap5/rt/dprintf.s $BUILD/t4.bin
 ./vm $BUILD/t4.bin
 
 echo Test 5
-./vm $IN -l -I $ROOT/include $ROOT/bootstrap5/rt/*.s $ROOT/bootstrap5/rt/tests/*.s $BUILD/t4.bin
+./vm $IN -l -I $ROOT/bootstrap5/include $ROOT/bootstrap5/rt/*.s $ROOT/bootstrap5/rt/tests/*.s $BUILD/t4.bin
 ./vm $BUILD/t4.bin
-./vm $IN -l -I $ROOT/include $ROOT/bootstrap5/rt/*.s $ROOT/bootstrap5/lex/lex.s $ROOT/bootstrap5/lex/lex_io.s $ROOT/bootstrap5/lex/tests/*.s $BUILD/t4.bin
+./vm $IN -l -I $ROOT/bootstrap5/include $ROOT/bootstrap5/rt/*.s $ROOT/bootstrap5/lex/lex.s $ROOT/bootstrap5/lex/lex_io.s $ROOT/bootstrap5/lex/tests/*.s $BUILD/t4.bin
 ./vm $BUILD/t4.bin
 
 echo Compile 5
-./vm $IN -l -I $ROOT/include $ROOT/bootstrap5/rt/*.s $ROOT/bootstrap5/lex/*.s $ROOT/bootstrap5/compiler0/*.s $OUT0
+./vm $IN -l -I $ROOT/bootstrap5/include $ROOT/bootstrap5/rt/*.s $ROOT/bootstrap5/lex/*.s $ROOT/bootstrap5/compiler0/*.s $OUT0
 mkdir $BUILD/b4
 
 echo Compile 5
@@ -142,7 +142,7 @@ echo Compile 5
 ./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_local.c $BUILD/b4/test_local.s
 ./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_string_literal.c $BUILD/b4/test_string_literal.s
 ./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_unary.c $BUILD/b4/test_unary.s
-./vm $IN -l -I $ROOT/include $ROOT/bootstrap5/rt/*.s $ROOT/bootstrap5/compiler0/tests/*.s $BUILD/b4/test_*.s $BUILD/t4_0.bin
+./vm $IN -l -I $ROOT/bootstrap5/include $ROOT/bootstrap5/rt/*.s $ROOT/bootstrap5/compiler0/tests/*.s $BUILD/b4/test_*.s $BUILD/t4_0.bin
 ./vm $BUILD/t4_0.bin
 
 echo Compile 5-1
@@ -152,7 +152,7 @@ mkdir $BUILD/b4-1
 ./vm $OUT0 $ROOT/bootstrap5/compiler1/rt/printf.c $BUILD/b4-1/printf.s
 ./vm $OUT0 $ROOT/bootstrap5/compiler1/compile_expr.c $BUILD/b4-1/compile_expr.s
 ./vm $OUT0 $ROOT/bootstrap5/compiler1/compile_util.c $BUILD/b4-1/compile_util.s
-./vm $IN -l -I $ROOT/include $ROOT/bootstrap5/lex/*.s $ROOT/bootstrap5/rt/string.s $ROOT/bootstrap5/rt/hash_table.s $ROOT/bootstrap5/rt/struct.s $ROOT/bootstrap5/rt/io.s $ROOT/bootstrap5/rt/sys.s $ROOT/bootstrap5/rt/linked_list.s $ROOT/bootstrap5/compiler1/rt/*.s $BUILD/b4-1/*.s $OUT1
+./vm $IN -l -I $ROOT/bootstrap5/include $ROOT/bootstrap5/lex/*.s $ROOT/bootstrap5/rt/string.s $ROOT/bootstrap5/rt/hash_table.s $ROOT/bootstrap5/rt/struct.s $ROOT/bootstrap5/rt/io.s $ROOT/bootstrap5/rt/sys.s $ROOT/bootstrap5/rt/linked_list.s $ROOT/bootstrap5/compiler1/rt/*.s $BUILD/b4-1/*.s $OUT1
 
 ./vm $OUT1
 
