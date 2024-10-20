@@ -46,6 +46,15 @@ Stage goal: More readable source.
 VM ASCII. The goal of this stage is to get a slightly more readable
 `bootstrap1.s` compiled by ignoring any control character bytes (< 0x20).
 
+Enables:
+
+```
+=#0 0005
+=#1 0300
+=#2 1000
+S+012   
+```
+
 ### Stage 1
 
 Status: *complete* ✅
@@ -56,6 +65,18 @@ Stage goal: More readable source and "hand-linking"
 skips comments (lines starting with `#`) and allows the use of a colon address
 (ie: `:ABCD`) to seek the output file to a given hex offset. All "assembled"
 lines must start with a tab character.
+
+Enables:
+
+```
+:0200
+# Read a char
+	=#0 0001
+	= 1B
+	[=1a
+	=#2 0001
+	S+0812  
+```
 
 ### Stage 2
 
@@ -70,18 +91,42 @@ symbol resolution. Also supports constant-style symbols that can be defined via
 no less. Includes a few hard-coded stack manipulation macros in this stage to
 make nested function calls simpler.
 
+Enables:
+
+```
+# Read a char into R0
+:readone_
+	=$0 :curr_ifd
+	@call:load32__
+	=$1 :SC_READ_
+```
+
 ### Stage 3
 
 Status: *complete* ✅
 
 Stage goal: Textual instrutions, reasonable length labels
 
-[`bootstrap3.s`](bootstrap3/bootstrap3.s) ([README](bootstrap3/README.md)): A fully-featured, though
-based assembler with support for variable-length, two-level symbols (ie:
-`:global` + `.local`) and two-pass symbol resolution. Also supports
-constant-style symbols that can be defined via `=symbol__ ABCD`.
+[`bootstrap3.s`](bootstrap3/bootstrap3.s) ([README](bootstrap3/README.md)): A
+fully-featured, though based assembler with support for variable-length,
+two-level symbols (ie: `:global` + `.local`) and two-pass symbol resolution.
+Also supports constant-style symbols that can be defined via `=symbol__ ABCD`.
 
 Instructions are defined in textual format.
+
+Enables:
+
+```
+:read_token
+# Whitespace is ignored
+	call :readchar_skip_ws
+
+# Default jump table
+	push r0
+	ldc r0, .jump_table
+	push r0
+	call :jump_table
+```
 
 ### Stage 4
 
@@ -102,6 +147,19 @@ This assembler also allows for more complex macros that make procedure calls,
 arguments and locals much simpler. As part of this functionality, the compiler
 defines a calling convention that determines which registers are caller- or
 callee-saved.
+
+Enables:
+
+```
+:__lex_consume_identifier
+	%arg fd
+	%arg buffer
+	%arg buffer_length
+	%local mark
+
+	%call :__lex_read, @fd
+	st.b [@buffer], @ret
+```
 
 ### Stage 5
 
