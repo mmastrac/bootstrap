@@ -18,7 +18,7 @@
 #define LEX_TOKEN_PEEK_CHAR 12
 #define LEX_TOKEN_SIZE 16
 
-:__lex_hash_table_test_key_compare
+:__lex_hash_table_test_key_cmp
 	%arg a
 	%arg b
 	%call :_streq, @a, @b
@@ -131,7 +131,7 @@
 	mov @ll, @ret
 
 	# Allocate a hash table for the macros
-	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
+	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_cmp
 	mov @ht, @ret
 
 	%call :_store_record, @file, @LEX_FILE_LEX, @lex

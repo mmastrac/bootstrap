@@ -1045,6 +1045,9 @@
 	call :islabelc
 	jump^ .done____
 	pop r1
+	ldh rx, 001f
+	gt r1, rx
+	jump? .toolong
 	ldc rx, .buffer__
 	add rx, r1
 	stb [rx], r0
@@ -1061,6 +1064,13 @@
 	call :rewind__
 	ldc r0, .buffer__
 	ret
+.toolong
+	ldc r0, .buffer__
+	call :log_____
+	ldc r0, .toolong_msg
+	jump :error___
+.toolong_msg
+	data \0aLabel too long\00
 
 # This is enough for 32-byte labels/identifiers/strings
 .buffer__
@@ -1068,15 +1078,9 @@
 	data ________
 	data ________
 	data ________
+	db 0
 #===========================================================================
 
-
-# Syntax highlighters get confused by our unmatched brackets
-# This is an unfortunate necessity
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
 
 #===========================================================================
 # Returns:
@@ -1153,6 +1157,7 @@
 	data ________
 	data ________
 	data ________
+	db 0
 
 .errescap
 	data Invalid escape\00
@@ -1294,14 +1299,6 @@
 .errinvch
 	data Invalid immediate character\00
 #===========================================================================
-
-
-# Syntax highlighters get confused by our unmatched brackets
-# This is an unfortunate necessity
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
 
 #===========================================================================
 # Returns:
@@ -2174,14 +2171,6 @@
 	ret
 #===========================================================================
 
-# Syntax highlighters get confused by our unmatched brackets
-# This is an unfortunate necessity
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
-
-
 #===========================================================================
 # Returns:
 #   R0: Char (zero if EOF)
@@ -2944,15 +2933,6 @@
 	data Expected register or EOL\00
 #===========================================================================
 
-
-# Syntax highlighters get confused by our unmatched brackets
-# This is an unfortunate necessity
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
-
-
 #===========================================================================
 # Args:
 #   R1: The register index
@@ -3331,14 +3311,6 @@
 :readind_
 	call :readtok_
 	jump :encind__
-
-# Syntax highlighters get confused by our unmatched brackets
-# This is an unfortunate necessity
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
-
 
 #===========================================================================
 # The vast majority of opcodes can be encoded with this method.
@@ -3806,13 +3778,6 @@
 	ret
 .call_s__
 	data -!y\04=!x\08+ xz(=yx= zw
-
-# Syntax highlighters get confused by our unmatched brackets
-# This is an unfortunate necessity
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
-	data ]})]})]})]})]})]})]})]})
 
 # Instruction table
 :instruct

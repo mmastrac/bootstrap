@@ -76,7 +76,7 @@
 	mov @buf2, @ret
 
 # Create the globals hash table
-	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
+	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_cmp
 	st.d [:_global_symbols], @ret
 
 # Create the include list
@@ -166,7 +166,7 @@
 
 .fn
 	%call :_track_global, @buf1, @size
-	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
+	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_cmp
 	st.d [:_local_symbols], @ret
 	%call :_compile_function_args, @file, @buf1, @BUFFER_SIZE
 	%call :_lex_peek, @file, 0, 0

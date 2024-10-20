@@ -139,7 +139,7 @@
 	%call :__lex_confirm_file, &"bootstrap5/lex/tests/c/test.c", :__lex_test_tokens_expected
 	%ret
 
-:__lex_test_tokens_define_expected
+:__lex_test_tokens_define_expect
 	dd @TOKEN_CONSTANT
 	dd &"1"
 	dd @TOKEN_CONSTANT
@@ -149,10 +149,10 @@
 	dd 0
 
 :_lex_test_tokens_define
-	%call :__lex_confirm_file, &"bootstrap5/lex/tests/c/test_define.c", :__lex_test_tokens_define_expected
+	%call :__lex_confirm_file, &"bootstrap5/lex/tests/c/test_define.c", :__lex_test_tokens_define_expect
 	%ret
 
-:__lex_test_tokens_include_expected
+:__lex_test_tokens_include_expect
 	dd @TOKEN_CONSTANT
 	dd &"1"
 	dd @TOKEN_CONSTANT
@@ -162,5 +162,5 @@
 	dd 0
 
 :_lex_test_tokens_include
-	%call :__lex_confirm_file, &"bootstrap5/lex/tests/c/test_include.c", :__lex_test_tokens_include_expected
+	%call :__lex_confirm_file, &"bootstrap5/lex/tests/c/test_include.c", :__lex_test_tokens_include_expect
 	%ret

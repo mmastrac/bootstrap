@@ -123,14 +123,14 @@
 	st.d [@tmp0], 1
 
 	# Toss the string tokens into a hash table
-	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
+	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_cmp
 	mov @ht, @ret
 	mov @tmp0, :__lex_string_tokens_hash
 	st.d [@tmp0], @ht
 	%call :_ht_insert_table, @ht, :string_tokens
 
 	# Toss the multi-byte tokens into a hash table
-	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_compare
+	%call :_ht_init, :__lex_hash_table_test_key_hash, :__lex_hash_table_test_key_cmp
 	mov @ht, @ret
 	mov @tmp0, :__lex_multibyte_tokens_hash
 	st.d [@tmp0], @ht
