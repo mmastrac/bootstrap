@@ -1,11 +1,16 @@
-#include "syscall.h"
+# Test for global/local labels
 
-:_main
-	mov r0, 2
-	mov r1, :pass
-	call :_dprintf
-	sub r0, r0
-	ret
+:global_label
+mov r5, $1
 
-:pass
-	ds "Pass!" 10
+.local_label
+mov r0, .local_label
+
+:global_label2
+
+.local_label
+mov r0, .local_label
+
+mov r1, :global_label
+mov r1, :global_label2
+

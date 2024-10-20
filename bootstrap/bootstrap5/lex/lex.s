@@ -1,6 +1,6 @@
 	# C lexer, complete for C89
 
-# Can be linked against the basic parser in bootstrap4, or a more complete parser
+# Can be linked against the basic parser in bootstrap5, or a more complete parser
 # to generate assembly.
 
 # Assumes parser provides a method to disambiguate between an identifier or a type.
@@ -14,7 +14,7 @@
 #	ret
 
 #include "regs.h"
-#include "../bootstrap4/lex/lex.h"
+#include "../bootstrap5/lex/lex.h"
 
 #define TRUE 1
 #define FALSE 0

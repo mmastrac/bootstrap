@@ -1,5 +1,5 @@
 #include "regs.h"
-#include "../bootstrap4/lex/lex.h"
+#include "../bootstrap5/lex/lex.h"
 
 :_lex_io_test
 	dd :_lex_io_test_create, &"test_create"
@@ -16,7 +16,7 @@
 	mov @lex, @ret
 
 	# Open a file
-	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex/tests/c/test.c"
+	%call :__lex_open, @lex, &"bootstrap/bootstrap5/lex/tests/c/test.c"
 	mov @file, @ret
 
 	%call :__lex_read, @file
@@ -36,7 +36,7 @@
 	# Create the include list
 	%call :_ll_init
 	mov @ll, @ret
-	%call :_ll_create_node_int, &"bootstrap/bootstrap4/lex/tests"
+	%call :_ll_create_node_int, &"bootstrap/bootstrap5/lex/tests"
 	mov @node, @ret
 	%call :_ll_insert_head, @ll, @node
 
@@ -45,7 +45,7 @@
 	mov @lex, @ret
 
 	# Open a file
-	%call :__lex_open, @lex, &"bootstrap/bootstrap4/lex/tests/c/test.c"
+	%call :__lex_open, @lex, &"bootstrap/bootstrap5/lex/tests/c/test.c"
 	mov @file, @ret
 
 	%call :_lex_check_read, @file, &"int "

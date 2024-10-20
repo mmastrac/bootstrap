@@ -1,14 +1,9 @@
-#include "syscall.h"
+# Test for virtual ops
+#define sp r60
+mov @sp, 1000
+call :myfunc
+mov r0, 999
 
-:_main
-	push :pass
-	%call :_dprintf, 2, :string
-	pop r0
-	sub r0, r0
+:myfunc
+	mov r0, 123
 	ret
-
-:string
-	ds "%s!" 0xa
-
-:pass
-	ds "Pass"

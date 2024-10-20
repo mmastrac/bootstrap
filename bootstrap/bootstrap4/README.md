@@ -1,28 +1,46 @@
-# Stage-4 Bootstrap
+# Stage-4 bootstrap
 
-Stage 4 builds a basic C-like compiler that is used to bootstrap the final C compiler in stage 5.
+A "complete" assembler that allows input from multiple files, linked together to create an output
+executable. This assembler has a more natural, intel-like syntax.
 
 ## Functionality of this stage
 
-This stage contains multiple sub-stages where we bootstrap a compiler in assembly and gradually increase its complexity.
+The output for a given opcode from this assembler may or may not correspond to a single VM opcode. The compiler takes over one of the VM
+registers as a "compiler temporary", allowing us to create some CISC-style ops that drastically reduce instruction counts for various 
+types of operations.
 
-The lexer is written in assembly and used for both sub-stages. It handles C tokens and _very_ basic preprocessor declarations. It does
-not support complex macros at this time.
+This assembler also allows for more complex macros that make procedure calls, arguments and locals much simpler. As part of this 
+functionality, the compiler defines a calling convention that determines which registers are caller- or callee-saved.
 
-`bootstrap4` makes use of the assembly compiler and linker in `bootstrap3`, and does not emit assembly code directly. This allows us
-to build on top of a rich runtime with simple data structions and useful runtime functionality. One `.c` file is compiled to a single `.s`
-assembly output, then assembled with `bootstrap3`'s one-shot assembler and linker.
+## Assembly opcodes
 
-### `compiler0`
+TODO
 
-The `compiler0` sub-stage is a very basic C compiler written entirely in assembly language. It uses the lexer directly and emits
-equivalent, highly-unoptimized assembly from C-like code. It is very limited and cannot handle complex statements, expressions, and
-has serious limitations around arrays.
+## Calling convention
 
-### `compiler1`
+  - Argument registers (`r0`-`r7`) are not preserved across calls (caller-saved)
+  - Return values provided in r0 (32-bit) or r0+r1 (64-bit)
+  - Temporary registers (`r55`-`r58`) are not preserved across calls (caller-saved)
+  - `r59` is a compiler temporary used for compound operations
+  - `r60` is the stack pointer
+  - `r61` is the program counter
+  - All other registers must be restored to state before call
 
-The `compiler1` sub-stage is a much richer C compiler, written in C (though the dialect is limited to what `compiler0` supports). This
-sub-stage is powerful enough to compile the `bootstrap5` full C compiler, which is written in a subset of C89 and is also compilable
-by any standard C compiler.
+## Macros
 
-Ideally the C portion of `compiler1` should compile with a standard C compiler, but this is not a hard requirement. 
+Macros are prefixed with `%` to indicate that they are "local-variable" aware. `call` and `ret` both have non-macro versions that are not local-aware. If `ret` is used in the scope of a global label that uses `%local` or `%arg`, the compiler will throw an error.
+
+| Macro | Description | Example |
+|---|---|---|
+| `%call` `[args...]` | Saves the current PC to the stack, calls the function placing args in `r0`-`r7` | `%call :strlen @mystring`  |
+| `%tailcall` `[args...]` | Replaces the current stack frame with another function (equivalent to `%call` + `%ret`) | `%tailcall :strlen @mystring`  |
+| `%ret` `[register]` | Returns from a function, popping off any saved `%local`s or `%arg`s | `%ret r0` |
+| `%local` `[name...]` | Allocates local register(s), saving the previous value to the stack | `%local x, y` |
+| `%arg` `[name...]` | Allocates argument register(s), saving the previous value to the stack and copying the argument value to it | `%arg x, y` |
+
+## Linker symbols/macros
+
+The linker defines multiple special symbols that can be used for determining the size of stack frames and code.
+
+`:__END__` Points to the end of the binary in memory
+`@__LOCALS_SIZE__` Equal to size of locals on stack

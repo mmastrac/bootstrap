@@ -1,9 +1,6 @@
-# Test for virtual ops
-#define sp r60
-mov @sp, 1000
-call :myfunc
-mov r0, 999
+	ldc r0, :sub
+	call :sub
 
-:myfunc
-	mov r0, 123
+:sub
+	mov r0, r1
 	ret

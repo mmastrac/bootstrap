@@ -1,46 +1,64 @@
 # Stage-3 bootstrap
 
-A "complete" assembler that allows input from multiple files, linked together to create an output
-executable. This assembler has a more natural, intel-like syntax.
+Implements a full assembler that supports text-format instructions, macros, and
+labels up to 15 characters long.
 
-## Functionality of this stage
+## TODO
 
-The output for a given opcode from this assembler may or may not correspond to a single VM opcode. The compiler takes over one of the VM
-registers as a "compiler temporary", allowing us to create some CISC-style ops that drastically reduce instruction counts for various 
-types of operations.
+ - Multi-file support
+ - Multiple register push/pop
 
-This assembler also allows for more complex macros that make procedure calls, arguments and locals much simpler. As part of this 
-functionality, the compiler defines a calling convention that determines which registers are caller- or callee-saved.
+## Syntax
 
-## Assembly opcodes
+The first character read from a line determines the behaviour of this assembler:
 
-TODO
+ - `#`: Comment (ignore text until newline)
+ - `=abcd`: Defines a 2-byte (16-bit) hex constant
+ - `:abcdefgh`: Defines a global label
+ - `.abcdefgh`: Defines a local label (local to the enclosing global)
+ - `tab`: Assemble (copy) chars to output until a newline
+ - `newline`: Blank line, skipped
 
-## Calling convention
+## Instruction set
 
-  - Argument registers (`r0`-`r7`) are not preserved across calls (caller-saved)
-  - Return values provided in r0 (32-bit) or r0+r1 (64-bit)
-  - Temporary registers (`r55`-`r58`) are not preserved across calls (caller-saved)
-  - `r59` is a compiler temporary used for compound operations
-  - `r60` is the stack pointer
-  - `r61` is the program counter
-  - All other registers must be restored to state before call
-
-## Macros
-
-Macros are prefixed with `%` to indicate that they are "local-variable" aware. `call` and `ret` both have non-macro versions that are not local-aware. If `ret` is used in the scope of a global label that uses `%local` or `%arg`, the compiler will throw an error.
-
-| Macro | Description | Example |
-|---|---|---|
-| `%call` `[args...]` | Saves the current PC to the stack, calls the function placing args in `r0`-`r7` | `%call :strlen @mystring`  |
-| `%tailcall` `[args...]` | Replaces the current stack frame with another function (equivalent to `%call` + `%ret`) | `%tailcall :strlen @mystring`  |
-| `%ret` `[register]` | Returns from a function, popping off any saved `%local`s or `%arg`s | `%ret r0` |
-| `%local` `[name...]` | Allocates local register(s), saving the previous value to the stack | `%local x, y` |
-| `%arg` `[name...]` | Allocates argument register(s), saving the previous value to the stack and copying the argument value to it | `%arg x, y` |
-
-## Linker symbols/macros
-
-The linker defines multiple special symbols that can be used for determining the size of stack frames and code.
-
-`:__END__` Points to the end of the binary in memory
-`@__LOCALS_SIZE__` Equal to size of locals on stack
+| Instruction | Expansion | Notes |
+|-------------|-----------|-------|
+| `data ...` | `...` | Literal data. Use backslash hex for escapes (`\00`, `\ff`) |
+| `mov? r1, r2` | `=?12` | Loads a register from another |
+| `ldc r1,` | `=$1 ` | Load constant |
+| `ldh r1, 2345` | `=#1 2345` | Load high bits |
+| `ldb [r1], r2` | `=[12` | Load byte |
+| `ldw [r1], r2` | `={12` | Load word |
+| `ldd [r1], r2` | `=(12` | Load double word |
+| `stb [r1], r2` | `[=12` | Store byte |
+| `stw [r1], r2` | `{=12` | Store word |
+| `std [r1], r2` | `(=12` | Store double word |
+| `add? r1, r2` | `+?12` | Add with optional condition |
+| `sub? r1, r2` | `-?12` | Subtract with optional condition |
+| `mul? r1, r2` | `*?12` | Multiply with optional condition |
+| `div? r1, r2` | `/?12` | Divide with optional condition |
+| `mod? r1, r2` | `%?12` | Modulo with optional condition |
+| `or? r1, r2` | `\|?12` | Bitwise OR with optional condition |
+| `and? r1, r2` | `&?12` | Bitwise AND with optional condition |
+| `xor? r1, r2` | `^?12` | Bitwise XOR with optional condition |
+| `eq r1, r2` | `?=12` | Compare equal |
+| `ne r1, r2` | `?!12` | Compare not equal |
+| `gt r1, r2` | `?>12` | Compare greater than |
+| `lt r1, r2` | `?<12` | Compare less than |
+| `push r1` | `- yd(=y1` | Push to stack |
+| `pop r1` | `=(1y+ yd` | Pop from stack |
+| `sys r1` | `S 1 ` | System call with 1 argument |
+| `sys r1, r2` | `S 12` | System call with 2 arguments |
+| `sys r1, r2, r3` | `S+123   ` | System call with 3 arguments |
+| `sys r1, r2, r3, r4` | `S+1234  ` | System call with 4 arguments |
+| `sys r1, r2, r3, r4, r5` | `S+12345 ` | System call with 5 arguments |
+| `sys r1, r2, r3, r4, r5, r6` | `S+123456` | System call with 6 arguments |
+| `jump` | `=$z ` | Unconditional jump |
+| `jump^` | `+?ze=$z ` | Jump if flag |
+| `jump?` | `+^ze=$z ` | Jump if not zero |
+| `ret` | `=(xy+ yd= zx` | Unconditional return |
+| `ret?` | `=(xy+?yd=?zx` | Conditional return |
+| `call` | `- yd=#x 000c+ xz(=yx=$z ` | Function call |
+| `db 0` | `\00` | Define zero byte |
+| `dw 0` | `\00\00` | Define zero word |
+| `dd 0` | `\00\00\00\00` | Define zero double word |

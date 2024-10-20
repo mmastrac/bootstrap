@@ -1,8 +1,10 @@
-#include "syscall.h"
+jump? :label
+jump? r0
+jump^ :label
+jump^ r0
+call? :label
+call^ :label
+jump? $0
 
-:_main
-	push &"Pass"
-	%call :_dprintf, 2, &"%s!\n"
-	pop r0
-	sub r0, r0
+:label
 	ret

@@ -1,5 +1,3 @@
-push r1, r2
-pop r1, r2
-push 1
+# comment
 :label
-push :label, r1
+	:label

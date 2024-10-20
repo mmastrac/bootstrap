@@ -1,5 +1,5 @@
 #include "regs.h"
-#include "../bootstrap4/lex/lex.h"
+#include "../bootstrap5/lex/lex.h"
 
 # Returns the size of the type token:
 # - 0 if not a type token

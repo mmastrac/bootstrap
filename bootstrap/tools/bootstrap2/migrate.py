@@ -96,7 +96,9 @@ def process_instruction(line):
     if len(line) == 13 and line[:2] == "=$":
         return f"\tldc r{line[2]}, {line[4:]}"
     if line[:2] in INSTRUCTION_PATTERNS_2 and len(line) == 4:
-        return f"\t{INSTRUCTION_PATTERNS_2[line[:2]]} r{line[2]}, r{line[3]}"
+        ins = INSTRUCTION_PATTERNS_2[line[:2]]
+        p, s = ("[", "]") if (ins[:2] == "ld" or ins[:2] == "st") else ("", "")
+        return f"\t{ins} {p}r{line[2]}{s}, r{line[3]}"
     if line[0] in INSTRUCTION_PATTERNS_1 and len(line) == 4 and line[1] in " ^?":
         return f"\t{INSTRUCTION_PATTERNS_1[line[0]]}{line[1] if line[1] != ' ' else ''} r{line[2]}, r{line[3]}"
     

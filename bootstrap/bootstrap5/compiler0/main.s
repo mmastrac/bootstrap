@@ -1,7 +1,7 @@
 # Stage 0 compiler: we want to get enough C that we can move out of assembly land
 
 #include "regs.h"
-#include "../bootstrap4/lex/lex.h"
+#include "../bootstrap5/lex/lex.h"
 
 #define BUFFER_SIZE 256
 
@@ -82,7 +82,7 @@
 # Create the include list
 	%call :_ll_init
 	mov @ll, @ret
-	%call :_ll_create_node_int, &"bootstrap/bootstrap4"
+	%call :_ll_create_node_int, &"bootstrap/bootstrap5"
 	mov @node, @ret
 	%call :_ll_insert_head, @ll, @node
 
