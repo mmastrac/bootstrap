@@ -37,7 +37,6 @@
 
 	jump :main____
 
-=__null__ 0000
 =newline_ 000a
 =hash____ 0023
 =colon___ 003a
@@ -166,15 +165,15 @@
 	data \38\ff\ff\ff
 
 :inclhand
-	data ____
+	dd 0
 
 # Stack of input file handles, used for #include
 :in_hands
-	:__null__
+	dd 0
 
 # Global: Output file handle
 :out_hand
-	data ____
+	dd 0
 
 
 #===========================================================================
@@ -236,7 +235,7 @@
 	mov rz, rx
 
 .ret_____
-	:__null__
+	dd 0
 #===========================================================================
 
 
@@ -290,7 +289,7 @@
 	ret
 
 .stash___
-	data ____
+	dd 0
 #===========================================================================
 
 
@@ -999,7 +998,7 @@
 	db 0
 
 :lastdef_
-	:__null__
+	dd 0
 
 :inglobal
 	db 0
@@ -1132,8 +1131,7 @@
 
 	ldc rx, :zero____
 	eq r0, rx
-	ldc rx, :__null__
-	mov? r1, rx
+	sub? r1, r1
 
 	ldh rx, ffff
 	eq r1, rx
@@ -1347,7 +1345,7 @@
 
 .jumptabl
 # Return zero at EOF
-	:__null__
+	dd 0
 	.ret_____
 	:newline_
 	.eol_____
@@ -1520,11 +1518,11 @@
 
 .cmtdstrd
 	data define\20
-	:__null__
+	dd 0
 
 .cmtdstri
 	data include\20
-	:__null__
+	dd 0
 
 #***************************
 
@@ -1903,7 +1901,7 @@
 	:space___
 
 .buffer__
-	data ____
+	dd 0
 #===========================================================================
 
 # Useful function ends to return false or true in the flag
@@ -2217,7 +2215,7 @@
 	sys r1, r0, r2, r3
 	ret
 .buffer__
-	data ____
+	dd 0
 #===========================================================================
 
 
@@ -2237,7 +2235,7 @@
 	sys r1, r0, r2, r3
 	ret
 .buffer__
-	data ____
+	dd 0
 #===========================================================================
 
 
@@ -2256,7 +2254,7 @@
 	sys r1, r0, r2, r3
 	ret
 .buffer__
-	data ____
+	dd 0
 #===========================================================================
 
 
@@ -2283,7 +2281,7 @@
 
 .errtoken
 	data Invalid\20token\20encountered
-	:__null__
+	dd 0
 #===========================================================================
 
 
@@ -2770,7 +2768,7 @@
 
 # Current global label
 :mlglobal
-	:__null__
+	dd 0
 
 #===========================================================================
 # Args:
@@ -2787,7 +2785,7 @@
 
 .error___
 	data Expected\20EOL
-	:__null__
+	dd 0
 #===========================================================================
 
 
@@ -3783,151 +3781,151 @@
 :instruct
 # Standard ALU-type instructions
 	data mov\00
-	:__null__
+	dd 0
 	:i_stnd__
 	mov r?, r?
 
 	data add\00
-	:__null__
+	dd 0
 	:i_stnd__
 	add r?, r?
 
 	data sub\00
-	:__null__
+	dd 0
 	:i_stnd__
 	sub r?, r?
 
 	data mul\00
-	:__null__
+	dd 0
 	:i_stnd__
 	mul r?, r?
 
 	data div\00
-	:__null__
+	dd 0
 	:i_stnd__
 	div r?, r?
 
 	data mod\00
-	:__null__
+	dd 0
 	:i_stnd__
 	mod r?, r?
 
 	data or\00\00
-	:__null__
+	dd 0
 	:i_stnd__
 	or r?, r?
 
 	data and\00
-	:__null__
+	dd 0
 	:i_stnd__
 	and r?, r?
 
 	data xor\00
-	:__null__
+	dd 0
 	:i_stnd__
 	xor r?, r?
 
 # Load/store
 	data ld\2eb
-	:__null__
+	dd 0
 	:i_stnd__
 	ldb [rL], r?
 
 	data ld\2ew
-	:__null__
+	dd 0
 	:i_stnd__
 	ldw [rL], r?
 
 	data ld\2ed
-	:__null__
+	dd 0
 	:i_stnd__
 	ldd [rL], r?
 
 	data st\2eb
-	:__null__
+	dd 0
 	:i_stnd__
 	stb [rS], r?
 
 	data st\2ew
-	:__null__
+	dd 0
 	:i_stnd__
 	stw [rS], r?
 
 	data st\2ed
-	:__null__
+	dd 0
 	:i_stnd__
 	std [rS], r?
 
 # Compare
 	data eq\00\00
-	:__null__
+	dd 0
 	:i_stnd__
 	eq r?, r?
 
 	data ne\00\00
-	:__null__
+	dd 0
 	:i_stnd__
 	ne r?, r?
 
 	data gt\00\00
-	:__null__
+	dd 0
 	:i_stnd__
 	gt r?, r?
 
 	data lt\00\00
-	:__null__
+	dd 0
 	:i_stnd__
 	lt r?, r?
 
 # Push/pop/PC
 	data push
-	:__null__
+	dd 0
 	:i_push__
 	data ????
 
 	data pop\00
-	:__null__
+	dd 0
 	:i_pop___
 	data ????
 
 	data call
-	:__null__
+	dd 0
 	:i_call__
 	data ????
 
 	data jump
-	:__null__
+	dd 0
 	:i_jump__
 	data ????
 
 	data ret\00
-	:__null__
+	dd 0
 	:i_ret___
 	data ????
 
 	data sys\00
-	:__null__
+	dd 0
 	:i_sys___
 	data ????
 
 # Data
 	data db\00\00
-	:__null__
+	dd 0
 	:i_db____
 	data ????
 
 	data dw\00\00
-	:__null__
+	dd 0
 	:i_dw____
 	data ????
 
 	data dd\00\00
-	:__null__
+	dd 0
 	:i_dd____
 	data ????
 
 	data ds\00\00
-	:__null__
+	dd 0
 	:i_ds____
 	data ????
 
@@ -3953,22 +3951,22 @@
 # Linked list of symbols:
 # [global symbol pointer] [local symbol pointer] [write address] [prev symbol]
 :symtab__
-	:__null__
+	dd 0
 
 # Linked list of defines:
 # [define string pointer] [token type] [token value] [prev define]
 :deftab__
-	:__null__
+	dd 0
 
 # Linked list of fixups:
 # [fixup address] [global symbol pointer] [local symbol pointer] [prev fixup]
 :fixuptab
-	:__null__
+	dd 0
 
 # Deferred string table
 # [fixup address] [string address in memory] [prev string]
 :defsttab
-	:__null__
+	dd 0
 
 # Current heap pointer
 :heap____
