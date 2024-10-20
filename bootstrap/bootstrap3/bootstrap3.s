@@ -3517,9 +3517,9 @@
 
 
 :i_call_s
-	-!y\04=!x\0c+ xz(=yx=$z 
+	-!y\04=!x\0c+ xz(=yx=$z\20
 :i_jump_s
-	=$z 
+	=$z\20
 :i_ret__s
 	=(xy+!y\04= zx
 

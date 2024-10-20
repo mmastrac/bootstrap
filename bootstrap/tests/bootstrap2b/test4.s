@@ -1,0 +1,2 @@
+=CONST 1234
+	:CONST

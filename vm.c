@@ -102,7 +102,7 @@ int sc(uint32_t syscall,
 	uint32_t arg1, uint32_t arg2, uint32_t arg3, uint32_t arg4, uint32_t arg5) {
 	if (syscall == 0) {
 		debug("open");
-		dprintf("%s %08x (%08x)\n", (const char*)&program[arg1], arg2, map_open_flags(arg2));
+		dprintf("open: %s %08x (%08x)\n", (const char*)&program[arg1], arg2, map_open_flags(arg2));
 		int r = open((const char*)&program[arg1], map_open_flags(arg2), 0777);
 		if (r < 0) {
 			perror("open");
@@ -269,6 +269,29 @@ int main(int argc, const char** argv) {
 		uint8_t op3 = program[pc+2];
 		uint8_t op4 = program[pc+3];
 		registers[PC] += 4;
+
+		int trace = op1 == '?' && op2 == '?' && op3 == '?';
+		if (trace) {
+			if (op4 == '?') {
+				printf("\n");
+				for (int i = 0; i < sizeof(registers) / sizeof(registers[0]); i += 8) {
+					printf("%08x %08x %08x %08x %08x %08x %08x %08x\n", registers[i], registers[i+1], registers[i+2], registers[i+3],
+						registers[i+4], registers[i+5], registers[i+6], registers[i+7]);
+				}
+			} else {
+				int address = registers[char_to_register(op4)];
+				printf("%08x:", address);
+				for (int i = 0; i < 16; i++) {
+					printf(" %02x", program[address + i]);
+				}
+				printf("  ");
+				for (int i = 0; i < 16; i++) {
+					printf("%c", (program[address + i] >= 0x20 && program[address + i] < 0x7f) ? program[address + i] : '.');
+				}
+				printf("\n");
+			}
+			continue;
+		}
 
 		dprintf("%c%c%c%c\n", op1, op2, op3, op4);
 
