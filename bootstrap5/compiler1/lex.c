@@ -13,7 +13,7 @@ int* lex_tokens;
 // we may need to compute an expression's value before we store it to the local.
 void lex_init(const char* file) {
     void* ll = _ll_init();
-    void* ll_node = _ll_create_node_int("bootstrap/bootstrap4");
+    void* ll_node = _ll_create_node_int("bootstrap4");
     int i;
     _ll_insert_head(ll, ll_node);
     lex_lexer = __lex_open(__lex_create(ll), file);

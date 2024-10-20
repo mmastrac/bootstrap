@@ -2,7 +2,7 @@
 set -euox pipefail
 cc vm.c -std=c99 -D_ATFILE_SOURCE=1 -o vm
 
-ROOT=bootstrap
+ROOT=.
 TEST=$ROOT/tests
 BUILD=out
 rm -rf "$BUILD" || true

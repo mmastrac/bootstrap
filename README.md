@@ -1,6 +1,6 @@
 # bootstrap 
 
-[![Build Status](https://travis-ci.org/mmastrac/bootstrap.svg?branch=master)](https://travis-ci.org/mmastrac/bootstrap)
+[![Build Status](https://github.com/mmastrac/bootstrap/actions/workflows/build.yml/badge.svg)](https://github.com/mmastrac/bootstrap/actions/workflows/build.yml)
 
 Bootstrap is a small VM (< 20 ops) with an ASCII encoding. The goal of this
 project is to create a readable and auditable bootstrapping process to generate
@@ -42,7 +42,7 @@ Status: *complete* ✅
 
 Stage goal: More readable source.
 
-[`bootstrap0.bin`](bootstrap/bootstrap0.bin): A basic assembler written in pure
+[`bootstrap0.bin`](bootstrap0.bin): A basic assembler written in pure
 VM ASCII. The goal of this stage is to get a slightly more readable
 `bootstrap1.s` compiled by ignoring any control character bytes (< 0x20).
 
@@ -52,7 +52,7 @@ Status: *complete* ✅
 
 Stage goal: More readable source and "hand-linking" 
 
-[`bootstrap1.s`](bootstrap/bootstrap1/bootstrap1.s): A basic assembler that
+[`bootstrap1.s`](bootstrap1/bootstrap1.s) ([README](bootstrap1/README.md)): A basic assembler that
 skips comments (lines starting with `#`) and allows the use of a colon address
 (ie: `:ABCD`) to seek the output file to a given hex offset. All "assembled"
 lines must start with a tab character.
@@ -63,7 +63,7 @@ Status: *complete* ✅
 
 Stage goal: Automated linking, a stack
 
-[`bootstrap2.s`](bootstrap/bootstrap2/bootstrap2.s): A more complex assembler
+[`bootstrap2.s`](bootstrap2/bootstrap2.s) ([README](bootstrap2/README.md)): A more complex assembler
 with support for two-level symbols (ie: `:global__` + `.local___`) and two-pass
 symbol resolution. Also supports constant-style symbols that can be defined via
 `=symbol__ ABCD`. Note that all symbols MUST be eight characters long - no more,
@@ -76,7 +76,7 @@ Status: *complete* ✅
 
 Stage goal: Textual instrutions, reasonable length labels
 
-[`bootstrap3.s`](bootstrap/bootstrap2/bootstrap3.s): A fully-featured, though
+[`bootstrap3.s`](bootstrap3/bootstrap3.s) ([README](bootstrap3/README.md)): A fully-featured, though
 based assembler with support for variable-length, two-level symbols (ie:
 `:global` + `.local`) and two-pass symbol resolution. Also supports
 constant-style symbols that can be defined via `=symbol__ ABCD`.
@@ -89,7 +89,7 @@ Status: *complete* ✅
 
 Stage goal: A fully-featured assembler, reusable by the next stage
 
-[`bootstrap4`](bootstrap/bootstrap4/): A "complete" assembler that allows input
+[`bootstrap4.s`](bootstrap4/bootstrap4.s) ([README](bootstrap4/README.md)): A "complete" assembler that allows input
 from multiple files, linked together to create an output executable. This
 assembler has a more natural, intel-like syntax.
 
@@ -109,7 +109,7 @@ Status: *work in progress* 🚧
 
 Stage goal: A reasonably-complete C compiler.
 
-[`bootstrap5`](bootstrap/bootstrap5/):This is the first stage C compiler that
+[`bootstrap5`](bootstrap5/) ([README](bootstrap5/README.md)): This is the first stage C compiler that
 compilers a (very reduced) subset of C. Currently a work-in-progress.
 
 There are multiple stages inside `bootstrap5` to build a basic compiler:
@@ -126,5 +126,5 @@ Status: *proof-of-concept* 💡
 
 Stage goal: A fully-featured C85 (C99?) compiler.
 
-A full C85 compiler written in a simpler subset of C than can compile a full CXX
+[`bootstrap6`](bootstrap6/) ([README](bootstrap6/README.md)): A full C85 compiler written in a simpler subset of C than can compile a full CXX
 compiler (as long as it conforms to C85). Currently a work-in-progress.
