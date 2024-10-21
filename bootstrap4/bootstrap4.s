@@ -32,13 +32,13 @@
 # Ra = Zero register
 	sub ra, ra
 # Rb = One register
-	ldh rb, 0001
+	ldh rb, #0001
 # Rc = Two register
-	ldh rc, 0002
+	ldh rc, #0002
 # Rd = Four register
-	ldh rd, 0004
+	ldh rd, #0004
 # Re = Eight register
-	ldh re, 0008
+	ldh re, #0008
 
 # Set stack to memsize
 	ldc r0, :SC_GTMEM
@@ -261,16 +261,16 @@
 	call :strlen__
 	pop r3
 	ldc r1, :SC_WRITE
-	ldh r2, 0002
+	ldh r2, #0002
 	sys r1, r2, r3, r0
 # Write a newline
 	ldc r1, :SC_WRITE
-	ldh r3, 000a
+	ldh r3, #000a
 	stb [r3], r3
 	sys r1, r2, r3, rb
 # Exit with code 1
 	ldc r0, :SC_EXIT_
-	ldh r1, 0001
+	ldh r1, #0001
 	sys r0, r1
 #===========================================================================
 
@@ -320,19 +320,19 @@
 # Clear the buffer
 	ldc r0, .buffer__
 	mov r1, ra
-	ldh r2, 0010
+	ldh r2, #0010
 	call :memset__
 	pop r0
 
 # Start at the end of the buffer
 	ldc r1, .buffer__
-	ldh rx, 000e
+	ldh rx, #000e
 	add r1, rx
 
 .loop____
 	mov r2, r0
 # Get the lowest digit
-	ldh rx, 000a
+	ldh rx, #000a
 	mod r2, rx
 # Get the ASCII version
 	ldc rx, .digits__
@@ -341,7 +341,7 @@
 # Write it to the buffer
 	stb [r1], r2
 	sub r1, rb
-	ldh rx, 000a
+	ldh rx, #000a
 # If we still have digits to write, continue
 	div r0, rx
 	gt r0, ra
@@ -384,19 +384,19 @@
 # Clear the buffer
 	ldc r0, .buffer__
 	mov r1, ra
-	ldh r2, 0010
+	ldh r2, #0010
 	call :memset__
 	pop r0
 
 # Start at the end of the buffer
 	ldc r1, .buffer__
-	ldh rx, 000e
+	ldh rx, #000e
 	add r1, rx
 
 .loop____
 	mov r2, r0
 # Get the lowest digit
-	ldh rx, 0010
+	ldh rx, #0010
 	mod r2, rx
 # Get the ASCII version
 	ldc rx, .digits__
@@ -405,7 +405,7 @@
 # Write it to the buffer
 	stb [r1], r2
 	sub r1, rb
-	ldh rx, 0010
+	ldh rx, #0010
 # If we still have digits to write, continue
 	div r0, rx
 	gt r0, ra
@@ -753,7 +753,7 @@
 	push r1
 	push r2
 # Allocate a record
-	ldh r0, 0010
+	ldh r0, #0010
 	call :malloc__
 # Read the current record
 	ldc rx, :deftab__
@@ -875,7 +875,7 @@
 	push r1
 	push r2
 # Allocate a record
-	ldh r0, 0010
+	ldh r0, #0010
 	call :malloc__
 # Read the current record
 	ldc rx, :symtab__
@@ -910,7 +910,7 @@
 	push r1
 	push r2
 # Allocate a record
-	ldh r0, 0010
+	ldh r0, #0010
 	call :malloc__
 # Read the current record
 	ldc rx, :fixuptab
@@ -943,7 +943,7 @@
 	push r0
 	push r1
 # Allocate a record
-	ldh r0, 0010
+	ldh r0, #0010
 	call :malloc__
 # Read the current record
 	ldc rx, :defsttab
@@ -994,7 +994,7 @@
 	stb [rx], rb
 
 	ldc rx, :curlocal
-	ldh r0, 0008
+	ldh r0, #0008
 	stb [rx], r0
 	ldc rx, :curarg__
 	sub r0, r0
@@ -1055,7 +1055,7 @@
 	call :islabelc
 	jump^ .done____
 	pop r1
-	ldh rx, 001f
+	ldh rx, #001f
 	gt r1, rx
 	jump? .toolong
 	ldc rx, .buffer__
@@ -1123,7 +1123,7 @@
 	push r2
 	call :readchar
 	pop r2
-	ldh r1, ffff
+	ldh r1, #ffff
 
 	ldc rx, :n_______
 	eq r0, rx
@@ -1144,7 +1144,7 @@
 	eq r0, rx
 	sub? r1, r1
 
-	ldh rx, ffff
+	ldh rx, #ffff
 	eq r1, rx
 	ldc rx, .errescap
 	mov? r0, rx
@@ -1253,7 +1253,7 @@
 	eq r0, rx
 	jump? .immdone_
 
-	ldh rx, 000a
+	ldh rx, #000a
 	mul r1, rx
 	ldc rx, :zero____
 	sub r0, rx
@@ -1281,7 +1281,7 @@
 .immhdigi
 	data _
 
-	ldh rx, 0010
+	ldh rx, #0010
 	mul r1, rx
 	add r1, r0
 	jump .immhloop
@@ -1476,10 +1476,10 @@
 	add r1, r2
 	add r2, rb
 	stb [r1], r0
-	ldh r3, 0007
+	ldh r3, #0007
 	eq r2, r3
 	jump? .cmtdef__
-	ldh r3, 0008
+	ldh r3, #0008
 	eq r2, r3
 	jump? .cmtinc__
 	jump .cmtloop_
@@ -1631,7 +1631,7 @@
 # Clear the token buffer
 	ldc r0, .buffer__
 	mov r1, ra
-	ldh r2, 0020
+	ldh r2, ' '
 	call :memset__
 	ldc r2, .buffer__
 
@@ -1949,32 +1949,13 @@
 #   Flag in appropriate state
 #   R0: Char
 #===========================================================================
-:isnumber
-	ldh rx, 0030
-	lt r0, rx
-	jump? :retfalse
-
-	ldh rx, 003a
-	lt r0, rx
-	jump? :rettrue_
-
-	jump :retfalse
-#===========================================================================
-
-
-#===========================================================================
-# Args:
-#   R0: Char
-# Returns:
-#   Flag in appropriate state
-#   R0: Char
-#===========================================================================
 :isdigit_
-	ldh rx, 0030
+	ldh rx, '0'
 	lt r0, rx
 	jump? :retfalse
 
-	ldh rx, 003a
+	ldh rx, '9'
+	add rx, rb
 	lt r0, rx
 	jump? :rettrue_
 
@@ -1990,27 +1971,30 @@
 #   R0: Char
 #===========================================================================
 :isalnum_
-	ldh rx, 0030
+	ldh rx, '0'
 	lt r0, rx
 	jump? :retfalse
 
-	ldh rx, 003a
+	ldh rx, '9'
+	add rx, rb
 	lt r0, rx
 	jump? :rettrue_
 
-	ldh rx, 0041
+	ldh rx, 'A'
 	lt r0, rx
 	jump? :retfalse
 
-	ldh rx, 005b
+	ldh rx, 'Z'
+	add rx, rb
 	lt r0, rx
 	jump? :rettrue_
 
-	ldh rx, 0061
+	ldh rx, 'a'
 	lt r0, rx
 	jump? :retfalse
 
-	ldh rx, 007b
+	ldh rx, 'z'
+	add rx, rb
 	lt r0, rx
 	jump? :rettrue_
 
@@ -2084,7 +2068,7 @@
 	ldc r1, :OPEN_RO_
 	call :open____
 	push r0
-	ldh r0, 000c
+	ldh r0, #000c
 	call :malloc__
 	pop r1
 # Store the file handle
@@ -2453,13 +2437,13 @@
 
 # Write a jump to the _start symbol
 	ldc r0, .startjmp
-	ldh r1, 000c
+	ldh r1, #000c
 	call :writebuf
 
 # Create a fixup
 	ldc r0, .start_s_
 	sub r1, r1
-	ldh r2, 0004
+	ldh r2, #0004
 	call :createfx
 
 	jump :mainloop
@@ -2573,7 +2557,7 @@
 .ins_cond
 	push r1
 # Write the skip instructions
-	ldh r1, 000c
+	ldh r1, #000c
 	call :writebuf
 	call :outtell_
 	sub r0, re
@@ -2766,7 +2750,7 @@
 	data \0a\00
 
 .done____
-	ldh r0, 0000
+	ldh r0, #0000
 	call :exit____
 .end_s___
 	data __END__\00
@@ -2851,7 +2835,7 @@
 	call :isdigit_
 	jump^ .done____
 
-	ldh rx, 000a
+	ldh rx, #000a
 	mul r1, rx
 	ldc rx, :zero____
 	sub r0, rx
@@ -2861,7 +2845,7 @@
 
 .done____
 # If the register is > 64, that's an error
-	ldh r0, 003f
+	ldh r0, '?'
 	gt r1, r0
 	ldc rx, .invalid_
 	mov? r0, rx
@@ -3002,7 +2986,7 @@
 	ldd r0, [rx]
 	call :createfx
 # Use a fake address for now
-	ldh r1, 1234
+	ldh r1, #1234
 	push r1
 	jump .enc32___
 .global__
@@ -3017,7 +3001,7 @@
 	sub r1, r1
 	call :createfx
 # Use a fake address for now
-	ldh r1, 1234
+	ldh r1, #1234
 	push r1
 	jump .enc32___
 .imm_____
@@ -3031,7 +3015,7 @@
 	pop r0
 	call :createsi
 # Use a fake address for now
-	ldh r0, 1234
+	ldh r0, #1234
 	push r0
 	jump .enc32___
 
@@ -3521,7 +3505,7 @@
 # Note that call doesn't support a register target yet - this is possible but would complicate
 # this code
 	ldc r0, :i_call_s
-	ldh r1, 0014
+	ldh r1, #0014
 	call :writebuf
 	call :readtok_
 	call :encrefim
@@ -3535,7 +3519,7 @@
 	push r1
 	push r2
 	ldc r0, :i_jump_s
-	ldh r1, 0004
+	ldh r1, #0004
 	call :writebuf
 	pop r2
 	pop r1
@@ -3550,14 +3534,14 @@
 :i_ret___
 	call :readeol_
 	ldc r0, :i_ret__s
-	ldh r1, 000c
+	ldh r1, #000c
 	call :writebuf
 	ret
 :i_sys___
 # Fill the syscall buffer with spaces
 	ldc r0, .sys_____
 	ldc r1, :space___
-	ldh r2, 0008
+	ldh r2, #0008
 	call :memset__
 # Set the first char to S
 	ldc r0, .sys_____
@@ -3587,7 +3571,7 @@
 	ldc rx, .sys_____
 	mov r1, r0
 	sub r1, rx
-	ldh rx, 0009
+	ldh rx, #0009
 	eq r1, rx
 	jump^ .loop____
 	ldc r0, .toomany_
@@ -3597,7 +3581,7 @@
 	ldc rx, .sys_____
 	mov r1, r0
 	sub r1, rx
-	ldh rx, 0005
+	ldh rx, #0005
 	lt r1, rx
 	jump? .short___
 	ldc r1, .sys_____
@@ -3630,7 +3614,7 @@
 	jump :errtoken
 :i_db_i__
 	mov r0, r1
-	ldh r1, 0100
+	ldh r1, #0100
 	lt r0, r1
 	jump? .ok______
 	sub rx, rx
@@ -3664,7 +3648,7 @@
 	jump :errtoken
 :i_dw_i__
 	mov r0, r1
-	ldh r1, ffff
+	ldh r1, #ffff
 	add r1, rb
 	lt r0, r1
 	jump? .ok______
@@ -3738,7 +3722,7 @@
 # Regular return
 	call :readeol_
 	ldc r0, :i_ret__s
-	ldh r1, 000c
+	ldh r1, #000c
 	call :writebuf
 	ret
 :i_mlocal
@@ -3782,7 +3766,7 @@
 
 .write___
 	ldc r0, .call_s__
-	ldh r1, 0014
+	ldh r1, #0014
 	call :writebuf
 	ret
 .call_s__

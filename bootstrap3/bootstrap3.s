@@ -982,6 +982,7 @@
 	:m_mov___:M_mov___
 	:m_ldc___:M_ldc___
 	:m_ldh___:M_ldh___
+	:m_ldhc__:M_ldhc__
 	:m_ldb___:M_ldb___
 	:m_ldw___:M_ldw___
 	:m_ldd___:M_ldd___
@@ -1038,9 +1039,14 @@
 	=$\01 \fe
 
 :m_ldh___
-	ldh r\01, \02\03\04\05\00
+	ldh r\01, #\02\03\04\05\00
 :M_ldh___
 	=#\01 \02\03\04\05\fe
+
+:m_ldhc__
+	ldh r\01, '\02'\00
+:M_ldhc__
+	=!\01\02\fe
 
 :m_ldb___
 	ldb r\01, [r\02]\00

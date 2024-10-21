@@ -26,7 +26,8 @@ The first character read from a line determines the behaviour of this assembler:
 | `data ...` | `...` | Literal data. Use backslash hex for escapes (`\00`, `\ff`) |
 | `mov? r1, r2` | `=?12` | Loads a register from another |
 | `ldc r1,` | `=$1 ` | Load constant |
-| `ldh r1, 2345` | `=#1 2345` | Load high bits |
+| `ldh r1, #2345` | `=#1 2345` | Load register |
+| `ldh r1, 'c'` | `=!1c` | Load char constant |
 | `ldb [r1], r2` | `=[12` | Load byte |
 | `ldw [r1], r2` | `={12` | Load word |
 | `ldd [r1], r2` | `=(12` | Load double word |
