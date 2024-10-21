@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+
+# As bootstrap2 is a complex, difficult beast to maintain, this Python script
+# allows one to "lint" the source and detect potential compilation issues that
+# may cause a miscompilation because of incomplete error detection.
+
+# TODO: This should be converted to C so we can compile it with bootstrap5+ or
+# bootstrap6+.
+
 import sys
 import re
 

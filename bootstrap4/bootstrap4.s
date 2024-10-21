@@ -1,18 +1,29 @@
-# Fourth stage bootstrap
-
+# Stage 4 bootstrap
+# =================
+#
+# Historical note: this was previously bootstrap3 and used the raw VM
+# opcodes. We introduced a new bootstrap3 in 2024 and mechanically
+# translated each line 1:1 with the newer syntax to make this stage
+# easier to maintain.
+#
 # Implements an assembler that supports a much richer, more human-readable format
 #
 # Includes real, two-pass label support (up to 32 chars long), simple call/return semantics
 
 # TODO:
-#   - object file support
-# Polish/performance
-#   - Symbol table with local symbs should be "rolled back" at next global symbol for perf
-#      - Can we do local fixups per global?
-#   - Short immediate constants should use '=!x.' format
-#   - readtok_ subroutines should be real functions
-#   - macro for locals/args copy (ie: r0->r4, r1->r5, pushed/restored automatically)
+#   - During mechanical translation, labels were not expanded to 8+ chars,
+#     and we did not trim the extraneous trailing underscores that are no
+#     longer necessary.
+#   - Polish/performance:
+#     - Symbol table with local symbs should be "rolled back" at next global symbol for perf
+#        - Can we do local fixups per global?
+#     - Short immediate constants should use '=!x.' format
+#     - readtok_ subroutines should be real functions
+#     - macro for locals/args copy (ie: r0->r4, r1->r5, pushed/restored automatically)
 
+# Register notes:
+#
+# Ra-Re = 0, 1, 2, 4, 8 values
 # Rx = Temp var
 # Ry = Stack pointer
 # Rz = PC

@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# This was a tool used to mechanically translate what lives in bootstrap4 (nee
+# bootstrap3) to the newer syntax we introduced in the "new" bootstrap3. We keep
+# it here for posterity, though it is unlikely we will use it again.
+
 import sys
 import re
 

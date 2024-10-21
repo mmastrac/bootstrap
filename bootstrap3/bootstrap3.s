@@ -1,9 +1,18 @@
+# Stage 3 bootstrap
+# =================
+#
 # Macro assembler that improves on the previous stage, allowing
 # for longer label lengths, and a simple assembler format to
 # isolate the source from the underlying op encoding.
+#
+# This is the final stage that uses hand-assembled opcodes for the
+# majority of its work.
 
 # TODO:
-#   eq|add|sub rX, ra/rb -> eq|add|sub rX, 0/1
+#   - Remove the a-e register use?
+#     - eq|add|sub rX, ra/rb -> eq|add|sub rX, 0/1
+#   - Consider `ldd r0, [r1]` rather than `ldd [r1], r0`
+#   - Multi-file support
 
 =ARGVSIZE 1000
 =SYMTSIZE 5000
