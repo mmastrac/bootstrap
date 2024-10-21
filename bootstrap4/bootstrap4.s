@@ -216,7 +216,7 @@
 	ldc r2, :JUMPEND_
 
 .loop____
-	ldd [r1], r3
+	ldd r1, [r3]
 	eq r1, r2
 	jump? .done____
 	eq r1, r0
@@ -227,7 +227,7 @@
 .found___
 	add r3, rd
 # Put the address in Rx
-	ldd [rx], r3
+	ldd rx, [r3]
 	pop r3
 	pop r2
 	pop r1
@@ -242,7 +242,7 @@
 
 # Manual jump
 	ldc rx, .ret_____
-	ldd [rx], rx
+	ldd rx, [rx]
 	mov rz, rx
 
 .ret_____
@@ -337,7 +337,7 @@
 # Get the ASCII version
 	ldc rx, .digits__
 	add r2, rx
-	ldb [r2], r2
+	ldb r2, [r2]
 # Write it to the buffer
 	stb [r1], r2
 	sub r1, rb
@@ -401,7 +401,7 @@
 # Get the ASCII version
 	ldc rx, .digits__
 	add r2, rx
-	ldb [r2], r2
+	ldb r2, [r2]
 # Write it to the buffer
 	stb [r1], r2
 	sub r1, rb
@@ -456,7 +456,7 @@
 	ldc rx, :args____
 	mul r0, rd
 	add r0, rx
-	ldd [r0], r0
+	ldd r0, [r0]
 	ret
 #===========================================================================
 
@@ -469,7 +469,7 @@
 	ldc r1, :args____
 	sub r0, r0
 .loop____
-	ldd [rx], r1
+	ldd rx, [r1]
 	eq rx, ra
 	ret?
 	add r0, rb
@@ -487,7 +487,7 @@
 :strlen__
 	mov r1, r0
 .loop____
-	ldb [r2], r0
+	ldb r2, [r0]
 	eq r2, ra
 	jump? .ret_____
 	add r0, rb
@@ -508,7 +508,7 @@
 :strcpy__
 	push r0
 .loop____
-	ldb [r2], r1
+	ldb r2, [r1]
 	stb [r0], r2
 	eq r2, ra
 	jump? .ret_____
@@ -529,8 +529,8 @@
 #  Equal? in flags
 #===========================================================================
 :strcmp__
-	ldb [r2], r0
-	ldb [r3], r1
+	ldb r2, [r0]
+	ldb r3, [r1]
 	ne r2, r3
 	jump? :retfalse
 	eq r2, ra
@@ -566,7 +566,7 @@
 #===========================================================================
 :malloc__
 	ldc rx, :heap____
-	ldd [rx], rx
+	ldd rx, [rx]
 	mov r1, rx
 	add r1, r0
 	mov r0, rx
@@ -588,7 +588,7 @@
 	add r0, rb
 	call :malloc__
 	ldc rx, :heap____
-	ldd [rx], rx
+	ldd rx, [rx]
 	pop r1
 	jump :strcpy__
 #===========================================================================
@@ -623,7 +623,7 @@
 	mul r1, rd
 	ldc rx, .mode____
 	add r1, rx
-	ldd [r0], r1
+	ldd r0, [r1]
 	call :log_____
 
 .nolog___
@@ -633,11 +633,11 @@
 	eq r2, rb
 	jump? .relative
 	ldc r4, :AT_FDCWD
-	ldd [r4], r4
+	ldd r4, [r4]
 	jump .doopen__
 .relative
 	ldc r4, :inclhand
-	ldd [r4], r4
+	ldd r4, [r4]
 .doopen__
 	ldc r2, :SC_OPNAT
 	ldc r3, :O_RDONLY
@@ -708,12 +708,12 @@
 
 .loop____
 # Get the definition record
-	ldd [r2], r2
+	ldd r2, [r2]
 	eq r2, ra
 	jump? .notfound
 # Get the pointer to the string
 	add r2, re
-	ldd [r1], r2
+	ldd r1, [r2]
 	pop r0
 	push r0
 	push r2
@@ -726,9 +726,9 @@
 # Found
 .found___
 	sub r2, rd
-	ldd [r0], r2
+	ldd r0, [r2]
 	sub r2, rd
-	ldd [r1], r2
+	ldd r1, [r2]
 	pop r2
 	ret
 
@@ -757,7 +757,7 @@
 	call :malloc__
 # Read the current record
 	ldc rx, :deftab__
-	ldd [rx], rx
+	ldd rx, [rx]
 # Write everything to the struct
 	mov r1, r0
 	pop r2
@@ -776,7 +776,7 @@
 
 # If we're in a global, just return
 	ldc rx, :inglobal
-	ldb [rx], rx
+	ldb rx, [rx]
 	eq rx, rb
 	ret?
 
@@ -820,12 +820,12 @@
 
 .loop____
 # Get the symbol record
-	ldd [r2], r2
+	ldd r2, [r2]
 	eq r2, ra
 	jump? .notfound
 # Get the pointer to the local name
 	add r2, rd
-	ldd [r1], r2
+	ldd r1, [r2]
 	pop r0
 	push r0
 	push r2
@@ -840,7 +840,7 @@
 	push r0
 	push r1
 	add r2, rd
-	ldd [r1], r2
+	ldd r1, [r2]
 	push r2
 	call :comparsm
 	pop r2
@@ -849,7 +849,7 @@
 	jump^ .loop____
 
 	sub r2, re
-	ldd [r0], r2
+	ldd r0, [r2]
 	pop r2
 	pop r2
 	ret
@@ -879,7 +879,7 @@
 	call :malloc__
 # Read the current record
 	ldc rx, :symtab__
-	ldd [rx], rx
+	ldd rx, [rx]
 # Write everything to the struct
 	mov r1, r0
 	pop r2
@@ -914,7 +914,7 @@
 	call :malloc__
 # Read the current record
 	ldc rx, :fixuptab
-	ldd [rx], rx
+	ldd rx, [rx]
 # Write everything to the struct
 	mov r1, r0
 	pop r2
@@ -947,7 +947,7 @@
 	call :malloc__
 # Read the current record
 	ldc rx, :defsttab
-	ldd [rx], rx
+	ldd rx, [rx]
 # Write everything to the struct
 	mov r1, r0
 	pop r2
@@ -986,7 +986,7 @@
 :newglobl
 # Roll the current definition back to the last global one
 	ldc rx, :lastdef_
-	ldd [r0], rx
+	ldd r0, [rx]
 	ldc rx, :deftab__
 	std [rx], r0
 
@@ -1020,7 +1020,7 @@
 #===========================================================================
 :nextlocl
 	ldc rx, :curlocal
-	ldb [r0], rx
+	ldb r0, [rx]
 	mov r1, r0
 	add r1, rb
 	stb [rx], r1
@@ -1034,7 +1034,7 @@
 #===========================================================================
 :nextarg_
 	ldc rx, :curarg__
-	ldb [r0], rx
+	ldb r0, [rx]
 	mov r1, r0
 	add r1, rb
 	stb [rx], r1
@@ -1293,7 +1293,7 @@
 	pop r0
 
 	ldc rx, .isneg___
-	ldb [rx], rx
+	ldb rx, [rx]
 	eq rx, ra
 	ret?
 
@@ -1412,7 +1412,7 @@
 # Special macro: @__LOCALS_SIZE__
 	ldc r0, :T_IMM___
 	ldc r1, :curlocal
-	ldb [r1], r1
+	ldb r1, [r1]
 	sub r1, re
 	add r1, rb
 	mul r1, rd
@@ -1674,11 +1674,11 @@
 # Search the instruction table for a match
 	ldc r0, :instruct
 	ldc r2, .buffer__
-	ldd [r2], r2
+	ldd r2, [r2]
 	ldc r4, :lastinst
 .inssrchl
 # Note that we only match the first four chars for each instruction
-	ldd [r1], r0
+	ldd r1, [r0]
 	eq r1, r2
 	jump? .insfound
 	add r0, re
@@ -2091,7 +2091,7 @@
 	std [r0], r1
 # Write this new record to the open stack
 	ldc rx, :in_hands
-	ldd [r1], rx
+	ldd r1, [rx]
 	std [rx], r0
 	add r0, rd
 # Store the input mode
@@ -2112,10 +2112,10 @@
 :popinput
 # Load the current input record
 	ldc rx, :in_hands
-	ldd [rx], rx
+	ldd rx, [rx]
 # Determine which mode this record was in
 	add rx, rd
-	ldd [r0], rx
+	ldd r0, [rx]
 	eq r0, rb
 	jump? .include_
 
@@ -2124,13 +2124,13 @@
 
 # Reload the current input record
 	ldc rx, :in_hands
-	ldd [rx], rx
+	ldd rx, [rx]
 	add rx, rd
 
 .include_
 	add rx, rd
 # Pop the previous record
-	ldd [rx], rx
+	ldd rx, [rx]
 	ldc r0, :in_hands
 	std [r0], rx
 	ret
@@ -2143,10 +2143,10 @@
 #===========================================================================
 :getinhnd
 	ldc rx, :in_hands
-	ldd [r0], rx
+	ldd r0, [rx]
 	eq r0, ra
 	ret?
-	ldd [r0], r0
+	ldd r0, [r0]
 	ret
 #===========================================================================
 
@@ -2157,7 +2157,7 @@
 #===========================================================================
 :outtell_
 	ldc r0, :out_hand
-	ldd [r0], r0
+	ldd r0, [r0]
 	ldc r1, :SC_SEEK_
 	sub r2, r2
 	ldc r3, :SEEK_CUR
@@ -2173,7 +2173,7 @@
 #===========================================================================
 :outseek_
 	ldc r2, :out_hand
-	ldd [r2], r2
+	ldd r2, [r2]
 	ldc r1, :SC_SEEK_
 	ldc r3, :SEEK_SET
 	sys r1, r2, r0, r3
@@ -2191,7 +2191,7 @@
 	stb [r2], ra
 	mov r3, rb
 	sys r1, r0, r2, r3
-	ldb [r0], r2
+	ldb r0, [r2]
 	ret
 .buffer__
 	data ????
@@ -2219,7 +2219,7 @@
 	ldc rx, .buffer__
 	stb [rx], r0
 	ldc r0, :out_hand
-	ldd [r0], r0
+	ldd r0, [r0]
 	ldc r1, :SC_WRITE
 	mov r2, rx
 	mov r3, rb
@@ -2239,7 +2239,7 @@
 	ldc rx, .buffer__
 	std [rx], r0
 	ldc r0, :out_hand
-	ldd [r0], r0
+	ldd r0, [r0]
 	ldc r1, :SC_WRITE
 	mov r2, rx
 	mov r3, rd
@@ -2258,7 +2258,7 @@
 	ldc rx, .buffer__
 	std [rx], r0
 	ldc r0, :out_hand
-	ldd [r0], r0
+	ldd r0, [r0]
 	ldc r1, :SC_WRITE
 	mov r2, rx
 	mov r3, rc
@@ -2276,7 +2276,7 @@
 #===========================================================================
 :writebuf
 	ldc r2, :out_hand
-	ldd [r2], r2
+	ldd r2, [r2]
 	ldc r3, :SC_WRITE
 	sys r3, r2, r0, r1
 	ret
@@ -2311,7 +2311,7 @@
 #===========================================================================
 :is_vrbos
 	ldc rx, :_isvrbfl
-	ldb [rx], rx
+	ldb rx, [rx]
 	eq rx, rb
 	ret
 
@@ -2321,7 +2321,7 @@
 :main____
 # Default include dir is working directory
 	ldc rx, :AT_FDCWD
-	ldd [rx], rx
+	ldd rx, [rx]
 	ldc r0, :inclhand
 	std [r0], rx
 
@@ -2338,7 +2338,7 @@
 
 # Point the heap past the end of args
 	ldc rx, :heap____
-	ldd [r0], rx
+	ldd r0, [rx]
 	add r0, r1
 	std [rx], r0
 
@@ -2447,7 +2447,7 @@
 
 # If we aren't linking, just write directly to output
 	ldc rx, :_islnkfl
-	ldb [rx], rx
+	ldb rx, [rx]
 	eq rx, ra
 	jump? :mainloop
 
@@ -2529,7 +2529,7 @@
 	mov r2, r0
 	pop r1
 	ldc rx, :mlglobal
-	ldd [r0], rx
+	ldd r0, [rx]
 	call :createsm
 	jump :mainloop
 
@@ -2607,7 +2607,7 @@
 .insdisp_
 # Load R2 w/the instruction address
 	add r1, re
-	ldd [r2], r1
+	ldd r2, [r1]
 # Point R0 at the instruction data
 	add r1, rd
 	mov r0, r1
@@ -2650,16 +2650,16 @@
 # Write the deferred strings
 	ldc r4, :defsttab
 .fixupsi_
-	ldd [r4], r4
+	ldd r4, [r4]
 	eq r4, ra
 	jump? .donesi__
 	call :outtell_
 	mov r5, r0
 # The fixup address
-	ldd [r6], r4
+	ldd r6, [r4]
 	add r4, rd
 # The string pointer
-	ldd [r7], r4
+	ldd r7, [r4]
 	add r4, rd
 	mov r0, r7
 	call :strlen__
@@ -2693,23 +2693,23 @@
 
 # Do the fixups
 	ldc rx, :fixuptab
-	ldd [r0], rx
+	ldd r0, [rx]
 
 .dofixups
 	eq r0, ra
 	jump? .done____
 	push r0
 # Address
-	ldd [r1], r0
+	ldd r1, [r0]
 	add r0, rd
 	push r1
 
 
 # Local
-	ldd [r2], r0
+	ldd r2, [r0]
 	add r0, rd
 # Global
-	ldd [r3], r0
+	ldd r3, [r0]
 	add r0, rd
 	mov r0, r3
 	mov r1, r2
@@ -2753,7 +2753,7 @@
 	pop r0
 	add r0, rd
 	add r0, re
-	ldd [r0], r0
+	ldd r0, [r0]
 	jump .dofixups
 
 .glo_s___
@@ -2953,7 +2953,7 @@
 	ldc r0, .register
 	add r0, r1
 # Load the character representing the register
-	ldb [r0], r0
+	ldb r0, [r0]
 	ret
 
 # Simple lookup table for registers
@@ -2999,7 +2999,7 @@
 	mov r2, r0
 	pop r1
 	ldc rx, :mlglobal
-	ldd [r0], rx
+	ldd r0, [rx]
 	call :createfx
 # Use a fake address for now
 	ldh r1, 1234
@@ -3356,12 +3356,12 @@
 :i_stnd__
 # Copy the first two metadata bytes to the buffer
 	ldc rx, .buf_____
-	ldw [r1], r0
+	ldw r1, [r0]
 	stw [rx], r1
 	add r0, rc
 
 # Check for load/store
-	ldb [r1], r0
+	ldb r1, [r0]
 	ldc rx, :L_______
 	eq r1, rx
 	mov? r1, rb
@@ -3369,7 +3369,7 @@
 	ldc rx, .isload__
 	stb [rx], r1
 
-	ldb [r1], r0
+	ldb r1, [r0]
 	ldc rx, :S_______
 	eq r1, rx
 	mov? r1, rb
@@ -3386,10 +3386,10 @@
 	push r0
 	ldc r0, .whichjmp
 	ldc rx, .isstore_
-	ldb [rx], rx
+	ldb rx, [rx]
 	mul rx, rd
 	add r0, rx
-	ldd [r0], r0
+	ldd r0, [r0]
 	push r0
 	call :jumptabl
 
@@ -3427,7 +3427,7 @@
 
 # Now read whatever is in position #2 and write it out
 	ldc rx, .isload__
-	ldb [rx], rx
+	ldb rx, [rx]
 	eq rx, rb
 	jump? .stdload_
 	call :readval_
@@ -3722,7 +3722,7 @@
 :i_mret__
 # Pop args/locals off before we return
 	ldc rx, :curlocal
-	ldb [r0], rx
+	ldb r0, [rx]
 .loop____
 	eq r0, re
 	jump? .done____
@@ -3840,17 +3840,17 @@
 	data ld\2eb
 	dd 0
 	:i_stnd__
-	ldb [rL], r?
+	ldb rL, [r?]
 
 	data ld\2ew
 	dd 0
 	:i_stnd__
-	ldw [rL], r?
+	ldw rL, [r?]
 
 	data ld\2ed
 	dd 0
 	:i_stnd__
-	ldd [rL], r?
+	ldd rL, [r?]
 
 	data st\2eb
 	dd 0

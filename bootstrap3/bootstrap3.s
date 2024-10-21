@@ -11,7 +11,6 @@
 # TODO:
 #   - Remove the a-e register use?
 #     - eq|add|sub rX, ra/rb -> eq|add|sub rX, 0/1
-#   - Consider `ldd r0, [r1]` rather than `ldd [r1], r0`
 #   - Multi-file support
 
 =ARGVSIZE 1000
@@ -1044,17 +1043,17 @@
 	=#\01 \02\03\04\05\fe
 
 :m_ldb___
-	ldb [r\01], r\02\00
+	ldb r\01, [r\02]\00
 :M_ldb___
 	=[\01\02\fe
 
 :m_ldw___
-	ldw [r\01], r\02\00
+	ldw r\01, [r\02]\00
 :M_ldw___
 	={\01\02\fe
 
 :m_ldd___
-	ldd [r\01], r\02\00
+	ldd r\01, [r\02]\00
 :M_ldd___
 	=(\01\02\fe
 
