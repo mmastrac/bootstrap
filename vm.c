@@ -38,6 +38,14 @@ void invalid(const char* what) {
 	exit(1);
 }
 
+uint8_t* memory(int register_index) {
+    uint32_t address = registers[register_index];
+    if (address >= PROGRAM_LENGTH) {
+        invalid("memory access");
+    }
+    return &program[address];
+}
+
 void write16(void* location, uint32_t value) {
 	uint8_t* bytes = (uint8_t*)location;
 	bytes[0] = value & 0xff;
@@ -327,26 +335,26 @@ int main(int argc, const char** argv) {
 			} else if (op2 == '[') {
 				// 8-bit indirect load
 				debug("8-bit indirect load");
-				registers[char_to_register(op3)] = program[registers[char_to_register(op4)]];
+				registers[char_to_register(op3)] = *memory(char_to_register(op4));
 			} else if (op2 == '{') {
 				// 16-bit indirect load
 				debug("16-bit indirect load");
-				registers[char_to_register(op3)] = read16(&program[registers[char_to_register(op4)]]);
+				registers[char_to_register(op3)] = read16(memory(char_to_register(op4)));
 			} else if (op2 == '(') {
 				// 32-bit indirect load
 				debug("32-bit indirect load");
-				registers[char_to_register(op3)] = read32(&program[registers[char_to_register(op4)]]);
+				registers[char_to_register(op3)] = read32(memory(char_to_register(op4)));
 			} else {
 				registers[char_to_register(op3)] = rhs(op2, op4);
 			}
 		} else if (op1 == '[' && op2 == '=') {
 			// 8-bit indirect store
 			debug("8-bit indirect store");
-			program[registers[char_to_register(op3)]] = registers[char_to_register(op4)];
+			*memory(char_to_register(op3)) = registers[char_to_register(op4)];
 		} else if (op1 == '{' && op2 == '=') {
-			write16(&program[registers[char_to_register(op3)]], registers[char_to_register(op4)]);
+			write16(memory(char_to_register(op3)), registers[char_to_register(op4)]);
 		} else if (op1 == '(' && op2 == '=') {
-			write32(&program[registers[char_to_register(op3)]], registers[char_to_register(op4)]);
+			write32(memory(char_to_register(op3)), registers[char_to_register(op4)]);
 		} else if (op1 == '+') {
 			registers[char_to_register(op3)] += rhs(op2, op4);
 		} else if (op1 == '-') {

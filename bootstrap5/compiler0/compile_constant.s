@@ -16,7 +16,7 @@
     jump :_compiler_jump_table
 
 .error
-    %call :_fatal, &"Unexpected token in _compile_expr_stack!\n"
+    %call :_fatal, &"Unexpected token in _compile_constant!\n"
     dd 0
 
 .jump_table

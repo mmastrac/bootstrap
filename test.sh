@@ -122,53 +122,58 @@ echo Test 5
 
 echo Compile 5
 ./vm $IN -l -I $ROOT/bootstrap5/include $ROOT/bootstrap5/rt/*.s $ROOT/bootstrap5/lex/*.s $ROOT/bootstrap5/compiler0/*.s $OUT0
-mkdir $BUILD/b4
 
 echo Compile 5
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_basic.c $BUILD/b4/test_basic.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_binary.c $BUILD/b4/test_binary.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_char_literal.c $BUILD/b4/test_char_literal.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_compare.c $BUILD/b4/test_compare.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_deref.c $BUILD/b4/test_deref.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_fn_args.c $BUILD/b4/test_fn_args.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_fn_in_fn.c $BUILD/b4/test_fn_in_fn.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_for.c $BUILD/b4/test_for.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_fib.c $BUILD/b4/test_fib.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_function.c $BUILD/b4/test_function.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_global.c $BUILD/b4/test_global.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_if_else.c $BUILD/b4/test_if_else.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_include.c $BUILD/b4/test_include.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_inited.c $BUILD/b4/test_inited.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_local.c $BUILD/b4/test_local.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_string_literal.c $BUILD/b4/test_string_literal.s
-./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_unary.c $BUILD/b4/test_unary.s
-./vm $IN -l -I $ROOT/bootstrap5/include $ROOT/bootstrap5/rt/*.s $ROOT/bootstrap5/compiler0/tests/*.s $BUILD/b4/test_*.s $BUILD/t4_0.bin
-./vm $BUILD/t4_0.bin
+mkdir $BUILD/b5-0
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_basic.c $BUILD/b5-0/test_basic.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_binary.c $BUILD/b5-0/test_binary.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_char_literal.c $BUILD/b5-0/test_char_literal.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_compare.c $BUILD/b5-0/test_compare.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_deref.c $BUILD/b5-0/test_deref.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_fn_args.c $BUILD/b5-0/test_fn_args.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_fn_in_fn.c $BUILD/b5-0/test_fn_in_fn.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_for.c $BUILD/b5-0/test_for.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_fib.c $BUILD/b5-0/test_fib.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_function.c $BUILD/b5-0/test_function.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_global.c $BUILD/b5-0/test_global.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_if_else.c $BUILD/b5-0/test_if_else.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_include.c $BUILD/b5-0/test_include.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_inited.c $BUILD/b5-0/test_inited.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_local.c $BUILD/b5-0/test_local.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_string_literal.c $BUILD/b5-0/test_string_literal.s
+./vm $OUT0 $ROOT/bootstrap5/compiler0/tests/test_unary.c $BUILD/b5-0/test_unary.s
+./vm $IN -l -I $ROOT/bootstrap5/include $ROOT/bootstrap5/rt/*.s $ROOT/bootstrap5/compiler0/tests/*.s $BUILD/b5-0/test_*.s $BUILD/t5_0.bin
+./vm $BUILD/t5_0.bin
 
 echo Compile 5-1
-mkdir $BUILD/b4-1
-./vm $OUT0 $ROOT/bootstrap5/compiler1/rt/heap.c $BUILD/b4-1/heap.s
-./vm $OUT0 $ROOT/bootstrap5/compiler1/rt/crt1.c $BUILD/b4-1/crt1.s
-./vm $OUT0 $ROOT/bootstrap5/compiler1/rt/printf.c $BUILD/b4-1/printf.s
-./vm $OUT0 $ROOT/bootstrap5/compiler1/compile_expr.c $BUILD/b4-1/compile_expr.s
-./vm $OUT0 $ROOT/bootstrap5/compiler1/compile_util.c $BUILD/b4-1/compile_util.s
-./vm $IN -l -I $ROOT/bootstrap5/include $ROOT/bootstrap5/lex/*.s $ROOT/bootstrap5/rt/string.s $ROOT/bootstrap5/rt/hash_table.s $ROOT/bootstrap5/rt/struct.s $ROOT/bootstrap5/rt/io.s $ROOT/bootstrap5/rt/sys.s $ROOT/bootstrap5/rt/linked_list.s $ROOT/bootstrap5/compiler1/rt/*.s $BUILD/b4-1/*.s $OUT1
+mkdir $BUILD/b5-1
+./vm $OUT0 $ROOT/bootstrap5/compiler1/rt/heap.c $BUILD/b5-1/heap.s
+./vm $OUT0 $ROOT/bootstrap5/compiler1/rt/crt1.c $BUILD/b5-1/crt1.s
+./vm $OUT0 $ROOT/bootstrap5/compiler1/rt/printf.c $BUILD/b5-1/printf.s
+./vm $OUT0 $ROOT/bootstrap5/compiler1/compile_expr.c $BUILD/b5-1/compile_expr.s
+./vm $OUT0 $ROOT/bootstrap5/compiler1/compile_type.c $BUILD/b5-1/compile_type.s
+./vm $OUT0 $ROOT/bootstrap5/compiler1/compile_unit.c $BUILD/b5-1/compile_unit.s
+./vm $OUT0 $ROOT/bootstrap5/compiler1/compile_util.c $BUILD/b5-1/compile_util.s
+./vm $OUT0 $ROOT/bootstrap5/compiler1/main.c $BUILD/b5-1/main.s
+./vm $IN -l -I $ROOT/bootstrap5/include $ROOT/bootstrap5/lex/*.s $ROOT/bootstrap5/rt/string.s $ROOT/bootstrap5/rt/hash_table.s $ROOT/bootstrap5/rt/struct.s $ROOT/bootstrap5/rt/io.s $ROOT/bootstrap5/rt/sys.s $ROOT/bootstrap5/rt/linked_list.s $ROOT/bootstrap5/compiler1/rt/*.s $BUILD/b5-1/*.s $OUT1
 
-./vm $OUT1
+echo Test 5-1
+mkdir $BUILD/b5-1t
+./vm $OUT1 $ROOT/bootstrap5/compiler1/tests/c/test_varied_types.c $BUILD/b5-1t
 
 #echo Compile 5-1
-#./vm $BUILD/t4.bin $ROOT/bootstrap5/compiler1/main.c $BUILD/b4/compiler1_main.s
-#./vm $BUILD/t4.bin $ROOT/bootstrap5/compiler1/lex.c $BUILD/b4/compiler1_lex.s
-#./vm $BUILD/t4.bin $ROOT/bootstrap5/compiler1/compile_file.c $BUILD/b4/compiler1_compile_file.s
-#./vm $BUILD/t4.bin $ROOT/bootstrap5/compiler1/struct.c $BUILD/b4/compiler1_struct.s
-#./vm $BUILD/t4.bin $ROOT/bootstrap5/compiler1/types.c $BUILD/b4/compiler1_types.s
-#mkdir $BUILD/b4/t
-#./vm $BUILD/t4.bin $ROOT/bootstrap5/compiler1/tests/tests.c $BUILD/b4/t/tests.s
-#./vm $BUILD/t4.bin $ROOT/bootstrap5/compiler1/tests/test_lex.c $BUILD/b4/t/test_lex.s
-#./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap5/rt/*.s $ROOT/bootstrap5/lex/*.s $BUILD/b4/compiler1_*.s $BUILD/b4/t/*.s $BUILD/b4/t/t.bin
-#./vm $BUILD/b4/t/t.bin
+#./vm $BUILD/t4.bin $ROOT/bootstrap5/compiler1/main.c $BUILD/b5-0/compiler1_main.s
+#./vm $BUILD/t4.bin $ROOT/bootstrap5/compiler1/lex.c $BUILD/b5-0/compiler1_lex.s
+#./vm $BUILD/t4.bin $ROOT/bootstrap5/compiler1/compile_file.c $BUILD/b5-0/compiler1_compile_file.s
+#./vm $BUILD/t4.bin $ROOT/bootstrap5/compiler1/struct.c $BUILD/b5-0/compiler1_struct.s
+#./vm $BUILD/t4.bin $ROOT/bootstrap5/compiler1/types.c $BUILD/b5-0/compiler1_types.s
+#mkdir $BUILD/b5-0/t
+#./vm $BUILD/t4.bin $ROOT/bootstrap5/compiler1/tests/tests.c $BUILD/b5-0/t/tests.s
+#./vm $BUILD/t4.bin $ROOT/bootstrap5/compiler1/tests/test_lex.c $BUILD/b5-0/t/test_lex.s
+#./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap5/rt/*.s $ROOT/bootstrap5/lex/*.s $BUILD/b5-0/compiler1_*.s $BUILD/b5-0/t/*.s $BUILD/b5-0/t/t.bin
+#./vm $BUILD/b5-0/t/t.bin
 #
-#./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap5/rt/*.s $ROOT/bootstrap5/lex/*.s $BUILD/b4/compiler1_*.s $BUILD/b4-1.bin
+#./vm $BUILD/b3.bin -l -I $ROOT/include $ROOT/bootstrap5/rt/*.s $ROOT/bootstrap5/lex/*.s $BUILD/b5-0/compiler1_*.s $BUILD/b4-1.bin
 #
 #echo Compile 5-1
 #mkdir $BUILD/b4-1

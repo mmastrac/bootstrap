@@ -46,6 +46,66 @@
 
 #===========================================================================
 # Args:
+#   R0: String
+#   R1: Character
+# Returns:
+#   R0: Pointer to last occurrence of character, or null
+#===========================================================================
+:_strrchr
+	push r2, r3
+	mov r2, 0  # Last occurrence pointer
+.loop
+	ld.b r3, [r0]
+	eq r3, r1
+	mov? r2, r0  # Update last occurrence
+	eq r3, 0
+	jump? .done
+	add r0, 1
+	jump .loop
+.done
+	mov r0, r2  # Set return value to last occurrence
+	pop r3, r2
+	ret
+#===========================================================================
+
+
+#===========================================================================
+# Args:
+#   R0: Destination string
+#   R1: Source string
+# Returns:
+#   R0: Pointer to the resulting string (same as destination)
+#===========================================================================
+:_strcat
+	push r2, r3, r4
+	mov r2, r0
+
+.find_end
+	ld.b @tmp0, [r0]
+	eq @tmp0, 0
+	jump? .loop
+	add r0, 1
+	jump .find_end
+
+# R0 is the write pointer
+# R1 is the read pointer
+.loop
+	ld.b @tmp0, [r1]
+	st.b [r0], @tmp0
+	eq @tmp0, 0
+	jump? .done
+	add r0, 1
+	add r1, 1
+	jump .loop
+.done
+	mov r0, r2
+	pop r4, r3, r2
+	ret
+#===========================================================================
+
+
+#===========================================================================
+# Args:
 #   R0: Dest
 #   R1: Source
 # Returns:
@@ -283,3 +343,41 @@
 #===========================================================================
 
 
+#===========================================================================
+# Args:
+#   R0: String
+# Returns:
+#   R0: Unsigned integer value
+#===========================================================================
+:_atou
+	push r1, r2
+	mov r1, r0  # R1: current character pointer
+	mov r2, 0   # R2: result
+
+	# Skip leading whitespace
+.skip_whitespace
+	ld.b @tmp0, [r1]
+	%call :_iswhitespace, @tmp0
+	eq r0, 1
+	jump^ .convert_loop
+	add r1, 1
+	jump .skip_whitespace
+
+.convert_loop
+	ld.b @tmp0, [r1]
+	%call :_isdigit, @tmp0
+	eq r0, 0
+	jump? .done
+	
+	sub @tmp0, '0'
+	mul r2, 10
+	add r2, @tmp0
+	
+	add r1, 1
+	jump .convert_loop
+
+.done
+	mov r0, r2  # Set return value
+	pop r2, r1
+	ret
+#===========================================================================

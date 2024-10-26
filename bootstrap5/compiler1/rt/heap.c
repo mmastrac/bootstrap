@@ -64,7 +64,7 @@ void* malloc(unsigned nbytes) {
                 // Allocate tail end
                 remaining_size = size - nunits;
                 p[BLOCK_SIZE_IDX] = remaining_size;
-                p = p + (nunits * HEADER_SIZE);
+                p = p + (remaining_size * HEADER_SIZE);
                 p[BLOCK_SIZE_IDX] = nunits;  // Set size
             }
             freep = prevp;
