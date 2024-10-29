@@ -572,25 +572,88 @@
 	mov r0, rx
 	ldc rx, :heap____
 	std [rx], r1
-	ret
+	gt r1, ry
+	ret^
+	ldc r0, .error
+	jump :error___
+.error
+	data Stack collision with heap (memory exhausted)\00
 #===========================================================================
 
 
 #===========================================================================
+# Allocates a string on the heap, returning a previous copy if it already
+# exists to save memory.
 # Args:
 #   R0: String
 # Returns:
 #   R0: Address
 #===========================================================================
 :mallocst
+	push r1
+	push r2
+	push r3
+
+# Search the string heap for the string if it already exists
+# otherwise malloc a new block
+	ldc r2, .string_heap
+	ldd r2, [r2]
+
+.loop
+	eq r2, ra
+	jump? .does_not_exist
+
+# R1 = Address of string
+# R2 = Address of next string
+	mov r1, rd
+	add r1, r2
+	ldd r2, [r2]
+
+# Compare the strings (return in flags)
+	push r0
+	push r1
+	push r2
+	push r3
+	call :strcmp__
+	pop r3
+	pop r2
+	pop r1
+	pop r0
+	jump? .found
+	jump .loop
+
+.does_not_exist
+# Malloc + 4 bytes for the link + 1 byte for the NUL terminator
 	push r0
 	call :strlen__
+	add r0, rd
 	add r0, rb
 	call :malloc__
-	ldc rx, :heap____
-	ldd rx, [rx]
 	pop r1
-	jump :strcpy__
+
+# Link the new string to the heap
+	ldc r2, .string_heap
+	ldd r2, [r2]
+	std [r0], r2
+	ldc r2, .string_heap
+	std [r2], r0
+
+	add r0, rd
+	call :strcpy__
+	pop r3
+	pop r2
+	pop r1
+	ret
+
+.found
+	mov r0, r1
+	pop r3
+	pop r2
+	pop r1
+	ret
+
+.string_heap
+	dd 0
 #===========================================================================
 
 
@@ -2750,8 +2813,29 @@
 	data \0a\00
 
 .done____
+# Check to see if heap memory is low and warn
+	ldc r0, :heap____
+	ldd r1, [r0]
+	ldc r0, :SC_GTMEM
+	sys r0
+	sub r0, r1
+	ldh r1, #2000
+	gt r0, r1
+	jump? .exit
+	push r0
+	ldc r0, .heapmsg
+	call :log_____
+	pop r0
+	call :lognum__
+	ldc r0, .heaplf
+	call :log_____
+.exit
 	ldh r0, #0000
 	call :exit____
+.heapmsg
+	data WARNING - Heap remaining
+.heaplf
+	data \0a\00
 .end_s___
 	data __END__\00
 .i_jmp_if
