@@ -1201,7 +1201,8 @@
 :m_call__
 	call \00
 :M_call__
-	- yd=#x 000c+ xz(=yx=$z \fe
+# Compact call syntax saves a bit of code space
+	- yd=!x\0c+ xz(=yx=$z \fe
 
 :m_db_0__
 	db 0\00
