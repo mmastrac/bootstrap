@@ -95,6 +95,8 @@ diff $TEST/bootstrap4/test9.bin $BUILD/t9.bin
 diff $TEST/bootstrap4/test10.bin $BUILD/t10.bin
 ./vm $OUT $TEST/bootstrap4/test11.s $BUILD/t11.bin
 diff $TEST/bootstrap4/test11.bin $BUILD/t11.bin
+./vm $OUT $TEST/bootstrap4/test12.s $BUILD/t12.bin
+diff $TEST/bootstrap4/test12.bin $BUILD/t12.bin
 
 echo Error 4
 ./vm $OUT $TEST/bootstrap4/error/error0.s $BUILD/out.bin && exit 1

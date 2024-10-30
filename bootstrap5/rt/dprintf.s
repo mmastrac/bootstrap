@@ -104,8 +104,7 @@
 	db 0
 
 .digit_buffer
-	db 0 0 0 0 0 0 0 0
-	db 0 0 0 0 0 0 0 0
+	dz 16
 .digit_buffer_end
 	db 0
 

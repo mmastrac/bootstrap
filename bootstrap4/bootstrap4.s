@@ -3748,6 +3748,31 @@
 	jump :i_dw____
 .toobig_s
 	data dw value is too large\00
+
+:i_dz____
+	call :readtok_
+	ldc rx, :T_IMM___
+	eq r0, rx
+	jump^ .not_imm
+# Allocate blank space
+.loop
+	eq r1, ra
+	jump? .done
+	sub r1, rb
+	mov r0, ra
+	push r1
+	call :writech_
+	pop r1
+	jump .loop
+.done
+	ret
+.not_imm
+	ldc r0, .expected_imm
+	call :error___
+	ret
+.expected_imm
+	data Expected immediate value\00
+
 :i_dd____
 	call :readtok_
 	ldc rx, :T_EOL___
@@ -4006,6 +4031,12 @@
 	data ds\00\00
 	dd 0
 	:i_ds____
+	data ????
+
+# Allocate blank space
+	data dz\00\00
+	dd 0
+	:i_dz____
 	data ????
 
 # "Macros" with more complex behaviour
