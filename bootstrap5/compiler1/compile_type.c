@@ -1,22 +1,22 @@
 #include "lex/lex.h"
+#include "compiler1/type.h"
 #define NULL 0
 
-#define TYPE_VOID 0
-#define TYPE_CHAR 1
-#define TYPE_INT 2
-#define TYPE_FLOAT 3
-#define TYPE_DOUBLE 4
-#define TYPE_POINTER 5
-#define TYPE_ARRAY 6
-#define TYPE_FUNCTION 7
-#define TYPE_STRUCT 8
+// The type for an int (used for sizeof)
+int type_int[] = { TYPE_INT, NULL, 0, NULL, NULL };
+// The type for a char
+int type_char[] = { TYPE_CHAR, NULL, 0, NULL, NULL };
 
-int* type_new(int kind, int* base, int size, int* fields) {
-    int* type = malloc(12);
+// The type for a char pointer (used for string literals)
+int type_char_ptr[] = { TYPE_POINTER, _type_char, 0, NULL, NULL };
+
+int* type_new(int kind, int* base, int size, int* fields, char* name) {
+    int* type = malloc(20);
     type[0] = kind;
     type[1] = base;
     type[2] = size;
     type[3] = fields;
+    type[4] = name;
     return type;
 }
 
@@ -35,6 +35,18 @@ int* type_get_field_size(int* type) {
 
 int* type_get_fields(int* type) {
     return type[3];
+}
+
+char* type_get_name(int* type) {
+    return type[4];
+}
+
+char* type_get_subtype_name(int* type, int index) {
+    return type_get_fields(type)[(index * 2) + 0];
+}
+
+int* type_get_subtype_type(int* type, int index) {
+    return type_get_fields(type)[(index * 2) + 1];
 }
 
 int type_size(int* type) {
@@ -61,18 +73,17 @@ int type_size(int* type) {
         size = type_get_field_size(type);
         return size * type_size(base);
     } else if (kind == TYPE_FUNCTION) {
-        return 4;  // Assuming function pointers are 32-bit
+        return 1; // Match GCC
     } else if (kind == TYPE_STRUCT) {
         size = 0;
-        fields = type_get_fields(type);
         field_count = type_get_field_size(type);
         for (i = 0; i < field_count; i = i + 1) {
-            field_type = fields[(i * 2) + 1];
+            field_type = type_get_subtype_type(type, i);
             size = size + type_size(field_type);
         }
         return size;
     } else {
-        // Handle error: unknown type
+        compiler_fatal("unknown type: %d", kind);
         return 0;
     }
 }
@@ -87,66 +98,76 @@ void type_print(int* type) {
     int i;
     char* field_name;
 
-    if (kind == TYPE_VOID) {
-        printf("void");
+    if (type == NULL) {
+        compiler_out("<null type>");
+    } if (kind == TYPE_VOID) {
+        compiler_out("void");
     } else if (kind == TYPE_CHAR) {
-        printf("char");
+        compiler_out("char");
     } else if (kind == TYPE_INT) {
-        printf("int");
+        compiler_out("int");
     } else if (kind == TYPE_FLOAT) {
-        printf("float");
+        compiler_out("float");
     } else if (kind == TYPE_DOUBLE) {
-        printf("double");
+        compiler_out("double");
     } else if (kind == TYPE_POINTER) {
         base = type_get_base(type);
-        printf("pointer to (");
+        compiler_out("pointer to (");
         type_print(base);
-        printf(")");
+        compiler_out(")");
     } else if (kind == TYPE_ARRAY) {
         base = type_get_base(type);
-        printf("array %d of (", type_get_field_size(type));
+        compiler_out("array %d of (", type_get_field_size(type));
         type_print(base);
-        printf(")");
+        compiler_out(")");
     } else if (kind == TYPE_FUNCTION) {
         base = type_get_base(type);
-        printf("function (");
-        fields = type_get_fields(type);
+        compiler_out("function ");
+        field_name = type_get_name(type);
+        if (field_name) {
+            compiler_out("%s ", field_name);
+        }
+        compiler_out("(");
         field_count = type_get_field_size(type);
         for (i = 0; i < field_count; i = i + 1) {
             if (i > 0) {
-                printf("; ");
+                compiler_out("; ");
             }
-            field_name = fields[i * 2];
-            field_type = fields[(i * 2) + 1];
+            field_name = type_get_subtype_name(type, i);
+            field_type = type_get_subtype_type(type, i);
             type_print(field_type);
-            printf(" %s", field_name);
+            compiler_out(" %s", field_name);
         }
-        printf(") returning (");
+        compiler_out(") returning (");
         type_print(base);
-        printf(")");
+        compiler_out(")");
     } else if (kind == TYPE_STRUCT) {
-        printf("struct { ");
-        fields = type_get_fields(type);
+        compiler_out("struct ");
+        field_name = type_get_name(type);
+        if (field_name) {
+            compiler_out("%s ", field_name);
+        }
+        compiler_out("{ ");
         field_count = type_get_field_size(type);
         for (i = 0; i < field_count; i = i + 1) {
-            if (i > 0) {
-                printf("; ");
-            }
-            field_name = fields[i * 2];
-            field_type = fields[(i * 2) + 1];
+            field_name = type_get_subtype_name(type, i);
+            field_type = type_get_subtype_type(type, i);
             type_print(field_type);
-            printf(" %s", field_name);
+            compiler_out(" %s; ", field_name);
         }
-        printf(" }");
+        compiler_out("}");
     } else {
         compiler_fatal("unknown type: %d", kind);
     }
 }
 
 // Parse the base type specifier (e.g., int, char)
-int parse_base_type_specifier() {
+int* parse_base_type_specifier() {
     int type;
     int token;
+    int members;
+    int i;
+    char* name;
     char buffer[256];
 
     token = compiler_peek(buffer);
@@ -165,12 +186,31 @@ int parse_base_type_specifier() {
         type = TYPE_STRUCT;
         compiler_read(NULL);
         token = compiler_peek(buffer);
+        members = malloc(16 * 4);
+        name = NULL;
+
         // This might be either a struct identifier or a struct tag
         if (token == TOKEN_IDENTIFIER) {
             compiler_read(buffer);
-            type = TYPE_STRUCT;
-        } else if (token == '{') {
-            compiler_read(NULL);
+            name = stralloc(buffer);
+            token = compiler_peek(buffer);
+        } 
+        
+        if (token == '{') {
+            i = 0;
+            compiler_read_expect('{');
+            while (compiler_peek(NULL) != '}') {
+                if (i == 6) {
+                    compiler_fatal("Struct too big");
+                }
+                type = parse_type_specifier(buffer);
+                members[(i * 2) + 0] = stralloc(buffer);
+                members[(i * 2) + 1] = type;
+                i = i + 1;
+                compiler_read_expect(';');
+            }
+            compiler_read_expect('}');
+            return type_new(TYPE_STRUCT, NULL, i, members, name);
         } else {
             compiler_fatal("unknown token for struct: %s (%d)", token, buffer);
         }
@@ -178,7 +218,7 @@ int parse_base_type_specifier() {
         compiler_fatal("unknown token for type: %s (%d)", token, buffer);
     }
     compiler_read(NULL);  // Move to the next token
-    return type;
+    return type_new(type, NULL, 0, NULL, NULL);
 }
 
 // Parse a type specifier for a local/global variable or a function's return type
@@ -186,7 +226,7 @@ int parse_base_type_specifier() {
 int* parse_type_specifier(char* name) {
     int* type;
     name[0] = 0;
-    type = type_new(parse_base_type_specifier(), NULL, 0, NULL);
+    type = parse_base_type_specifier();
     return parse_type_specifier_recursive(name, type);
 }
 
@@ -226,6 +266,9 @@ int* parse_type_specifier_recursive(char* name, int* type) {
             compiler_read(NULL);
             args = malloc(16 * 4);
             while (token != ')') {
+                if (i == 16) {
+                    compiler_fatal("Too many function args");
+                }
                 token = compiler_peek(NULL);
                 if (token == ')') {
                     compiler_read_expect(')');
@@ -241,7 +284,7 @@ int* parse_type_specifier_recursive(char* name, int* type) {
             }
 
             // This is not correct, but works well enough for our purposes
-            type = type_insert_before_terminal(type, type_new(TYPE_FUNCTION, NULL, i / 2, args));
+            type = type_insert_before_terminal(type, type_new(TYPE_FUNCTION, NULL, i / 2, args, NULL));
             token = compiler_peek(NULL);
         } else if (token == '[') {
             // Array
@@ -256,7 +299,7 @@ int* parse_type_specifier_recursive(char* name, int* type) {
             compiler_read_expect(']');
 
             // This is not correct, but works well enough for our purposes
-            type = type_insert_before_terminal(type, type_new(TYPE_ARRAY, NULL, array_size, NULL));
+            type = type_insert_before_terminal(type, type_new(TYPE_ARRAY, NULL, array_size, NULL, NULL));
             token = compiler_peek(NULL);
         } else {
             return type;
@@ -295,6 +338,8 @@ int type_is_type_token(int token) {
     } else if (token == TOKEN_DOUBLE) {
         return 1;
     } else if (token == TOKEN_VOID) {
+        return 1;
+    } else if (token == TOKEN_STRUCT) {
         return 1;
     } else {
         return 0;

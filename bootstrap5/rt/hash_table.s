@@ -1,5 +1,6 @@
 #include "regs.h"
 
+# Bucket count + key hash + key compare + cache for hash/key
 #define HT_OVERHEAD 20
 #define HT_NODE_SIZE 12
 
@@ -38,8 +39,10 @@
 	st.d [@ret], @key_hash_function
 	add @ret, 4
 	st.d [@ret], @key_compare_function
-	add @ret, 12
+
 	# Zero the buckets
+	mov @ret, @ht
+	add @ret, @HT_OVERHEAD
 .loop
 	eq @buckets, 0
 	mov? r0, @ht

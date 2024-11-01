@@ -173,14 +173,6 @@
 	# Abort on forward declarations
 	eq @ret, ';'
 	jump? .fn_forward
-	%call :_compiler_out, &"    %%local _carg0\n"
-	%call :_compiler_out, &"    %%local _carg1\n"
-	%call :_compiler_out, &"    %%local _carg2\n"
-	%call :_compiler_out, &"    %%local _carg3\n"
-	%call :_compiler_out, &"    %%local _carg4\n"
-	%call :_compiler_out, &"    %%local _carg5\n"
-	%call :_compiler_out, &"    %%local _carg6\n"
-	%call :_compiler_out, &"    %%local _carg7\n"
 	mov @tmp0, 0
 	st.d [:_function_has_saved_stack], @tmp0
 	%call :_compile_block, @file, @buf1, @BUFFER_SIZE

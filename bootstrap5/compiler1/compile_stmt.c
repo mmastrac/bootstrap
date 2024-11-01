@@ -1,210 +1,184 @@
-#include "regs.h"
-#include "../lex/lex.h"
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
+#define NULL 0
+#define TOKEN_SIZE 256
+#include "lex/lex.h"
 
-static bool function_has_saved_stack = false;
+extern int function_locals_size;
+extern int* function_scope;
 
-static void compile_block(int file, char* buf, int buflen) {
-    compiler_read_expect(file, buf, buflen, '{');
+void compile_block() {
+    compiler_read_expect('{');
     compiler_out("# {\n");
     
-    while (!compiler_peek_is(file, '}')) {
-        compile_stmt(file, buf, buflen);
+    while (compiler_peek(NULL) != '}') {
+        compile_stmt();
     }
     
-    compiler_read_expect(file, buf, buflen, '}');
+    compiler_read_expect('}');
     compiler_out("# }\n");
-}
+}   
 
-static void compile_stmt(int file, char* buf, int buflen) {
-    int token = lex_peek(file, buf, buflen);
+void compile_stmt() {
+    int token = compiler_peek(NULL);
     
-    switch (token) {
-        case ';':
-            return;
-        case TOKEN_IF:
-            compile_stmt_if(file, buf, buflen);
-            return;
-        case TOKEN_FOR:
-            compile_stmt_for(file, buf, buflen);
-            return;
-        case TOKEN_WHILE:
-            compile_stmt_while(file, buf, buflen);
-            return;
-        case TOKEN_IDENTIFIER:
-        case '*':
-            if (strcmp(buf, "__asm__") == 0) {
-                compiler_read_expect(file, buf, buflen, TOKEN_IDENTIFIER);
-                compiler_read_expect(file, buf, buflen, '(');
-                compiler_read_expect(file, buf, buflen, TOKEN_STRING_LITERAL);
-                compiler_out("%s\n", buf);
-                compiler_read_expect(file, buf, buflen, ')');
-                compiler_read_expect(file, buf, buflen, ';');
-            } else {
-                compile_expr_ret(file, buf, buflen);
-                compiler_read_expect(file, buf, buflen, ';');
-            }
-            return;
-        case TOKEN_RETURN:
-            compile_stmt_return(file, buf, buflen);
-            return;
-        default:
-            compile_stmt_local(file, buf, buflen);
-            return;
+    if (token == ';') {
+        return;
+    } else if (token == TOKEN_IF) {
+        compile_stmt_if();
+        return;
+    } else if (token == TOKEN_FOR) {
+        compile_stmt_for(); 
+        return;
+    } else if (token == TOKEN_WHILE) {
+        compile_stmt_while();
+        return;
+    } else if (token == TOKEN_ASM) {
+        // compiler_read_expect(TOKEN_IDENTIFIER);
+        // compiler_read_expect('(');
+        // compiler_read_expect(TOKEN_STRING_LITERAL);
+        // compiler_out("%s\n", lex_buffer);
+        // compiler_read_expect(')');
+        // compiler_read_expect(';');
+        return;
+    } else if ((token == TOKEN_IDENTIFIER) || (token == '*')) {
+        compile_expr_ret();
+        compiler_read_expect(';');
+        return;
+    } else if (token == TOKEN_RETURN) {
+        compile_stmt_return();
+        return;
+    } else if (type_is_type_token(token)){
+        compile_stmt_local();
+        return;
+    } else {
+        compiler_fatal("Unexpected token: %d", token);
     }
 }
 
-static void compile_stmt_if(int file, char* buf, int buflen) {
-    int else_label = compile_get_next_label();
-    int end_label = compile_get_next_label();
+void compile_stmt_if() {
+//     int else_label = compile_get_next_label();
+//     int end_label = compile_get_next_label();
 
-    compiler_read_expect(file, buf, buflen, TOKEN_IF);
-    compiler_out("# if\n");
-    compile_expr_paren_ret(file, buf, buflen);
-    compiler_out("# if test\n");
-    compiler_out("    eq @ret, 0\n");
-    compiler_out("    jump? .else_%d\n", else_label);
-    compile_block(file, buf, buflen);
-    compiler_out("    jump .end_%d\n", end_label);
-    compiler_out(".else_%d\n", else_label);
+//     compiler_read_expect(TOKEN_IF);
+//     compiler_out("# if\n");
+//     compile_expr_paren_ret();
+//     compiler_out("# if test\n");
+//     compiler_out("    eq @ret, 0\n");
+//     compiler_out("    jump? .else_%d\n", else_label);
+//     compile_block();
+//     compiler_out("    jump .end_%d\n", end_label);
+//     compiler_out(".else_%d\n", else_label);
 
-    while (lex_peek(file, NULL, 0) == TOKEN_ELSE) {
-        compiler_read_expect(file, buf, buflen, TOKEN_ELSE);
+//     while (compiler_peek(NULL) == TOKEN_ELSE) {
+//         compiler_read_expect(TOKEN_ELSE);
 
-        if (lex_peek(file, NULL, 0) == TOKEN_IF) {
-            lex(file, buf, buflen);
-            else_label = compile_get_next_label();
-            compiler_out("# else if\n");
-            compile_expr_paren_ret(file, buf, buflen);
-            compiler_out("# else if test\n");
-            compiler_out("    eq @ret, 0\n");
-            compiler_out("    jump? .else_%d\n", else_label);
-            compile_block(file, buf, buflen);
-            compiler_out("    jump .end_%d\n", end_label);
-            compiler_out(".else_%d\n", else_label);
-        } else {
-            compiler_out("# else\n");
-            compile_block(file, buf, buflen);
-            break;
-        }
-    }
+//         if (compiler_peek(NULL) == TOKEN_IF) {
+//             lex(lex_file, lex_buffer, TOKEN_SIZE);
+//             else_label = compile_get_next_label();
+//             compiler_out("# else if\n");
+//             compile_expr_paren_ret();
+//             compiler_out("# else if test\n");
+//             compiler_out("    eq @ret, 0\n");
+//             compiler_out("    jump? .else_%d\n", else_label);
+//             compile_block();
+//             compiler_out("    jump .end_%d\n", end_label);
+//             compiler_out(".else_%d\n", else_label);
+//         } else {
+//             compiler_out("# else\n");
+//             compile_block();
+//             break;
+//         }
+//     }
 
-    compiler_out(".end_%d\n", end_label);
+//     compiler_out(".end_%d\n", end_label);
 }
 
-static void compile_stmt_for(int file, char* buf, int buflen) {
-    int label = compile_get_next_label();
+void compile_stmt_for() {
+//     int label = compile_get_next_label();
 
-    compiler_read_expect(file, buf, buflen, TOKEN_FOR);
-    compiler_read_expect(file, buf, buflen, '(');
+//     compiler_read_expect(TOKEN_FOR);
+//     compiler_read_expect('(');
 
-    compile_expr_ret(file, buf, buflen);
-    compiler_read_expect(file, buf, buflen, ';');
+//     compile_expr_ret();
+//     compiler_read_expect(';');
 
-    compiler_out(".test_%d\n", label);
-    compile_expr_ret(file, buf, buflen);
-    compiler_out("    eq @ret, 0\n");
-    compiler_out("    jump^ .begin_%d\n", label);
-    compiler_out("    jump .end_%d\n", label);
-    compiler_read_expect(file, buf, buflen, ';');
+//     compiler_out(".test_%d\n", label);
+//     compile_expr_ret();
+//     compiler_out("    eq @ret, 0\n");
+//     compiler_out("    jump^ .begin_%d\n", label);
+//     compiler_out("    jump .end_%d\n", label);
+//     compiler_read_expect(';');
 
-    compiler_out(".inc_%d\n", label);
-    compile_expr_ret(file, buf, buflen);
-    compiler_out("    jump .test_%d\n", label);
+//     compiler_out(".inc_%d\n", label);
+//     compile_expr_ret();
+//     compiler_out("    jump .test_%d\n", label);
 
-    compiler_read_expect(file, buf, buflen, ')');
+//     compiler_read_expect(')');
 
-    compiler_out(".begin_%d\n", label);
-    compile_block(file, buf, buflen);
-    compiler_out("    jump .inc_%d\n", label);
-    compiler_out(".end_%d\n", label);
+//     compiler_out(".begin_%d\n", label);
+//     compile_block();
+//     compiler_out("    jump .inc_%d\n", label);
+//     compiler_out(".end_%d\n", label);
 }
 
-static void compile_stmt_while(int file, char* buf, int buflen) {
-    int label = compile_get_next_label();
+void compile_stmt_while() {
+//     int label = compile_get_next_label();
 
-    compiler_read_expect(file, buf, buflen, TOKEN_WHILE);
-    compiler_read_expect(file, buf, buflen, '(');
+//     compiler_read_expect(TOKEN_WHILE);
+//     compiler_read_expect('(');
 
-    compiler_out(".test_%d\n", label);
-    compile_expr_ret(file, buf, buflen);
-    compiler_out("    eq @ret, 0\n");
-    compiler_out("    jump? .end_%d\n", label);
+//     compiler_out(".test_%d\n", label);
+//     compile_expr_ret();
+//     compiler_out("    eq @ret, 0\n");
+//     compiler_out("    jump? .end_%d\n", label);
 
-    compiler_read_expect(file, buf, buflen, ')');
+//     compiler_read_expect(')');
 
-    compiler_out(".begin_%d\n", label);
-    compile_block(file, buf, buflen);
-    compiler_out("    jump .test_%d\n", label);
-    compiler_out(".end_%d\n", label);
+//     compiler_out(".begin_%d\n", label);
+//     compile_block();
+//     compiler_out("    jump .test_%d\n", label);
+//     compiler_out(".end_%d\n", label);
 }
 
-static void compile_stmt_return(int file, char* buf, int buflen) {
-    compiler_read_expect(file, buf, buflen, TOKEN_RETURN);
+void compile_stmt_return() {
+    compiler_read_expect(TOKEN_RETURN);
     compiler_out("# return\n");
     
-    if (lex_peek(file, NULL, 0) != ';') {
-        compile_expr_ret(file, buf, buflen);
+    if (compiler_peek(NULL) != ';') {
+        compile_expr_ret();
     }
     
-    if (function_has_saved_stack) {
-        compiler_out("    pop @tmp0\n");
-        compiler_out("    mov @sp, @tmp0\n");
-    }
-    
-    compiler_out("    %ret\n");
-    compiler_read_expect(file, buf, buflen, ';');
+    compiler_out("\tjump .__exit\n");
+    compiler_read_expect(';');
 }
 
-static void compile_stmt_local(int file, char* buf, int buflen) {
-    if (function_has_saved_stack) {
-        fatal("No locals may appear after an array local\n");
-    }
+void compile_stmt_local() {
+    int* base_type;
+    int token;
+    int size;
+    char name[TOKEN_SIZE];
 
-    int size = compile_function_type(file, buf, buflen);
-    compiler_out("# local\n");
-    compiler_read_expect(file, buf, buflen, TOKEN_IDENTIFIER);
-    track_local(buf, size);
-    
-    if (is_global(buf)) {
-        fatal("Local cannot shadow a global");
-    }
-    
-    compiler_out("    %local %s\n", buf);
-    
-    int token = lex_peek(file, NULL, 0);
-    if (token == '[') {
-        function_has_saved_stack = true;
-        
-        char local_name[32];
-        strncpy(local_name, buf, sizeof(local_name));
-        
-        compiler_read_expect(file, NULL, 0, '[');
-        compiler_read_expect(file, buf, buflen, TOKEN_CONSTANT);
-        compiler_read_expect(file, NULL, 0, ']');
-        
-        compiler_out("    mov @tmp0, @sp\n");
-        compiler_out("    mov @tmp1, %s\n", buf);
-        compiler_out("    mul @tmp1, %d\n", size);
-        compiler_out("    sub @sp, @tmp1\n");
-        compiler_out("    mov @%s, @sp\n", local_name);
-        compiler_out("    push @tmp0\n");
+    base_type = parse_type_specifier(name);
+    scope_add(function_scope, stralloc(name), base_type);
+    size = type_size(base_type);
+    function_locals_size = function_locals_size + size;
+    compiler_out("# local %s (%d)\n", name, size);
+    compiler_out("#define L_%s %d\n", name, function_locals_size);
+
+    token = compiler_peek(name);
+    if (token == ',') {
+        compiler_out("\tpush 0\n");
+        compiler_read_expect(token);
+        compiler_fatal("Not implemented");
     } else if (token == '=') {
-        int label = compile_get_next_label();
-        compiler_out("# assign %s (#%d)\n", buf, label);
-        compiler_out("    jump .assign_value_1_%d\n", label);
-        compiler_out(".assign_value_2_%d\n", label);
-        compiler_out("    mov @%s, @ret\n", buf);
-        compiler_out("    jump .assign_value_3_%d\n", label);
-        compiler_read_expect(file, NULL, 0, '=');
-        compiler_out(".assign_value_1_%d\n", label);
-        compile_expr_ret(file, buf, buflen);
-        compiler_out("    jump .assign_value_2_%d\n", label);
-        compiler_out(".assign_value_3_%d\n", label);
+        compiler_read_expect(token);
+        compile_expr_stack();
+        compiler_read_expect(';');
+        return;
+    } else if (token == ';') {
+        compiler_out("\tpush 0\n");
+        compiler_read_expect(token);
+        return;
+    } else {
+        compiler_fatal("Unexpected token in compile_stmt_local");
     }
-
-    compiler_read_expect(file, buf, buflen, ';');
 }

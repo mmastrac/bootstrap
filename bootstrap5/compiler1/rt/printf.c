@@ -83,3 +83,12 @@ int printf(char* s, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, 
     __print_function_data = 1;
     return __printf(s, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
 }
+
+void set_fprintf_fd(int fd) {
+    __print_function_data = fd;
+}
+
+int call_fprintf(char* s, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6) {
+    __print_function = fputchar;
+    return __printf(s, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+}

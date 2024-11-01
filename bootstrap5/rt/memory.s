@@ -14,7 +14,9 @@
 	add @tmp0, @tmp1
 # Store that back into the heap pointer
 	st.d [:__heap], @tmp0
-	ret
+	gt @tmp0, @sp
+	ret^
+	%call :_fatal, &"Stack collision with heap"
 
 #===========================================================================
 # Args:

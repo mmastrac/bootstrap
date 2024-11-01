@@ -36,6 +36,7 @@
     dd @TOKEN_FOR, .for
     dd @TOKEN_WHILE, .while
     dd @TOKEN_IDENTIFIER, .expr
+    dd @TOKEN_ASM, .asm
     dd '*', .expr
     dd @TOKEN_RETURN, .return
     # Assume anything else is a local declaration
@@ -54,15 +55,12 @@
     jump .done
 
 .expr
-    %call :_strcmp, @buf, &"__asm__"
-    eq @ret, 0
-    jump? .asm
     %call :_compile_expr_ret, @file, @buf, @buflen
     %call :_compiler_read_expect, @file, @buf, @buflen, ';'
     jump .done
 
 .asm
-    %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_IDENTIFIER
+    %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_ASM
     %call :_compiler_read_expect, @file, @buf, @buflen, '('
     %call :_compiler_read_expect, @file, @buf, @buflen, @TOKEN_STRING_LITERAL
     %call :_compiler_out, &"%s\n", @buf
@@ -257,18 +255,20 @@
     eq @ret, '='
     jump^ .done
 
+    # The size of these labels adds up in the previous stage so
+    # try to avoid making them too long.
     %call :_compile_get_next_label
     mov @label, @ret
     %call :_compiler_out, &"# assign %s (#%d)\n", @buf, @label
-    %call :_compiler_out, &"    jump .assign_value_1_%d\n", @label
-    %call :_compiler_out, &".assign_value_2_%d\n", @label
+    %call :_compiler_out, &"    jump .asnval_1_%d\n", @label
+    %call :_compiler_out, &".asnval_2_%d\n", @label
     %call :_compiler_out, &"    mov @%s, @ret\n", @buf
-    %call :_compiler_out, &"    jump .assign_value_3_%d\n", @label
+    %call :_compiler_out, &"    jump .asnval_3_%d\n", @label
     %call :_compiler_read_expect, @file, 0, 0, '='
-    %call :_compiler_out, &".assign_value_1_%d\n", @label
+    %call :_compiler_out, &".asnval_1_%d\n", @label
     %call :_compile_expr_ret, @file, @buf, @buflen
-    %call :_compiler_out, &"    jump .assign_value_2_%d\n", @label
-    %call :_compiler_out, &".assign_value_3_%d\n", @label
+    %call :_compiler_out, &"    jump .asnval_2_%d\n", @label
+    %call :_compiler_out, &".asnval_3_%d\n", @label
     jump .done
 
 .local_array

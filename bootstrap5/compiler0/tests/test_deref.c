@@ -1,5 +1,5 @@
 int global_array_int[] = { 10, 20, 30 };
-char* global_string = "abcd";
+char global_string[] = "abcd";
 
 int result_deref() {
     int* ptr = &global_array_int;

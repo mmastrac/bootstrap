@@ -4,8 +4,7 @@ int* lex_file;
 char* lex_buffer;
 int out_file;
 
-extern void* _lex_hash_table_test_key_hash;
-extern void* _lex_hash_table_test_key_cmp;
+extern int* global_scope;
 
 void compiler_init(char* in, char* out) {
     void* ll;
@@ -13,7 +12,7 @@ void compiler_init(char* in, char* out) {
     void* lex;
     int token;
 
-    ht_init(_lex_hash_table_test_key_hash, _lex_hash_table_test_key_cmp);
+    global_scope = scope_create();
 
     lex_buffer = malloc(TOKEN_SIZE);
 
@@ -36,8 +35,9 @@ void compiler_fatal(char* message, int arg0, int arg1, int arg2, int arg3, int a
     syscall_exit(1);
 }
 
-int compiler_out() {
-
+int compiler_out(char* s, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6) {
+    set_fprintf_fd(out_file);
+    return call_fprintf(s, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 int compiler_read_expect(int token) {
@@ -48,10 +48,6 @@ int compiler_read_expect(int token) {
         compiler_fatal("Unexpected token: %d %s", next_token, lex_buffer);
     }
     return next_token;
-}
-
-int is_global() {
-    
 }
 
 int compiler_peek(char* buffer) {

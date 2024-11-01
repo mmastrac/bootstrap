@@ -3,7 +3,7 @@ int function_a(int n) {
     return 10;
 }
 
-int function_c(const char* a, int b) {
+int function_c(int a, int b) {
     return a + b;
 }
 

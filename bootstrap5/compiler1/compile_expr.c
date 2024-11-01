@@ -1,3 +1,4 @@
+#define NULL 0
 #include "lex/lex.h"
 
 // Forward declarations
@@ -18,25 +19,34 @@ void emit_call(char* func);
 void swap_arg(char* reg, int stack_offset);
 void op1(int op);
 void op2(int op);
-void compile_ternary(int* file, char* buf, int buflen);
-void compile_logical_or(int* file, char* buf, int buflen);
-void compile_logical_and(int* file, char* buf, int buflen);
-void compile_equality(int* file, char* buf, int buflen);
-void compile_relational(int* file, char* buf, int buflen);
-void compile_additive(int* file, char* buf, int buflen);
-void compile_multiplicative(int* file, char* buf, int buflen);
-void compile_unary(int* file, char* buf, int buflen);
-void compile_primary(int* file, char* buf, int buflen);
-void compile_function_call(int* file, char* buf, int buflen);
-void compile_assignment(int* file, char* buf, int buflen);
-void compile_array_access(int* file, char* buf, int buflen);
-void compile_expr(int* file, char* buf, int buflen, int precedence);
-void compile_expr_paren(int* file, char* buf, int buflen);
-void compile_expr_stack(int* file, char* buf, int buflen);
-void compile_expr_ret(int* file, char* buf, int buflen);
+int* compile_ternary();
+int* compile_logical_or();
+int* compile_logical_and();
+int* compile_equality();
+int* compile_relational();
+int* compile_additive();
+int* compile_multiplicative();
+int* compile_unary();
+int* compile_primary();
+int* compile_function_call();
+int* compile_assignment();
+int* compile_array_access();
+int* compile_expr(int precedence);
+int* compile_expr_paren();
+int* compile_expr_stack();
+void compile_expr_ret();
+int* compile_struct_access();
+int* compile_struct_deref();
 
 int* binary_expressions = 0;
 int compile_next_label = 0;
+
+extern char* lex_buffer;
+extern int* function_scope;
+extern int* global_scope;
+
+extern int* type_int;
+extern int* type_char_ptr;
 
 int compile_get_next_label() {
     int tmp = compile_next_label;
@@ -44,9 +54,19 @@ int compile_get_next_label() {
     return tmp;
 }
 
+void emit_comment(char* format, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6) {
+    compiler_out("# ");
+    compiler_out(format, arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+    compiler_out("\n");
+}
+
 // Helper functions for stack operations
 void push_constant(char* value) {
     compiler_out("    push %s\n", value);
+}
+
+void push_constant_number(int value) {
+    compiler_out("    push %d\n", value);
 }
 
 void push_string(char* value) {
@@ -70,7 +90,9 @@ void push_global(char* var) {
 }
 
 void push_local(char* var) {
-    compiler_out("    push @%s\n", var);
+    compiler_out("    mov @ctmp0, @fp\n");
+    compiler_out("    add, @ctmp0, @L_%s\n", var);
+    compiler_out("    push @ctmp0\n");
 }
 
 void store_global(char* var) {
@@ -158,184 +180,251 @@ void op2(int op) {
     compiler_out("    push @tmp0\n");
 }
 
-void compile_ternary(int* file, char* buf, int buflen) {
-    compile_logical_or(file, buf, buflen);
+int* compile_ternary() {
+    int token;
+    int label_false;
+    int label_end;
+    int* type;
+
+    type = compile_logical_or();
     
-    if (lex_peek(file, buf, buflen) == '?') {
-        lex(file, buf, buflen);
+    token = compiler_peek(NULL);
+    if (token == '?') {
+        compiler_read_expect(token);
         emit_comment("ternary operator");
         
-        int label_false = compile_get_next_label();
-        int label_end = compile_get_next_label();
+        label_false = compile_get_next_label();
+        label_end = compile_get_next_label();
         
         compiler_out("    pop @tmp0\n");
         compiler_out("    eq @tmp0, 0\n");
         compiler_out("    jump? .L%d\n", label_false);
         
-        compile_expr(file, buf, buflen, 0);
-        compiler_read_expect(file, ':');
+        type = compile_expr(0);
+        compiler_read_expect(':');
         
         compiler_out("    jump .L%d\n", label_end);
         emit_label(label_false);
         
-        compile_expr(file, buf, buflen, 0);
+        type = compile_expr(0);
         
         emit_label(label_end);
     }
+    return type;
 }
 
-void compile_logical_or(int* file, char* buf, int buflen) {
-    compile_logical_and(file, buf, buflen);
+int* compile_logical_or() {
+    int token;
+    int* type = compile_logical_and();
     
-    while (lex_peek(file, buf, buflen) == TOKEN_OR_OP) {
-        lex(file, buf, buflen);
+    token = compiler_peek(NULL);
+    if (token == TOKEN_OR_OP) {
+        compiler_read_expect(token);
+        type = compile_logical_and();
         emit_comment("operator '||'");
-        compile_logical_and(file, buf, buflen);
         op2(TOKEN_OR_OP);
     }
+    return type;
 }
 
-void compile_logical_and(int* file, char* buf, int buflen) {
-    compile_equality(file, buf, buflen);
+int* compile_logical_and() {
+    int token;
+    int* type = compile_equality();
     
-    while (lex_peek(file, buf, buflen) == TOKEN_AND_OP) {
-        lex(file, buf, buflen);
+    token = compiler_peek(NULL);
+    if (token == TOKEN_AND_OP) {
+        compiler_read_expect(token);
+        type = compile_equality();
         emit_comment("operator '&&'");
-        compile_equality(file, buf, buflen);
         op2(TOKEN_AND_OP);
     }
+    return type;
 }
 
-void compile_equality(int* file, char* buf, int buflen) {
-    compile_relational(file, buf, buflen);
+int* compile_equality() {
+    int token;
+    int* type = compile_relational();
     
     while (1) {
-        int token = lex_peek(file, buf, buflen);
+        token = compiler_peek(NULL);
         if ((token == TOKEN_EQ_OP) || (token == TOKEN_NE_OP)) {
-            lex(file, buf, buflen);
-            emit_comment("operator '%s'", buf);
-            compile_relational(file, buf, buflen);
+            compiler_read_expect(token);
+            type = compile_relational();
+            emit_comment("operator '%s'", lex_buffer);
             op2(token);
         } else {
-            return;
+            return type;
         }
     }
 }
 
-void compile_relational(int* file, char* buf, int buflen) {
-    compile_additive(file, buf, buflen);
+int* compile_relational() {
+    int token;
+    int* type = compile_additive();
     
     while (1) {
-        int token = lex_peek(file, buf, buflen);
+        token = compiler_peek(NULL);
         if ((token == '<') || ((token == '>') || ((token == TOKEN_LE_OP) || (token == TOKEN_GE_OP)))) {
-            lex(file, buf, buflen);
-            emit_comment("operator '%s'", buf);
-            compile_additive(file, buf, buflen);
+            compiler_read_expect(token);
+            type = compile_additive();
+            emit_comment("operator '%s'", lex_buffer);
             op2(token);
         } else {
-            return;
+            return type;
         }
     }
 }
 
-void compile_additive(int* file, char* buf, int buflen) {
-    compile_multiplicative(file, buf, buflen);
+int* compile_additive() {
+    int token;
+    int* type = compile_multiplicative();
     
     while (1) {
-        int token = lex_peek(file, buf, buflen);
+        token = compiler_peek(NULL);
         if ((token == '+') || (token == '-')) {
-            lex(file, buf, buflen);
-            emit_comment("operator '%s'", buf);
-            compile_multiplicative(file, buf, buflen);
+            compiler_read_expect(token);
+            type = compile_multiplicative();
+            emit_comment("operator '%s'", lex_buffer);
             op2(token);
         } else {
-            return;
+            return type;
         }
     }
 }
 
-void compile_multiplicative(int* file, char* buf, int buflen) {
-    compile_unary(file, buf, buflen);
+int* compile_multiplicative() {
+    int token;
+    int* type = compile_unary();
     
     while (1) {
-        int token = lex_peek(file, buf, buflen);
+        token = compiler_peek(NULL);
         if ((token == '*') || ((token == '/') || (token == '%'))) {
-            lex(file, buf, buflen);
-            emit_comment("operator '%s'", buf);
-            compile_unary(file, buf, buflen);
+            compiler_read_expect(token);
+            type = compile_unary();
+            emit_comment("operator '%s'", lex_buffer);
             op2(token);
         } else {
-            return;
+            return type;
         }
     }
 }
 
-void compile_unary(int* file, char* buf, int buflen) {
-    int token = lex_peek(file, 0, 0);
+int* compile_unary() {
+    int token = compiler_peek(NULL);
+    int* type;
     
     if ((token == '-') || (token == '!')) {
-        lex(file, buf, buflen);
+        compiler_read_expect(token);
+        type = compile_unary();
         emit_comment("unary %c", token);
-        compile_unary(file, buf, buflen);
         op1(token);
     } else {
-        compile_primary(file, buf, buflen);
+        type = compile_primary();
     }
+    return type;
 }
 
-void compile_primary(int* file, char* buf, int buflen) {
-    int token = lex_peek(file, 0, 0);
+int* compile_primary() {
+    int token;
     int next_token;
     int label;
     int arg_count;
+    int* type;
+    char primary_buffer[256];
 
-    if (token == TOKEN_CONSTANT) {
-        lex(file, buf, buflen);
-        push_constant(buf);
+    token = compiler_peek(primary_buffer);
+    emit_comment("primary %s", primary_buffer);
+
+    if (token == TOKEN_SIZEOF) {
+        return compile_sizeof();
+    } else if (token == TOKEN_CONSTANT) {
+        compiler_read_expect(token);
+        push_constant(primary_buffer);
+        return type_int;
     } else if (token == TOKEN_STRING_LITERAL) {
-        lex(file, buf, buflen);
-        push_string(buf);
+        compiler_read_expect(token);
+        push_string(primary_buffer);
+        return type_char_ptr;
     } else if (token == TOKEN_IDENTIFIER) {
-        lex(file, buf, buflen);
-        next_token = lex_peek(file, 0, 0);
+        compiler_read_expect(token);
+        next_token = compiler_peek(NULL);
         if (next_token == '(') {
-            compile_function_call(file, buf, buflen);
+            return compile_function_call(primary_buffer);
         } else if (next_token == '=') {
-            compile_assignment(file, buf, buflen);
+            return compile_assignment(primary_buffer);
+        } else if (next_token == '.') {
+            return compile_struct_access(primary_buffer);
+        } else if (next_token == TOKEN_PTR_OP) {
+            return compile_struct_deref(primary_buffer);
         } else {
-            if (is_global(buf)) {
-                push_global(buf);
+            type = scope_lookup(global_scope, primary_buffer);
+            if (type) {
+                push_global(primary_buffer);
             } else {
-                push_local(buf);
+                type = scope_lookup(function_scope, primary_buffer);
+                if (type) {
+                    push_local(primary_buffer);
+                } else {
+                    compiler_fatal("Unknown identifier '%s'", primary_buffer);
+                }
             }
+            return type;
         }
     } else if (token == '(') {
-        compile_expr_paren(file, buf, buflen);
+        return compile_expr_paren();
     } else if (token == '[') {
-        compile_array_access(file, buf, buflen);
+        return compile_array_access();
     } else {
-        fatal("Unexpected token in compile_primary!\n");
+        compiler_fatal("Unexpected token in compile_primary!\n");
     }
 }
 
-void compile_function_call(int* file, char* buf, int buflen) {
+int* compile_sizeof() {
+    int token;
+    int* type;    
+    char name[256];
+
+    compiler_read_expect(TOKEN_SIZEOF);
+    compiler_read_expect('(');
+
+    token = compiler_peek(name);
+    if (type_is_type_token(token)) {
+        type = parse_type_specifier(name);
+        compiler_read_expect(')');
+        push_constant_number(type_size(type));
+    } else if (token == TOKEN_IDENTIFIER) {
+        compiler_read_expect(TOKEN_IDENTIFIER);
+        type = scope_lookup(function_scope, name);
+        if (!type) {
+            type = scope_lookup(global_scope, name);
+            if (!type) {
+                compiler_fatal("Unknown identifier for sizeof: '%s'", name);
+            }
+        }
+        compiler_read_expect(')');
+        push_constant_number(type_size(type));
+    } else {
+        compiler_fatal("Invalid sizeof argument");
+    }
+    return type_int;
+}
+
+int* compile_function_call(char* func_name) {
     int arg_count = 0;
     int i;
-    char func_name[256];
-    strcpy(func_name, buf);
 
     emit_comment("call %s", func_name);
     
-    compiler_read_expect(file, '(');
-    while (lex_peek(file, 0, 0) != ')') {
+    compiler_read_expect('(');
+    while (compiler_peek(NULL) != ')') {
         if (arg_count > 0) {
-            compiler_read_expect(file, ',');
+            compiler_read_expect(',');
         }
         emit_comment("arg %d", arg_count);
-        compile_expr(file, buf, buflen, 0);
+        compile_expr(0);
         arg_count = arg_count + 1;
     }
-    compiler_read_expect(file, ')');
+    compiler_read_expect(')');
     
     // Save original register values
     for (i = 0; (i < arg_count) && (i < 8); i = i + 1) {
@@ -361,49 +450,72 @@ void compile_function_call(int* file, char* buf, int buflen) {
     }
     
     push_reg("ret");
+    return NULL; // TODO: Return function return type
 }
 
-void compile_assignment(int* file, char* buf, int buflen) {
+int* compile_assignment() {
+    int* type;
     char var_name[256];
-    strcpy(var_name, buf);
+    strcpy(var_name, lex_buffer);
 
     emit_comment("assign %s", var_name);
     
-    compiler_read_expect(file, '=');
-    compile_expr(file, buf, buflen, 0);
+    compiler_read_expect('=');
+    type = compile_expr(0);
     
-    if (is_global(var_name)) {
+    type = scope_lookup(global_scope, var_name);
+    if (type) {
         store_global(var_name);
     } else {
-        store_local(var_name);
+        type = scope_lookup(function_scope, var_name);
+        if (type) {
+            store_local(var_name);
+        } else {
+            compiler_fatal("Unknown identifier '%s'", var_name);
+        }
     }
     push_reg("ret");
+    return type;
 }
 
-void compile_array_access(int* file, char* buf, int buflen) {
+int* compile_array_access() {
+    int* type;
     emit_comment("array access");
-    compiler_read_expect(file, '[');
-    compile_expr(file, buf, buflen, 0);
+    compiler_read_expect('[');
+    type = compile_expr(0);
     op2('+');
     op1('*');
-    compiler_read_expect(file, ']');
+    compiler_read_expect(']');
+    return type;
 }
 
-void compile_expr(int* file, char* buf, int buflen, int precedence) {
-    compile_ternary(file, buf, buflen);
+int* compile_struct_access() {
+    // TODO: Implement struct member access (.)
+    return NULL;
 }
 
-void compile_expr_paren(int* file, char* buf, int buflen) {
-    compiler_read_expect(file, '(');
-    compile_expr(file, buf, buflen, 0);
-    compiler_read_expect(file, ')');
+int* compile_struct_deref() {
+    // TODO: Implement struct pointer dereference (->)
+    return NULL;
 }
 
-void compile_expr_stack(int* file, char* buf, int buflen) {
-    compile_expr(file, buf, buflen, 0);
+int* compile_expr(int precedence) {
+    return compile_ternary();
 }
 
-void compile_expr_ret(int* file, char* buf, int buflen) {
-    compile_expr_stack(file, buf, buflen);
-    compiler_out("    pop @ret\n", buf);
+int* compile_expr_paren() {
+    int* type;
+    compiler_read_expect('(');
+    type = compile_expr(0);
+    compiler_read_expect(')');
+    return type;
+}
+
+int* compile_expr_stack() {
+    return compile_expr(0);
+}
+
+void compile_expr_ret() {
+    compile_expr_stack();
+    compiler_out("    pop @ret\n", lex_buffer);
 }

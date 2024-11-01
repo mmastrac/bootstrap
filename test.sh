@@ -153,6 +153,9 @@ mkdir $BUILD/b5-1
 ./vm $OUT0 $ROOT/bootstrap5/compiler1/rt/crt1.c $BUILD/b5-1/crt1.s
 ./vm $OUT0 $ROOT/bootstrap5/compiler1/rt/printf.c $BUILD/b5-1/printf.s
 ./vm $OUT0 $ROOT/bootstrap5/compiler1/compile_expr.c $BUILD/b5-1/compile_expr.s
+./vm $OUT0 $ROOT/bootstrap5/compiler1/compile_fn.c $BUILD/b5-1/compile_fn.s
+./vm $OUT0 $ROOT/bootstrap5/compiler1/compile_scope.c $BUILD/b5-1/compile_scope.s
+./vm $OUT0 $ROOT/bootstrap5/compiler1/compile_stmt.c $BUILD/b5-1/compile_stmt.s
 ./vm $OUT0 $ROOT/bootstrap5/compiler1/compile_type.c $BUILD/b5-1/compile_type.s
 ./vm $OUT0 $ROOT/bootstrap5/compiler1/compile_unit.c $BUILD/b5-1/compile_unit.s
 ./vm $OUT0 $ROOT/bootstrap5/compiler1/compile_util.c $BUILD/b5-1/compile_util.s
